@@ -242,29 +242,43 @@ export async function createOrder(
       throw new AppError("ORDER_CREATE_FAILED", orderError?.message || "Failed to create order", 500);
     }
 
-    // Decrement inventory (permanent reduction)
+    // Create inventory reservations (NOT permanent decrement yet)
+    // Inventory only finalizes after verified payment (or immediately for COD)
     for (const item of items) {
-      let query = supabase
-        .from("product_inventory")
-        .select("id, quantity, reserved")
-        .eq("product_id", item.product_id);
+      const { data: reservation, error: reservationError } = await supabase
+        .from("inventory_reservations")
+        .insert({
+          order_id: order.id,
+          product_id: item.product_id,
+          variant_id: item.variant_id || null,
+          quantity: item.quantity,
+          status: paymentMethod === "cod" ? "finalized" : "reserved",
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min TTL for non-COD
+          finalized_at: paymentMethod === "cod" ? new Date().toISOString() : null,
+        })
+        .select()
+        .single();
 
-      if (item.variant_id) {
-        query = query.eq("variant_id", item.variant_id);
-      } else {
-        query = query.is("variant_id", null);
+      if (reservationError) {
+        console.error(`Failed to create inventory reservation for order ${order.id}:`, reservationError);
+        // Don't fail the entire order - reservation is for tracking, not blocking
       }
+    }
 
-      const { data: inventory } = await query.single();
-
-      if (inventory) {
-        await supabase
-          .from("product_inventory")
-          .update({
-            quantity: inventory.quantity - item.quantity,
-            reserved: Math.max(0, inventory.reserved - item.quantity),
-          })
-          .eq("id", inventory.id);
+    // For COD orders, finalize inventory immediately (no payment verification needed)
+    if (paymentMethod === "cod") {
+      try {
+        const { finalizeInventory } = await import("@/lib/payments/inventory-finalization");
+        await finalizeInventory(order.id);
+      } catch (error) {
+        console.error(`Failed to finalize inventory for COD order ${order.id}:`, error);
+        // Log but don't fail - order should still succeed
+        await logAuditEvent(
+          "inventory_finalization_failed",
+          "order",
+          order.id,
+          { paymentMethod: "cod", error: String(error) }
+        );
       }
     }
 
@@ -579,29 +593,65 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
       );
     }
 
-    // Restore inventory
-    if (Array.isArray(order.items)) {
-      for (const item of order.items) {
-        let query = supabase
-          .from("product_inventory")
-          .select("id, quantity")
-          .eq("product_id", item.product_id);
+    // Release inventory reservations or restore stock if already finalized
+    const { data: reservations } = await supabase
+      .from("inventory_reservations")
+      .select("*")
+      .eq("order_id", orderId);
 
-        if (item.variant_id) {
-          query = query.eq("variant_id", item.variant_id);
-        } else {
-          query = query.is("variant_id", null);
-        }
-
-        const { data: inventory } = await query.single();
-
-        if (inventory) {
+    if (reservations && reservations.length > 0) {
+      for (const reservation of reservations) {
+        if (reservation.status === "reserved") {
+          // Release unrealized reservations
           await supabase
-            .from("product_inventory")
+            .from("inventory_reservations")
             .update({
-              quantity: inventory.quantity + item.quantity,
+              status: "released",
+              released_at: new Date().toISOString(),
             })
-            .eq("id", inventory.id);
+            .eq("id", reservation.id);
+        } else if (reservation.status === "finalized") {
+          // Restore already-finalized stock
+          if (reservation.variant_id) {
+            const { data: variant } = await supabase
+              .from("product_variants")
+              .select("stock_quantity")
+              .eq("id", reservation.variant_id)
+              .single();
+
+            if (variant) {
+              await supabase
+                .from("product_variants")
+                .update({
+                  stock_quantity: variant.stock_quantity + reservation.quantity,
+                })
+                .eq("id", reservation.variant_id);
+            }
+          } else {
+            const { data: product } = await supabase
+              .from("products")
+              .select("stock_quantity")
+              .eq("id", reservation.product_id)
+              .single();
+
+            if (product) {
+              await supabase
+                .from("products")
+                .update({
+                  stock_quantity: product.stock_quantity + reservation.quantity,
+                })
+                .eq("id", reservation.product_id);
+            }
+          }
+
+          // Mark reservation as released
+          await supabase
+            .from("inventory_reservations")
+            .update({
+              status: "released",
+              released_at: new Date().toISOString(),
+            })
+            .eq("id", reservation.id);
         }
       }
     }

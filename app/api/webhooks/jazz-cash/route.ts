@@ -9,6 +9,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { recordPaymentAttempt, logAuditEvent } from "@/lib/supabase/helpers";
 import { verifyJazzCashWebhookSignature } from "@/lib/payments/signature";
+import {
+  recordWebhookProcessing,
+  finalizeInventory,
+  releaseInventoryReservations,
+} from "@/lib/payments/inventory-finalization";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 
 export async function POST(request: NextRequest) {
@@ -85,9 +90,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SECURITY: Prevent duplicate webhook processing (idempotency check)
-    if (order.payment_status === "paid" && order.payment_reference === transactionId) {
-      console.log(`JazzCash webhook: Duplicate webhook for order ${orderId}, already paid`);
+    // SECURITY: Record webhook processing to detect and handle duplicates
+    const webhookRecord = await recordWebhookProcessing(
+      orderId,
+      transactionId,
+      "jazz_cash",
+      body
+    );
+
+    // If this is an exact duplicate webhook and was already processed, return success
+    if (webhookRecord.isDuplicate && webhookRecord.wasProcessed) {
+      console.log(
+        `JazzCash webhook: Duplicate webhook for order ${orderId}, already processed`
+      );
       return NextResponse.json({ success: true }, { status: 200 });
     }
 
@@ -122,6 +137,24 @@ export async function POST(request: NextRequest) {
         // Don't fail the webhook response; webhook was valid, order update is separate concern
       }
 
+      // CRITICAL: Finalize inventory reservations after verified payment
+      // This converts temporary holds to permanent stock reduction
+      try {
+        const result = await finalizeInventory(orderId);
+        console.log(
+          `JazzCash: Finalized ${result.reservationsFinalized} inventory reservations for order ${orderId}`
+        );
+      } catch (error) {
+        console.error(`JazzCash: Failed to finalize inventory for order ${orderId}`, error);
+        await logAuditEvent(
+          "inventory_finalization_failed",
+          "order",
+          orderId,
+          { gateway: "jazz_cash", error: String(error) }
+        );
+        // Don't fail webhook - order is already marked as paid
+      }
+
       // Log payment confirmation
       await logAuditEvent(
         "payment_confirmed_webhook",
@@ -137,7 +170,14 @@ export async function POST(request: NextRequest) {
 
       console.log(`JazzCash payment confirmed for order ${orderId}`);
     } else {
-      // Payment failed
+      // Payment failed - release inventory reservations
+      try {
+        await releaseInventoryReservations(orderId);
+        console.log(`JazzCash: Released inventory reservations for failed order ${orderId}`);
+      } catch (error) {
+        console.error(`JazzCash: Failed to release reservations for order ${orderId}`, error);
+      }
+
       const { data: attempts } = await supabase
         .from("payment_attempts")
         .select("attempt_number, is_counted_failure")
