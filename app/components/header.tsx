@@ -22,8 +22,9 @@ export function Header() {
             <Link href="/products" className="text-gray-700 hover:text-gray-900">
               Products
             </Link>
-            <Link href="/cart" className="text-gray-700 hover:text-gray-900">
+            <Link href="/cart" data-testid="cart-link" className="text-gray-700 hover:text-gray-900 relative">
               Cart
+              <span data-testid="cart-badge" className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
             </Link>
             <Link href="/account" className="text-gray-700 hover:text-gray-900">
               Account

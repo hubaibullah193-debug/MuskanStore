@@ -25,7 +25,7 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Link href={`/products/${slug}`}>
-      <div className="group cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+      <div className="group cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md" data-testid="product-card">
         {/* Product Image */}
         <div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-gray-100">
           {imageUrl ? (

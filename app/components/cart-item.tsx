@@ -19,7 +19,7 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
   };
 
   return (
-    <div className="flex items-center gap-4 border-b border-gray-200 py-4">
+    <div className="flex items-center gap-4 border-b border-gray-200 py-4" data-testid="cart-item">
       {/* Product Info */}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 truncate">
