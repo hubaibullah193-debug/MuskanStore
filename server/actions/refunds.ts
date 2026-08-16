@@ -36,12 +36,19 @@ export async function createRefundRequest(
 ): Promise<{ success: boolean; refundId?: string; error?: string }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    // Resolve the authenticated customer from the auth-token cookie
+    const { getCurrentUser } = await import('./auth');
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
 
     // Get order to verify ownership and get customer email
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, order_number, total_amount, guest_email, user_id, items')
+      .select('id, order_number, total_amount, guest_email, user_id, items, order_status')
       .eq('id', payload.orderId)
       .single();
 
@@ -50,8 +57,13 @@ export async function createRefundRequest(
     }
 
     // Verify user owns this order
-    if (user?.id !== order.user_id && !user) {
+    if (user.id !== order.user_id) {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    // Only delivered orders are eligible for a refund request
+    if (order.order_status !== 'delivered') {
+      return { success: false, error: 'Only delivered orders can be refunded' };
     }
 
     // Validate refund amount doesn't exceed order total
@@ -76,7 +88,7 @@ export async function createRefundRequest(
       .from('refunds')
       .insert({
         order_id: payload.orderId,
-        requested_by: user?.id || null,
+        requested_by: user.id,
         refund_amount: payload.refundAmount,
         reason: payload.reason,
         status: 'requested',
@@ -90,7 +102,7 @@ export async function createRefundRequest(
     }
 
     // Send notification email
-    const customerEmail = user?.email || order.guest_email;
+    const customerEmail = user.email || order.guest_email;
     await sendRefundEmail({
       orderNumber: order.order_number,
       customerEmail,

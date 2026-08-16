@@ -26,12 +26,13 @@ export default async function OrderRefundsPage({
   searchParams: { token?: string };
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { getCurrentUser } = await import('@/server/actions/auth');
+  const user = await getCurrentUser();
 
   // Get order
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select('id, order_number, total_amount, guest_email, user_id, payment_status, created_at')
+    .select('id, order_number, total_amount, guest_email, user_id, order_status, payment_status, created_at')
     .eq('id', params.id)
     .single();
 
@@ -54,8 +55,10 @@ export default async function OrderRefundsPage({
     .eq('order_id', params.id)
     .order('created_at', { ascending: false });
 
-  // Check if order qualifies for refund (payment complete)
-  const canRequestRefund = order.payment_status === 'completed' && (refunds || []).every(r => r.status !== 'requested');
+  // Check if order qualifies for refund (delivered and no active request)
+  const canRequestRefund =
+    order.order_status === 'delivered' &&
+    (refunds || []).every(r => r.status !== 'requested');
 
   const statusBadgeColor = (status: string) => {
     switch (status) {
@@ -146,8 +149,8 @@ export default async function OrderRefundsPage({
         {!canRequestRefund && !refunds?.length && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <p className="text-yellow-900">
-              {order.payment_status !== 'completed'
-                ? 'Refunds can only be requested after payment is confirmed.'
+              {order.order_status !== 'delivered'
+                ? 'Refunds can only be requested after the order is delivered.'
                 : 'A refund request is already in progress for this order.'}
             </p>
           </div>
