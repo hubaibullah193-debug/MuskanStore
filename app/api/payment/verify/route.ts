@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Get order
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, order_number, payment_status, guest_email, user_id, total_amount')
+      .select('id, order_number, payment_status, payment_reference, guest_email, user_id, total_amount')
       .eq('id', orderId)
       .single();
 
@@ -37,6 +37,34 @@ export async function POST(request: NextRequest) {
     }
 
     const isPaymentSuccess = paymentStatus === 'completed' || paymentStatus === 'success';
+
+    // SECURITY: Verify amount matches order total (prevent partial payment acceptance)
+    if (amount && Math.abs(amount - order.total_amount) > 0.01) {
+      console.error(
+        `Payment verify: Amount mismatch for order ${orderId}. Expected: ${order.total_amount}, Got: ${amount}`
+      );
+      await logAuditEvent(
+        'payment_amount_mismatch',
+        'order',
+        orderId,
+        {
+          gateway,
+          expectedAmount: order.total_amount,
+          receivedAmount: amount,
+          transactionId,
+        }
+      );
+      return NextResponse.json(
+        { error: 'Amount mismatch' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Prevent duplicate webhook processing (idempotency check)
+    if (isPaymentSuccess && order.payment_status === 'paid' && order.payment_reference === transactionId) {
+      console.log(`Payment verify: Duplicate webhook for order ${orderId}, already paid`);
+      return NextResponse.json({ success: true, orderId, status: 'paid' }, { status: 200 });
+    }
 
     // Record payment attempt
     await recordPaymentAttempt(
@@ -53,6 +81,7 @@ export async function POST(request: NextRequest) {
         .update({
           payment_status: 'paid',
           order_status: 'confirmed',
+          payment_reference: transactionId,
         })
         .eq('id', orderId);
 

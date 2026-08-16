@@ -194,14 +194,19 @@ export async function verifyPayment(
 
 function verifyJazzCashSignature(response: Record<string, any>): boolean {
   try {
-    // In production, verify HMAC signature using gateway public key
-    // For now, just verify required fields exist
-    return (
-      response.pp_TxnRefNo &&
-      response.pp_ResponseCode &&
-      response.pp_TransactionID
-    );
-  } catch {
+    // SECURITY: Import and use actual HMAC signature verification
+    const { verifyJazzCashWebhookSignature } = require("@/lib/payments/signature");
+    const password = process.env.JAZZ_CASH_PP_PASSWORD || "";
+
+    if (!password) {
+      console.error("JazzCash signature verification: JAZZ_CASH_PP_PASSWORD not configured");
+      return false;
+    }
+
+    // Verify using actual HMAC, not just field presence
+    return verifyJazzCashWebhookSignature(password, response);
+  } catch (error) {
+    console.error("JazzCash signature verification error:", error);
     return false;
   }
 }
@@ -212,14 +217,19 @@ function verifyJazzCashSignature(response: Record<string, any>): boolean {
 
 function verifyEasypaisaSignature(response: Record<string, any>): boolean {
   try {
-    // In production, verify HMAC signature using gateway public key
-    // For now, just verify required fields exist
-    return (
-      response.transactionID &&
-      response.status &&
-      response.amount
-    );
-  } catch {
+    // SECURITY: Import and use actual HMAC signature verification
+    const { verifyEasypaisaWebhookSignature } = require("@/lib/payments/signature");
+    const secret = process.env.EASYPAISA_MERCHANT_SECRET || "";
+
+    if (!secret) {
+      console.error("Easypaisa signature verification: EASYPAISA_MERCHANT_SECRET not configured");
+      return false;
+    }
+
+    // Verify using actual HMAC, not just field presence
+    return verifyEasypaisaWebhookSignature(secret, response);
+  } catch (error) {
+    console.error("Easypaisa signature verification error:", error);
     return false;
   }
 }

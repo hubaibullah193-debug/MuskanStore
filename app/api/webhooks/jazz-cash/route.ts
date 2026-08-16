@@ -2,25 +2,36 @@
  * JazzCash Payment Webhook Handler
  * Receives async payment confirmation from JazzCash
  * Handles both success and failure scenarios
+ * CRITICAL: Verifies webhook authenticity and amount before updating order
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { recordPaymentAttempt, logAuditEvent } from "@/lib/supabase/helpers";
+import { verifyJazzCashWebhookSignature } from "@/lib/payments/signature";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Verify webhook signature (simplified; production would use proper HMAC verification)
-    const isValidSignature = verifyJazzCashSignature(body);
+    // SECURITY: Verify webhook signature using HMAC (NOT just field presence)
+    const password = process.env.JAZZ_CASH_PP_PASSWORD || "";
+    if (!password) {
+      console.error("JazzCash webhook: JAZZ_CASH_PP_PASSWORD not configured");
+      return NextResponse.json(
+        { error: "Gateway not configured" },
+        { status: 500 }
+      );
+    }
+
+    const isValidSignature = verifyJazzCashWebhookSignature(password, body);
 
     if (!isValidSignature) {
-      console.error("JazzCash webhook signature verification failed");
+      console.error("JazzCash webhook signature verification failed - rejecting forged webhook");
       return NextResponse.json(
         { error: "Invalid signature" },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Get order
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, order_status, payment_status, total_amount")
+      .select("id, order_status, payment_status, total_amount, payment_reference")
       .eq("id", orderId)
       .single();
 
@@ -50,6 +61,34 @@ export async function POST(request: NextRequest) {
         { error: "Order not found" },
         { status: 404 }
       );
+    }
+
+    // SECURITY: Verify amount matches order total (prevent partial payment acceptance)
+    if (Math.abs(amount - order.total_amount) > 0.01) {
+      console.error(
+        `JazzCash webhook: Amount mismatch for order ${orderId}. Expected: ${order.total_amount}, Got: ${amount}`
+      );
+      await logAuditEvent(
+        "payment_amount_mismatch",
+        "order",
+        orderId,
+        {
+          gateway: "jazz_cash",
+          expectedAmount: order.total_amount,
+          receivedAmount: amount,
+          transactionId,
+        }
+      );
+      return NextResponse.json(
+        { error: "Amount mismatch" },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Prevent duplicate webhook processing (idempotency check)
+    if (order.payment_status === "paid" && order.payment_reference === transactionId) {
+      console.log(`JazzCash webhook: Duplicate webhook for order ${orderId}, already paid`);
+      return NextResponse.json({ success: true }, { status: 200 });
     }
 
     // Determine if payment was successful
@@ -66,11 +105,13 @@ export async function POST(request: NextRequest) {
 
     if (paymentSuccessful) {
       // Update order status to confirmed and payment status to paid
+      // ONLY after signature AND amount verification passed
       const { data: updated, error: updateError } = await supabase
         .from("orders")
         .update({
           order_status: "confirmed",
           payment_status: "paid",
+          payment_reference: transactionId,
         })
         .eq("id", orderId)
         .select()
@@ -146,34 +187,5 @@ export async function POST(request: NextRequest) {
       { error: "Internal server error" },
       { status: 500 }
     );
-  }
-}
-
-// ===================================================================
-// VERIFY JAZZCASH WEBHOOK SIGNATURE
-// ===================================================================
-
-function verifyJazzCashSignature(webhook: Record<string, any>): boolean {
-  try {
-    // In production, verify HMAC signature using JazzCash public key
-    // For now, verify required fields exist
-    const requiredFields = [
-      "pp_TxnRefNo",
-      "pp_ResponseCode",
-      "pp_TransactionID",
-      "pp_Amount",
-    ];
-
-    for (const field of requiredFields) {
-      if (!webhook[field]) {
-        console.error(`JazzCash webhook missing field: ${field}`);
-        return false;
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.error("JazzCash signature verification error:", error);
-    return false;
   }
 }
