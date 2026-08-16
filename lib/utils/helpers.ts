@@ -333,16 +333,13 @@ export function generateRandomString(length: number = 16): string {
 }
 
 export function generateToken(length: number = 32): string {
-  const array = new Uint8Array(length);
-  if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(array);
-  } else if (typeof global !== "undefined" && (global as any).crypto) {
-    (global as any).crypto.getRandomValues(array);
-  } else {
-    // Fallback for environments without crypto
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
+  // Use crypto.getRandomValues for secure random generation
+  if (typeof globalThis !== "undefined" && globalThis.crypto) {
+    const array = new Uint8Array(length);
+    globalThis.crypto.getRandomValues(array);
+    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+  // Fallback for non-crypto environments (should not happen in production)
+  throw new Error("Secure random generation not available in this environment");
 }

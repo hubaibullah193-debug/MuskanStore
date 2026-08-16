@@ -198,8 +198,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Failed to create user");
       }
 
-      // User profile will be created via trigger or separate call
-      // For now, we'll just set basic user state
+      // Create user profile in public.users table
+      const { error: profileError } = await supabase
+        .from("users")
+        .insert({
+          id: authData.user.id,
+          email,
+          name,
+          phone,
+          role: "customer",
+          email_verified: false,
+        });
+
+      if (profileError) {
+        throw new Error(profileError.message);
+      }
+
       setUser({
         id: authData.user.id,
         email: authData.user.email || email,

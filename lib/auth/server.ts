@@ -76,6 +76,7 @@ export async function loginUser(email: string, password: string) {
     const validated = LogInSchema.parse({ email, password });
 
     // Authenticate with Supabase
+    // Note: signInWithPassword works server-side in Next.js via Supabase JS SDK
     const { data, error } = await supabase.auth.signInWithPassword({
       email: validated.email,
       password: validated.password,

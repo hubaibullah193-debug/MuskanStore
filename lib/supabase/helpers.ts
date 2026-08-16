@@ -89,15 +89,15 @@ export async function checkInventoryAvailable(
   variantId?: string,
   quantity: number = 1
 ) {
-  const query = supabase
+  let query = supabase
     .from("product_inventory")
     .select("quantity, reserved")
     .eq("product_id", productId);
 
   if (variantId) {
-    query.eq("variant_id", variantId);
+    query = query.eq("variant_id", variantId);
   } else {
-    query.is("variant_id", null);
+    query = query.is("variant_id", null);
   }
 
   const { data, error } = await query.single();
@@ -253,12 +253,8 @@ export async function getActiveBundles() {
     `
     )
     .eq("is_active", true)
-    .or(
-      `active_from.is.null,active_from.lte.${now}`
-    )
-    .or(
-      `active_to.is.null,active_to.gte.${now}`
-    );
+    .or(`active_from.is.null,active_from.lte.${now}`)
+    .or(`active_to.is.null,active_to.gte.${now}`);
 }
 
 export async function getBundleById(bundleId: string) {
