@@ -324,6 +324,7 @@ export async function createOrder(
       }).catch((error) => {
         console.error("Failed to send order confirmation email:", error);
         // Don't throw - order succeeded even if email fails
+        // Email logs will capture the failure for retry/debugging
       });
     }
 

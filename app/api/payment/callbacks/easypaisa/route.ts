@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { verifyEasypaisaWebhookSignature } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
+import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
 
 export async function GET(request: NextRequest) {
   try {
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      // Send payment status email
+      // Send payment status email - deduplicated to prevent duplicate emails from webhook retries
       if (updatedOrder) {
         let customerEmail = updatedOrder.guest_email;
         if (updatedOrder.user_id && !customerEmail) {
@@ -94,17 +95,28 @@ export async function GET(request: NextRequest) {
         }
 
         if (customerEmail) {
-          await sendPaymentStatusEmail({
-            orderNumber: updatedOrder.order_number,
-            customerEmail,
-            status: 'completed',
-            paymentMethod: 'Easypaisa',
-            totalAmount: updatedOrder.total_amount,
-            paymentReference: transactionId || undefined,
-          }).catch((error) => {
-            console.error('Failed to send payment status email:', error);
-            // Don't throw - payment succeeded even if email fails
+          // Check if email already sent for this exact webhook payload
+          const shouldSend = await shouldSendWebhookEmail({
+            orderId,
+            transactionId: transactionId || '',
+            paymentGateway: 'easypaisa',
+            emailType: 'payment_status',
+            webhookPayload: Object.fromEntries(searchParams),
           });
+
+          if (shouldSend) {
+            await sendPaymentStatusEmail({
+              orderNumber: updatedOrder.order_number,
+              customerEmail,
+              status: 'completed',
+              paymentMethod: 'Easypaisa',
+              totalAmount: updatedOrder.total_amount,
+              paymentReference: transactionId || undefined,
+            }).catch((error) => {
+              console.error('Failed to send payment status email:', error);
+              // Don't throw - payment succeeded even if email fails
+            });
+          }
         }
       }
 
