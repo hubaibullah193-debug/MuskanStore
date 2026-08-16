@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { getCurrentUser } from '@/server/actions/auth';
+import { getUserOrders } from '@/server/actions/orders';
 import Link from 'next/link';
 
 interface User {
@@ -22,8 +23,8 @@ interface Order {
   id: string;
   order_number: string;
   total_amount: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'pending_payment' | 'confirmed' | 'shipped' | 'delivered' | 'refund_requested' | 'refunded' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'failed' | 'awaiting_cod';
   created_at: string;
   item_count: number;
 }
@@ -54,9 +55,10 @@ export default function AccountPage() {
           name: currentUser.name || '',
           phone: currentUser.phone || '',
         });
+        // Fetch user's orders
+        const userOrders = await getUserOrders(currentUser.id);
+        setOrders(userOrders);
       }
-      // In production, fetch orders via API
-      setOrders([]);
     } catch (err) {
       setError('Failed to load account data');
     } finally {
@@ -98,7 +100,7 @@ export default function AccountPage() {
       <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-gray-600 mb-4">Please log in to view your account</p>
-          <Link href="/auth/login" className="text-blue-600 hover:text-blue-700">
+          <Link href="/auth/login" className="underline" style={{color: 'var(--color-accent)'}}>
             Go to Login
           </Link>
         </div>
@@ -143,7 +145,10 @@ export default function AccountPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                      style={{
+                        '--tw-ring-color': 'var(--color-accent)',
+                      } as React.CSSProperties}
                     />
                   </div>
 
@@ -155,14 +160,22 @@ export default function AccountPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                      style={{
+                        '--tw-ring-color': 'var(--color-accent)',
+                      } as React.CSSProperties}
                     />
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={handleUpdate}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="flex-1 px-4 py-2 text-white rounded-lg"
+                      style={{
+                        backgroundColor: 'var(--color-accent)',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
                     >
                       Save
                     </button>
@@ -286,7 +299,7 @@ export default function AccountPage() {
                             {new Date(order.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            ₨{order.total_amount.toLocaleString()}
+                            Rs {(order.total_amount / 100).toFixed(0)}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <span
@@ -295,10 +308,12 @@ export default function AccountPage() {
                                   ? 'bg-green-100 text-green-800'
                                   : order.status === 'cancelled'
                                   ? 'bg-red-100 text-red-800'
+                                  : order.status === 'pending_payment'
+                                  ? 'bg-yellow-100 text-yellow-800'
                                   : 'bg-blue-100 text-blue-800'
                               }`}
                             >
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              {order.status === 'pending_payment' ? 'Awaiting Payment' : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm">
@@ -311,8 +326,7 @@ export default function AccountPage() {
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}
                             >
-                              {order.payment_status.charAt(0).toUpperCase() +
-                                order.payment_status.slice(1)}
+                              {order.payment_status === 'pending' ? 'Pending' : order.payment_status === 'paid' ? 'Paid' : 'Failed'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">

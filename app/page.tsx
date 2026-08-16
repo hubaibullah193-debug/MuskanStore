@@ -27,25 +27,29 @@ export default async function HomePage() {
   return (
     <div className="w-full">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+      <section className="text-white" style={{backgroundImage: 'linear-gradient(to right, var(--color-accent), var(--color-accent-dark))'}}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <div className="max-w-3xl">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">
               Welcome to Muskan Care Center
             </h1>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-xl mb-8" style={{color: 'rgba(255, 255, 255, 0.85)'}}>
               Premium personal hygiene products for a healthier, cleaner you. Quality care, trusted by thousands.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center rounded-lg bg-white px-8 py-3 font-semibold text-blue-600 hover:bg-gray-100 transition"
+                className="inline-flex items-center justify-center rounded-lg px-8 py-3 font-semibold text-white transition hover:opacity-90"
+                style={{
+                  backgroundColor: 'white',
+                  color: 'var(--color-accent)',
+                }}
               >
                 Shop Now
               </Link>
               <Link
                 href="#featured"
-                className="inline-flex items-center justify-center rounded-lg border-2 border-white px-8 py-3 font-semibold text-white hover:bg-blue-800 transition"
+                className="inline-flex items-center justify-center rounded-lg border-2 border-white px-8 py-3 font-semibold text-white transition hover:opacity-90"
               >
                 Explore Products
               </Link>
@@ -62,9 +66,9 @@ export default async function HomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
                 <svg
-                  className="h-6 w-6 text-white"
+                  className="h-6 w-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -86,9 +90,9 @@ export default async function HomePage() {
             </div>
 
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
                 <svg
-                  className="h-6 w-6 text-white"
+                  className="h-6 w-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -110,9 +114,9 @@ export default async function HomePage() {
             </div>
 
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
                 <svg
-                  className="h-6 w-6 text-white"
+                  className="h-6 w-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -193,7 +197,8 @@ export default async function HomePage() {
               <p className="text-gray-600 mb-4">No featured products available yet.</p>
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 transition"
+                className="inline-flex items-center justify-center rounded-lg px-6 py-3 font-semibold text-white transition hover:opacity-90"
+                style={{backgroundColor: 'var(--color-accent)'}}
               >
                 View All Products
               </Link>
@@ -213,7 +218,8 @@ export default async function HomePage() {
           </p>
           <Link
             href="/products"
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white hover:bg-blue-700 transition"
+            className="inline-flex items-center justify-center rounded-lg px-8 py-3 font-semibold text-white transition hover:opacity-90"
+            style={{backgroundColor: 'var(--color-accent)'}}
           >
             Browse Our Full Collection
           </Link>

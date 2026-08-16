@@ -56,7 +56,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               name="search"
               placeholder="Search products..."
               defaultValue={searchParams.search || ''}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2"
+              style={{
+                '--tw-ring-color': 'var(--color-accent)',
+              } as React.CSSProperties}
             />
           </form>
 

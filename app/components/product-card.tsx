@@ -1,8 +1,12 @@
 // components/product-card.tsx
 // Product card for grid display with image, price, and CTA
 
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
+import { useCart } from '@/lib/hooks/useCart';
 
 interface ProductCardProps {
   id: string;
@@ -23,11 +27,31 @@ export function ProductCard({
   imageUrl,
   inStock,
 }: ProductCardProps) {
+  const { addItem } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
+  const [showMessage, setShowMessage] = useState<'success' | 'error' | null>(null);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      setIsAdding(true);
+      setShowMessage(null);
+      await addItem(id, undefined, 1, price);
+      setShowMessage('success');
+      setTimeout(() => setShowMessage(null), 2000);
+    } catch (err) {
+      setShowMessage('error');
+      setTimeout(() => setShowMessage(null), 2000);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   return (
     <Link href={`/products/${slug}`}>
-      <div className="group cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md" data-testid="product-card">
+      <div className="group cursor-pointer rounded-lg border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-md" data-testid="product-card">
         {/* Product Image */}
-        <div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-gray-100">
+        <div className="relative aspect-square overflow-hidden bg-gray-100">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -44,7 +68,7 @@ export function ProductCard({
         </div>
 
         {/* Product Info */}
-        <div className="space-y-2">
+        <div className="p-4 space-y-2">
           <h3 className="font-semibold text-gray-900 line-clamp-2">{name}</h3>
 
           {description && (
@@ -52,7 +76,7 @@ export function ProductCard({
           )}
 
           {/* Price and Stock */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-2 pb-3">
             <span className="text-lg font-bold text-gray-900">
               Rs. {price.toFixed(2)}
             </span>
@@ -66,6 +90,32 @@ export function ProductCard({
               {inStock ? 'In Stock' : 'Out of Stock'}
             </span>
           </div>
+
+          {/* Add to Cart Button */}
+          <button
+            onClick={handleAddToCart}
+            disabled={!inStock || isAdding}
+            className="w-full disabled:bg-gray-400 text-white font-semibold py-2 rounded transition text-sm"
+            style={{
+              backgroundColor: !inStock || isAdding ? undefined : 'var(--color-accent)',
+            }}
+            onMouseEnter={(e) => !(!inStock || isAdding) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+            onMouseLeave={(e) => !(!inStock || isAdding) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
+          >
+            {isAdding ? 'Adding...' : 'Add to Cart'}
+          </button>
+
+          {/* Message */}
+          {showMessage === 'success' && (
+            <div className="text-xs text-green-600 text-center font-medium">
+              Added to cart!
+            </div>
+          )}
+          {showMessage === 'error' && (
+            <div className="text-xs text-red-600 text-center font-medium">
+              Failed to add
+            </div>
+          )}
         </div>
       </div>
     </Link>

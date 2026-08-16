@@ -371,13 +371,12 @@ export async function logAuditEvent(
   adminId?: string,
   ipAddress?: string
 ) {
-  return supabase.from("audit_logs").insert({
+  return supabase.from("admin_audit_logs").insert({
     admin_id: adminId,
     action,
-    resource_type: resourceType,
-    resource_id: resourceId,
-    details: details || null,
-    ip_address: ipAddress,
+    entity_type: resourceType,
+    entity_id: resourceId,
+    changes: details || null,
   });
 }
 

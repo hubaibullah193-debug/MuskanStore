@@ -10,12 +10,14 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getOrderForDisplay, requestRefund } from '@/server/actions/orders';
+import { getCurrentUser } from '@/server/actions/auth';
 
 export default function OrderTrackingPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const guestToken = searchParams.get('token');
 
   const [order, setOrder] = useState<any>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refundLoading, setRefundLoading] = useState(false);
@@ -26,7 +28,13 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const result = await getOrderForDisplay(params.id, undefined, guestToken || undefined);
+        // Get current user if authenticated
+        const user = await getCurrentUser();
+        if (user) {
+          setUserId(user.id);
+        }
+
+        const result = await getOrderForDisplay(params.id, user?.id, guestToken || undefined);
         setOrder(result);
       } catch (err: any) {
         setError(err.message || 'Failed to load order');
@@ -45,13 +53,16 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
       return;
     }
 
+    if (!userId) {
+      setRefundError('You must be logged in to request a refund');
+      return;
+    }
+
     setRefundLoading(true);
     setRefundError(null);
 
     try {
-      // TODO: Get userId from session
-      // For now, this would need to be called from an authenticated context
-      await requestRefund(params.id, 'user-id-placeholder', refundReason);
+      await requestRefund(params.id, userId, refundReason);
       setRefundSuccess(true);
       setRefundReason('');
       setOrder((prev: any) => ({

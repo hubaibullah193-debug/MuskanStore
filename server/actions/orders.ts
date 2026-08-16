@@ -11,6 +11,7 @@ import { CheckoutSchema, RefundRequestSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, generateRandomString, calculateTotal } from "@/lib/utils/helpers";
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
 import { sendOrderConfirmation, sendRefundEmail } from "@/server/actions/email";
+import { createShipment } from "@/server/actions/shipments";
 
 // ===================================================================
 // RESERVE INVENTORY (CHECKOUT START)
@@ -293,6 +294,17 @@ export async function createOrder(
         console.error("Failed to send order confirmation email:", error);
         // Don't throw - order succeeded even if email fails
       });
+    }
+
+    // Auto-create shipment record for tracking
+    try {
+      await createShipment({
+        orderId: order.id,
+        carrier: "pending",
+      });
+    } catch (error) {
+      console.error("Failed to auto-create shipment:", error);
+      // Don't throw - order succeeded even if shipment creation fails
     }
 
     return order;
@@ -607,5 +619,44 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("CANCEL_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
+// GET USER ORDERS (FOR ACCOUNT PAGE)
+// ===================================================================
+
+export async function getUserOrders(userId: string) {
+  try {
+    if (!userId) {
+      throw new AppError("INVALID_USER", "User ID required", 400);
+    }
+
+    const { data: orders, error } = await supabase
+      .from("orders")
+      .select("id, order_number, total_amount, order_status, payment_status, created_at, items")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      throw new AppError("FETCH_ORDERS_FAILED", error.message, 500);
+    }
+
+    // Transform orders for display
+    const transformed = (orders || []).map((order: any) => ({
+      id: order.id,
+      order_number: order.order_number,
+      total_amount: order.total_amount,
+      status: order.order_status,
+      payment_status: order.payment_status,
+      created_at: order.created_at,
+      item_count: Array.isArray(order.items) ? order.items.length : 0,
+    }));
+
+    return transformed;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("GET_ORDERS_ERROR", getErrorMessage(error), 500);
   }
 }

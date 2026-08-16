@@ -8,7 +8,7 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signUpUser } from '@/lib/auth/server';
+import { signUpAction } from '@/app/auth/actions';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -51,15 +51,17 @@ export default function SignupPage() {
       }
 
       // Sign up
-      const result = await signUpUser(
+      const result = await signUpAction(
         formData.email,
         formData.password,
         formData.name,
         formData.phone
       );
 
-      // Redirect to login
-      router.push('/auth/login?message=Signup successful. Please log in.');
+      if (result.success) {
+        // Redirect to login
+        router.push('/auth/login?message=Signup successful. Please log in.');
+      }
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -68,7 +70,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      backgroundImage: 'linear-gradient(to bottom right, rgba(52, 80, 64, 0.05), rgba(52, 80, 64, 0.08))',
+    }}>
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
@@ -97,7 +101,10 @@ export default function SignupPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="John Doe"
                 required
               />
@@ -113,7 +120,10 @@ export default function SignupPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="you@example.com"
                 required
               />
@@ -129,7 +139,10 @@ export default function SignupPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="+92 300 1234567"
               />
             </div>
@@ -144,7 +157,10 @@ export default function SignupPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="••••••••"
                 required
               />
@@ -161,7 +177,10 @@ export default function SignupPage() {
                 name="passwordConfirm"
                 value={formData.passwordConfirm}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="••••••••"
                 required
               />
@@ -170,7 +189,12 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-white py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{
+                backgroundColor: loading ? 'var(--color-accent-light)' : 'var(--color-accent)',
+              }}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
@@ -199,7 +223,7 @@ export default function SignupPage() {
         <div className="text-center mt-6">
           <p className="text-gray-600 text-sm">
             Or{' '}
-            <Link href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/products" className="font-medium" style={{color: 'var(--color-accent)'}}>
               continue as guest
             </Link>
           </p>

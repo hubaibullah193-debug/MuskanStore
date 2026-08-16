@@ -8,7 +8,7 @@
 import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { loginUser } from '@/lib/auth/server';
+import { loginAction } from '@/app/auth/actions';
 
 function LoginContent() {
   const router = useRouter();
@@ -38,11 +38,12 @@ function LoginContent() {
         return;
       }
 
-      const result = await loginUser(formData.email, formData.password);
+      const result = await loginAction(formData.email, formData.password);
 
-      // In production, store session/JWT in cookie via server action
-      // For now, redirect to dashboard
-      router.push(redirectUrl);
+      if (result.success) {
+        // Session cookie is automatically set by Server Action
+        router.push(redirectUrl);
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -51,7 +52,9 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      backgroundImage: 'linear-gradient(to bottom right, rgba(52, 80, 64, 0.05), rgba(52, 80, 64, 0.08))',
+    }}>
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
@@ -80,7 +83,10 @@ function LoginContent() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="you@example.com"
                 required
               />
@@ -96,7 +102,10 @@ function LoginContent() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="••••••••"
                 required
               />
@@ -105,7 +114,10 @@ function LoginContent() {
             <div className="text-right">
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm"
+                style={{
+                  color: 'var(--color-accent)',
+                }}
               >
                 Forgot password?
               </Link>
@@ -114,7 +126,12 @@ function LoginContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-white py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{
+                backgroundColor: loading ? 'var(--color-accent-light)' : 'var(--color-accent)',
+              }}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -143,7 +160,7 @@ function LoginContent() {
         <div className="text-center mt-6">
           <p className="text-gray-600 text-sm">
             Or{' '}
-            <Link href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/products" className="font-medium" style={{color: 'var(--color-accent)'}}>
               continue as guest
             </Link>
           </p>

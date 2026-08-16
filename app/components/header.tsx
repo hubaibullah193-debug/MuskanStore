@@ -44,7 +44,13 @@ export function Header() {
             </Link>
             <Link
               href="/auth/signup"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              className="rounded-lg px-4 py-2 text-white"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               Sign Up
             </Link>
@@ -112,7 +118,13 @@ export function Header() {
               </Link>
               <Link
                 href="/auth/signup"
-                className="block rounded-md bg-blue-600 px-3 py-2 text-base font-medium text-white hover:bg-blue-700"
+                className="block rounded-md px-3 py-2 text-base font-medium text-white"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
               >
                 Sign Up
               </Link>

@@ -5,6 +5,7 @@
  * Shows order summary after successful checkout
  * Redirects guests to order tracking with token
  * Displays payment instructions for online payments
+ * Handles payment gateway redirects (JazzCash, Easypaisa)
  */
 
 import { useEffect, useState } from 'react';
@@ -15,10 +16,13 @@ import { getOrderForDisplay } from '@/server/actions/orders';
 export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const guestToken = searchParams.get('token');
+  const paymentStatus = searchParams.get('payment');
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [redirectError, setRedirectError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -35,11 +39,46 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
     fetchOrder();
   }, [params.id, guestToken]);
 
+  const handlePaymentRedirect = async (method: 'jazz_cash' | 'easypaisa') => {
+    try {
+      setRedirecting(true);
+      setRedirectError(null);
+
+      const endpoint = method === 'jazz_cash'
+        ? '/api/payment/redirect/jazz-cash'
+        : '/api/payment/redirect/easypaisa';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: params.id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to redirect to payment gateway');
+      }
+
+      const data = await response.json();
+
+      // Redirect to payment gateway
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error('No redirect URL provided');
+      }
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : 'Payment redirect failed';
+      setRedirectError(message);
+      setRedirecting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 mx-auto mb-4" style={{borderBottomColor: 'var(--color-accent)', borderColor: 'transparent', borderWidth: '2px'}}></div>
           <p>Loading order confirmation...</p>
         </div>
       </div>
@@ -95,24 +134,73 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         </div>
 
         {/* Payment Status */}
+        {paymentStatus === 'success' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <svg className="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h2 className="text-lg font-semibold text-green-900">Payment Successful</h2>
+                <p className="text-green-700">Your payment has been processed and your order is confirmed.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {paymentStatus === 'failed' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="h-6 w-6 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h2 className="text-lg font-semibold text-red-900">Payment Failed</h2>
+                <p className="text-red-700 mb-3">Your payment was not processed. You can retry payment below.</p>
+                {redirectError && (
+                  <p className="text-sm text-red-600 mb-3">{redirectError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isPending && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold text-yellow-900 mb-4">Payment Required</h2>
             <p className="text-yellow-700 mb-4">
-              Your order is waiting for payment. Please complete payment to proceed.
+              Your order is waiting for payment. Please select a payment method to proceed.
             </p>
-            {order.payment_method === 'jazz_cash' && (
-              <p className="text-yellow-700 text-sm">
-                A payment link was sent to {order.guest_email || 'your email'}.
-                Check your email for payment instructions.
-              </p>
+
+            {/* Payment Method Buttons */}
+            {order.payment_method !== 'cod' && (
+              <div className="space-y-3 mb-4">
+                {order.payment_method === 'jazz_cash' && (
+                  <button
+                    onClick={() => handlePaymentRedirect('jazz_cash')}
+                    disabled={redirecting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition"
+                  >
+                    {redirecting ? 'Redirecting to JazzCash...' : 'Pay with JazzCash'}
+                  </button>
+                )}
+
+                {order.payment_method === 'easypaisa' && (
+                  <button
+                    onClick={() => handlePaymentRedirect('easypaisa')}
+                    disabled={redirecting}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition"
+                  >
+                    {redirecting ? 'Redirecting to Easypaisa...' : 'Pay with Easypaisa'}
+                  </button>
+                )}
+              </div>
             )}
-            {order.payment_method === 'easypaisa' && (
-              <p className="text-yellow-700 text-sm">
-                A payment link was sent to {order.guest_email || 'your email'}.
-                Check your email for payment instructions.
-              </p>
-            )}
+
+            <p className="text-yellow-700 text-sm">
+              A payment link was also sent to {order.guest_email || 'your email'}.
+              Check your email if you prefer to pay from there.
+            </p>
           </div>
         )}
 

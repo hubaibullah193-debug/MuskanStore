@@ -8,6 +8,7 @@ import {
   orderConfirmationTemplate,
   paymentStatusTemplate,
   refundEmailTemplate,
+  shipmentStatusTemplate,
 } from '@/lib/email/templates';
 
 interface OrderConfirmationPayload {
@@ -51,6 +52,17 @@ interface RefundPayload {
   refundAmount: number;
   reason?: string;
   status: 'requested' | 'approved' | 'rejected' | 'completed';
+}
+
+interface ShipmentStatusPayload {
+  orderNumber: string;
+  customerEmail: string;
+  customerName?: string;
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+  notes?: string;
 }
 
 /**
@@ -147,6 +159,42 @@ export async function sendRefundEmail(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Error sending refund email:', message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Send shipment status update email
+ * Called when shipment status changes (shipped, delivered, etc.)
+ */
+export async function sendShipmentStatusEmail(
+  payload: ShipmentStatusPayload
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const statusLabel = {
+      pending: 'Shipment Pending',
+      shipped: 'Your Order Has Shipped',
+      delivered: 'Delivery Confirmed',
+      cancelled: 'Shipment Cancelled',
+      returned: 'Return Initiated',
+    };
+
+    const html = shipmentStatusTemplate(payload);
+    const result = await sendEmail({
+      to: payload.customerEmail,
+      subject: `${statusLabel[payload.status]} - Order #${payload.orderNumber}`,
+      html,
+    });
+
+    if (!result.success) {
+      console.error('Failed to send shipment status email:', result.error);
+      return { success: false, error: result.error };
+    }
+
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error sending shipment status email:', message);
     return { success: false, error: message };
   }
 }

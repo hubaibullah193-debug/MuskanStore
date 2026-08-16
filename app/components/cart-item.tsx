@@ -1,8 +1,7 @@
 // app/components/cart-item.tsx
 // Cart item row with quantity controls and remove button
 
-import { Dispatch, SetStateAction } from 'react';
-import { CartItem } from '@/lib/utils/helpers';
+import { CartItem } from '@/lib/hooks/useCart';
 
 interface CartItemProps {
   item: CartItem;
@@ -23,10 +22,10 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
       {/* Product Info */}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 truncate">
-          {item.product_id}
+          {item.name || item.productId}
         </h3>
-        {item.variant_id && (
-          <p className="text-sm text-gray-500">Variant: {item.variant_id}</p>
+        {item.variantId && (
+          <p className="text-sm text-gray-500">Variant: {item.variantId}</p>
         )}
       </div>
 

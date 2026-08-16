@@ -44,6 +44,17 @@ interface RefundEmailData {
   status: 'requested' | 'approved' | 'rejected' | 'completed';
 }
 
+interface ShipmentStatusEmailData {
+  orderNumber: string;
+  customerEmail: string;
+  customerName?: string;
+  status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+  notes?: string;
+}
+
 /**
  * Order confirmation email template
  */
@@ -225,6 +236,117 @@ export function paymentStatusTemplate(data: PaymentStatusEmailData): string {
 
     <p style="margin-top: 24px; color: #666; font-size: 14px;">
       If you have any questions or concerns about this transaction, please contact our support team.
+    </p>
+
+    <div class="footer">
+      <p>© 2026 mstore. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Shipment status update email template
+ */
+export function shipmentStatusTemplate(data: ShipmentStatusEmailData): string {
+  const statusMessages = {
+    pending: {
+      title: 'Shipment Pending',
+      message: 'Your order is being prepared for shipment. We will notify you once it ships.',
+      color: '#f59e0b',
+    },
+    shipped: {
+      title: 'Your Order Has Shipped!',
+      message: 'Great news! Your order is on its way. Use the tracking information below to monitor your delivery.',
+      color: '#3b82f6',
+    },
+    delivered: {
+      title: 'Delivery Confirmed',
+      message: 'Your order has been delivered. Thank you for shopping with us!',
+      color: '#10b981',
+    },
+    cancelled: {
+      title: 'Shipment Cancelled',
+      message: 'Your shipment has been cancelled. Please contact us if you have any questions.',
+      color: '#ef4444',
+    },
+    returned: {
+      title: 'Return Initiated',
+      message: 'Your return has been initiated. We will provide return instructions shortly.',
+      color: '#8b5cf6',
+    },
+  };
+
+  const statusInfo = statusMessages[data.status];
+  const trackingSection = data.trackingNumber
+    ? `
+    <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin: 0 0 12px 0; color: #333;">Tracking Information</h3>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+        <span style="color: #666;">Tracking Number</span>
+        <span style="font-weight: 600; font-family: monospace;">${data.trackingNumber}</span>
+      </div>
+      ${data.carrier ? `<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+        <span style="color: #666;">Carrier</span>
+        <span style="font-weight: 600;">${data.carrier}</span>
+      </div>` : ''}
+      ${data.estimatedDelivery ? `<div style="display: flex; justify-content: space-between; padding: 8px 0;">
+        <span style="color: #666;">Estimated Delivery</span>
+        <span style="font-weight: 600;">${new Date(data.estimatedDelivery).toLocaleDateString()}</span>
+      </div>` : ''}
+    </div>
+  `
+    : '';
+
+  const notesSection = data.notes
+    ? `
+    <div style="background: #f3f4f6; padding: 12px; border-radius: 4px; margin: 16px 0; border-left: 4px solid #6b7280;">
+      <p style="margin: 0; color: #666; font-size: 14px;"><strong>Note:</strong> ${data.notes}</p>
+    </div>
+  `
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .alert { background: #f0fdf4; border-left: 4px solid ${statusInfo.color}; padding: 16px; border-radius: 4px; margin-bottom: 24px; }
+    .alert h2 { margin: 0 0 8px 0; color: ${statusInfo.color}; font-size: 18px; }
+    .alert p { margin: 0; color: #333; }
+    .details { background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 20px 0; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .detail-row:last-child { border-bottom: none; }
+    .label { color: #666; font-size: 14px; }
+    .value { font-weight: 600; }
+    .footer { color: #999; font-size: 12px; margin-top: 24px; padding-top: 12px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="alert">
+      <h2>${statusInfo.title}</h2>
+      <p>${statusInfo.message}</p>
+    </div>
+
+    <div class="details">
+      <div class="detail-row">
+        <span class="label">Order Number</span>
+        <span class="value">${data.orderNumber}</span>
+      </div>
+    </div>
+
+    ${trackingSection}
+    ${notesSection}
+
+    <p style="margin-top: 24px; color: #666; font-size: 14px;">
+      If you have any questions about your shipment, please reply to this email or contact our support team.
     </p>
 
     <div class="footer">

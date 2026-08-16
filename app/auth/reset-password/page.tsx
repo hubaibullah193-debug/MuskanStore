@@ -65,7 +65,9 @@ function ResetPasswordContent() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{
+      backgroundImage: 'linear-gradient(to bottom right, rgba(52, 80, 64, 0.05), rgba(52, 80, 64, 0.08))',
+    }}>
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-6">
@@ -82,7 +84,12 @@ function ResetPasswordContent() {
               <div className="pt-4">
                 <Link
                   href="/auth/login"
-                  className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="inline-block px-6 py-2 text-white rounded-lg"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
                 >
                   Go to Login
                 </Link>
@@ -95,7 +102,9 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      backgroundImage: 'linear-gradient(to bottom right, rgba(52, 80, 64, 0.05), rgba(52, 80, 64, 0.08))',
+    }}>
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
@@ -124,7 +133,10 @@ function ResetPasswordContent() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="••••••••"
                 required
               />
@@ -144,7 +156,10 @@ function ResetPasswordContent() {
                 name="passwordConfirm"
                 value={formData.passwordConfirm}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties}
                 placeholder="••••••••"
                 required
               />
@@ -153,7 +168,12 @@ function ResetPasswordContent() {
             <button
               type="submit"
               disabled={loading || !token}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full text-white py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{
+                backgroundColor: loading || !token ? 'var(--color-accent-light)' : 'var(--color-accent)',
+              }}
+              onMouseEnter={(e) => !(loading || !token) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => !(loading || !token) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>

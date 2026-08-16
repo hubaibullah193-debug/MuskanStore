@@ -1,7 +1,7 @@
 /**
  * POST /api/checkout
  * Create order from cart and redirect to payment/confirmation
- * Request body: { items, deliveryAddress, paymentMethod, guestEmail? }
+ * Handles both authenticated and guest checkouts
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,9 +9,10 @@ import { createOrder, reserveInventory } from '@/server/actions/orders';
 import { validateCartInventory } from '@/server/actions/cart';
 import { generateJazzCashUrl, generateEasypaisaUrl } from '@/lib/payments/url-generators';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
+import { supabase } from '@/lib/supabase/client';
 
-const TAX_RATE = 17; // 17% tax
-const DELIVERY_FEE = 0; // Can be dynamic based on city
+const TAX_RATE = 0.17; // 17% tax
+const DELIVERY_FEE = 300; // Rs. 300 delivery fee
 const PAYMENT_FEE = 0; // Can be dynamic based on payment method
 
 export async function POST(request: NextRequest) {
@@ -46,16 +47,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get authenticated user if available
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || null;
+    const userEmail = user?.email || guestEmail;
+
+    // Validate email
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'Email required' },
+        { status: 400 }
+      );
+    }
+
     // Validate inventory before reserving
     await validateCartInventory(items);
 
     // Reserve inventory (optional but recommended)
     await reserveInventory(items);
 
-    // Create order (this also decrements inventory)
+    // Create order
     const order = await createOrder(
-      null, // No user ID for guest checkout
-      guestEmail || 'guest@temp.local',
+      userId,
+      userEmail,
       items,
       deliveryAddress,
       paymentMethod,
@@ -79,18 +93,18 @@ export async function POST(request: NextRequest) {
       redirectUrl = `/order-confirmation/${order.id}`;
     } else if (paymentMethod === 'jazz_cash') {
       // Generate JazzCash payment URL
-      paymentUrl = await generateJazzCashUrl(
+      paymentUrl = generateJazzCashUrl(
         order.id,
         order.total_amount,
-        guestEmail || 'guest@temp.local'
+        userEmail
       );
       redirectUrl = `/order-confirmation/${order.id}?paymentUrl=${encodeURIComponent(paymentUrl)}`;
     } else if (paymentMethod === 'easypaisa') {
       // Generate Easypaisa payment URL
-      paymentUrl = await generateEasypaisaUrl(
+      paymentUrl = generateEasypaisaUrl(
         order.id,
         order.total_amount,
-        guestEmail || 'guest@temp.local'
+        userEmail
       );
       redirectUrl = `/order-confirmation/${order.id}?paymentUrl=${encodeURIComponent(paymentUrl)}`;
     } else {
@@ -129,3 +143,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

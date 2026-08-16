@@ -4,18 +4,24 @@
 'use client';
 
 import { useState } from 'react';
+import { useCart } from '@/lib/hooks/useCart';
 
 interface AddToCartButtonProps {
   productId: string;
+  price: number;
+  productName?: string;
   variantId?: string;
   disabled?: boolean;
 }
 
 export default function AddToCartButton({
   productId,
+  price,
+  productName,
   variantId,
   disabled = false,
 }: AddToCartButtonProps) {
+  const { addItem } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,21 +33,8 @@ export default function AddToCartButton({
       setError(null);
       setSuccess(false);
 
-      // Call simple wrapper action that handles cart retrieval
-      const response = await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId,
-          variantId: variantId || undefined,
-          quantity,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add to cart');
-      }
+      // Use the useCart hook to add item
+      await addItem(productId, variantId, quantity, price);
 
       setSuccess(true);
       setQuantity(1);
@@ -70,7 +63,10 @@ export default function AddToCartButton({
           max="99"
           value={quantity}
           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-          className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-20 rounded-lg border border-gray-300 px-3 py-2 text-center focus:outline-none focus:ring-2"
+          style={{
+            '--tw-ring-color': 'var(--color-accent)',
+          } as React.CSSProperties}
         />
       </div>
 
@@ -78,7 +74,12 @@ export default function AddToCartButton({
       <button
         onClick={handleAddToCart}
         disabled={disabled || isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+        className="w-full disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+        style={{
+          backgroundColor: disabled || isLoading ? undefined : 'var(--color-accent)',
+        }}
+        onMouseEnter={(e) => !(disabled || isLoading) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+        onMouseLeave={(e) => !(disabled || isLoading) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
       >
         {isLoading ? 'Adding...' : 'Add to Cart'}
       </button>

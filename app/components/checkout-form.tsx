@@ -18,7 +18,12 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+      className="w-full disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+      style={{
+        backgroundColor: pending ? undefined : 'var(--color-accent)',
+      }}
+      onMouseEnter={(e) => !pending && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+      onMouseLeave={(e) => !pending && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
     >
       {pending ? 'Processing...' : 'Complete Order'}
     </button>
@@ -30,8 +35,32 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
 
   return (
     <form action={onSubmit} className="space-y-6">
+      {/* Email Section (Guest Checkout) */}
+      <div className="border-b pb-6">
+        <h2 className="text-xl font-bold mb-4">Email Address</h2>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
+            placeholder="you@example.com"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            We'll send order updates and receipt to this email
+          </p>
+        </div>
+      </div>
+
       {/* Delivery Address Section */}
-      <div className="border-t pt-6">
+      <div className="border-b pb-6">
         <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -45,7 +74,10 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
               id="recipient_name"
               name="recipient_name"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
               placeholder="John Doe"
             />
           </div>
@@ -60,7 +92,10 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
               id="phone"
               name="phone"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
               placeholder="+923001234567"
             />
           </div>
@@ -75,7 +110,10 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
               id="street"
               name="street"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
               placeholder="123 Main Street"
             />
           </div>
@@ -90,7 +128,10 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
               id="city"
               name="city"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
               placeholder="Karachi"
             />
           </div>
@@ -104,7 +145,10 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
               type="text"
               id="postal_code"
               name="postal_code"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
+            style={{
+              '--tw-ring-color': 'var(--color-accent)',
+            } as React.CSSProperties}
               placeholder="75500"
             />
           </div>
@@ -112,7 +156,7 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
       </div>
 
       {/* Payment Method Section */}
-      <div className="border-t pt-6">
+      <div className="border-b pb-6">
         <h2 className="text-xl font-bold mb-4">Payment Method</h2>
 
         <div className="space-y-3">
@@ -167,7 +211,7 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
       </div>
 
       {/* Submit Button */}
-      <div className="border-t pt-6">
+      <div className="pt-6">
         <SubmitButton />
       </div>
     </form>

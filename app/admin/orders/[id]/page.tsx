@@ -11,12 +11,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { updateOrderStatus } from '@/server/actions/orders';
+import { verifyAdminAccess } from '@/server/actions/auth';
 
 export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [adminId, setAdminId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
@@ -26,6 +28,15 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
+        // Get admin ID
+        const admin = await verifyAdminAccess();
+        if (!admin) {
+          setError('Unauthorized. Admin access required.');
+          setLoading(false);
+          return;
+        }
+        setAdminId(admin.userId);
+
         // Fetch order
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
@@ -69,15 +80,13 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStatus || newStatus === order.order_status) {
+    if (!newStatus || newStatus === order.order_status || !adminId) {
       return;
     }
 
     setUpdatingStatus(true);
 
     try {
-      // TODO: Get adminId from session
-      const adminId = 'admin-user-placeholder';
       await updateOrderStatus(params.id, newStatus, adminId, statusNotes);
 
       setOrder((prev: any) => ({

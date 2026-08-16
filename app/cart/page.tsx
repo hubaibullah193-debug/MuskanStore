@@ -3,41 +3,31 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CartItemRow } from '@/app/components/cart-item';
-import { CartItem } from '@/lib/utils/helpers';
+import { useCart } from '@/lib/hooks/useCart';
 import Link from 'next/link';
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { items, loading, error, updateItem, removeItem } = useCart();
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load cart from localStorage (simple implementation)
-    // In production, fetch from server-side cart endpoint
-    const cart = localStorage.getItem('cart');
-    if (cart) {
-      try {
-        setItems(JSON.parse(cart));
-      } catch (err) {
-        setError('Failed to load cart');
-      }
+  const handleQuantityChange = async (itemId: string, quantity: number) => {
+    try {
+      setUpdateError(null);
+      await updateItem(itemId, quantity);
+    } catch (err) {
+      setUpdateError('Failed to update quantity');
     }
-    setIsLoading(false);
-  }, []);
-
-  const updateQuantity = (index: number, quantity: number) => {
-    const updated = [...items];
-    updated[index].quantity = quantity;
-    setItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
   };
 
-  const removeItem = (index: number) => {
-    const updated = items.filter((_, i) => i !== index);
-    setItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
+  const handleRemove = async (itemId: string) => {
+    try {
+      setUpdateError(null);
+      await removeItem(itemId);
+    } catch (err) {
+      setUpdateError('Failed to remove item');
+    }
   };
 
   const subtotal = items.reduce(
@@ -47,7 +37,7 @@ export default function CartPage() {
   const tax = Math.round(subtotal * 0.17 * 100) / 100; // 17% tax
   const total = subtotal + tax;
 
-  if (isLoading) {
+  if (loading) {
     return <div className="min-h-screen bg-gray-50 py-8 px-4">Loading...</div>;
   }
 
@@ -67,7 +57,13 @@ export default function CartPage() {
             <p className="text-gray-500 text-lg mb-4">Your cart is empty</p>
             <Link
               href="/products"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg"
+              className="inline-block text-white font-semibold py-2 px-6 rounded-lg"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               Continue Shopping
             </Link>
@@ -77,12 +73,12 @@ export default function CartPage() {
             {/* Cart Items */}
             <div className="lg:col-span-2 bg-white rounded-lg p-6">
               <div className="space-y-0">
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <CartItemRow
-                    key={index}
+                    key={item.id}
                     item={item}
-                    onQuantityChange={(qty) => updateQuantity(index, qty)}
-                    onRemove={() => removeItem(index)}
+                    onQuantityChange={(qty) => handleQuantityChange(item.id, qty)}
+                    onRemove={() => handleRemove(item.id)}
                   />
                 ))}
               </div>
@@ -111,7 +107,13 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+                className="block w-full text-center text-white font-semibold py-3 rounded-lg transition"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
               >
                 Proceed to Checkout
               </Link>
