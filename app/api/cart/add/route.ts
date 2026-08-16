@@ -5,8 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateCart, addToCart } from '@/server/actions/cart';
+import { addToCart } from '@/server/actions/cart';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
+import { supabase } from '@/lib/supabase/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,32 +21,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create cart (guest cart for now)
-    const cart = await getOrCreateCart(undefined, guestEmail || 'guest@temp.local');
+    // Get authenticated user if available
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
 
-    if (!cart || !cart.id) {
+    if (!userId && !guestEmail) {
       return NextResponse.json(
-        { error: 'Failed to get or create cart' },
-        { status: 500 }
+        { error: 'Authentication or guest email required' },
+        { status: 400 }
       );
     }
 
     // Add item to cart
-    const updatedCart = await addToCart(
-      cart.id,
+    await addToCart(
+      userId || '',
       productId,
       variantId,
       quantity,
-      undefined,
       guestEmail
     );
+
+    // Fetch updated cart items
+    let query = supabase.from('cart_items').select('*');
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      query = query.eq('guest_email', guestEmail).is('user_id', null);
+    }
+
+    const { data: cartItems, error: fetchError } = await query;
+
+    if (fetchError) {
+      return NextResponse.json(
+        { error: 'Failed to fetch cart' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        cartId: updatedCart.id,
-        items: updatedCart.items,
-        itemCount: Array.isArray(updatedCart.items) ? updatedCart.items.length : 0,
+        items: cartItems || [],
+        itemCount: (cartItems || []).length,
       },
       { status: 200 }
     );

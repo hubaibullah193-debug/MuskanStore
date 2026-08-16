@@ -20,7 +20,8 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
       throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
 
-    let query = supabase.from("carts").select("*");
+    // Fetch all cart items for this user/guest
+    let query = supabase.from("cart_items").select("*");
 
     if (userId) {
       query = query.eq("user_id", userId);
@@ -28,34 +29,14 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
       query = query.eq("guest_email", guestEmail).is("user_id", null);
     }
 
-    const { data, error } = await query.single();
-
-    if (error && error.code === "PGRST116") {
-      // Cart doesn't exist, create new one
-      const newCart = {
-        user_id: userId || null,
-        guest_email: guestEmail || null,
-        items: [],
-      };
-
-      const { data: created, error: createError } = await supabase
-        .from("carts")
-        .insert([newCart])
-        .select()
-        .single();
-
-      if (createError) {
-        throw new AppError("CART_CREATE_FAILED", createError.message, 500);
-      }
-
-      return created;
-    }
+    const { data, error } = await query;
 
     if (error) {
       throw new AppError("CART_FETCH_FAILED", error.message, 500);
     }
 
-    return data;
+    // Return cart items as array (schema uses individual rows, not JSONB)
+    return data || [];
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("CART_ERROR", getErrorMessage(error), 500);
@@ -67,36 +48,28 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
 // ===================================================================
 
 export async function addToCart(
-  cartId: string,
+  userId: string,
   productId: string,
   variantId?: string,
   quantity: number = 1,
-  userId?: string,
   guestEmail?: string
 ) {
   try {
     // Validate input
-    if (!cartId || !productId || quantity < 1) {
-      throw new AppError("INVALID_PARAMS", "Invalid cart ID, product ID, or quantity", 400);
+    if (!productId || quantity < 1) {
+      throw new AppError("INVALID_PARAMS", "Invalid product ID or quantity", 400);
+    }
+
+    if (!userId && !guestEmail) {
+      throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
 
     CartItemSchema.parse({ product_id: productId, variant_id: variantId, quantity });
 
-    // Get current cart
-    const { data: cart, error: cartError } = await supabase
-      .from("carts")
-      .select("items")
-      .eq("id", cartId)
-      .single();
-
-    if (cartError || !cart) {
-      throw new AppError("CART_NOT_FOUND", "Cart not found", 404);
-    }
-
     // Validate product and get price
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, price, is_active")
+      .select("id, base_price, is_active")
       .eq("id", productId)
       .single();
 
@@ -104,59 +77,60 @@ export async function addToCart(
       throw new AppError("PRODUCT_NOT_FOUND", "Product not available", 404);
     }
 
-    // Get variant price override if applicable
-    let price = product.price;
+    // Get variant price adjustment if applicable
+    let price = product.base_price;
     if (variantId) {
       const { data: variant } = await supabase
-        .from("variants")
-        .select("price_override")
+        .from("product_variants")
+        .select("price_adjustment")
         .eq("id", variantId)
         .eq("product_id", productId)
         .single();
 
-      if (variant?.price_override) {
-        price = variant.price_override;
+      if (variant?.price_adjustment) {
+        price = Number(product.base_price) + Number(variant.price_adjustment);
       }
     }
 
-    // Parse existing items
-    const items = Array.isArray(cart.items) ? cart.items : [];
-
     // Check if item already in cart
-    const key = `${productId}:${variantId || "none"}`;
-    const existingIndex = items.findIndex(
-      (item: any) => `${item.product_id}:${item.variant_id || "none"}` === key
-    );
-
-    if (existingIndex >= 0) {
-      // Update quantity
-      items[existingIndex].quantity += quantity;
-    } else {
-      // Add new item
-      items.push({
-        product_id: productId,
-        variant_id: variantId,
-        quantity,
-        price,
-      });
-    }
-
-    // Update cart in database
-    const { data: updated, error: updateError } = await supabase
-      .from("carts")
-      .update({
-        items,
-        last_activity: new Date().toISOString(),
-      })
-      .eq("id", cartId)
-      .select()
+    const { data: existing } = await supabase
+      .from("cart_items")
+      .select("id, quantity")
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null)
+      .eq("product_id", productId)
+      .eq("variant_id", variantId || null)
       .single();
 
-    if (updateError) {
-      throw new AppError("CART_UPDATE_FAILED", updateError.message, 500);
+    if (existing) {
+      // Update quantity
+      const { error: updateError } = await supabase
+        .from("cart_items")
+        .update({ quantity: existing.quantity + quantity })
+        .eq("id", existing.id);
+
+      if (updateError) {
+        throw new AppError("CART_UPDATE_FAILED", updateError.message, 500);
+      }
+    } else {
+      // Add new item
+      const { error: insertError } = await supabase
+        .from("cart_items")
+        .insert({
+          user_id: userId || null,
+          guest_email: guestEmail || null,
+          product_id: productId,
+          variant_id: variantId || null,
+          quantity,
+          price,
+        });
+
+      if (insertError) {
+        throw new AppError("CART_INSERT_FAILED", insertError.message, 500);
+      }
     }
 
-    return updated;
+    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("ADD_TO_CART_ERROR", getErrorMessage(error), 500);
@@ -168,61 +142,34 @@ export async function addToCart(
 // ===================================================================
 
 export async function updateCartItemQuantity(
-  cartId: string,
-  productId: string,
-  variantId?: string,
-  quantity: number = 1
+  cartItemId: string,
+  quantity: number = 1,
+  userId?: string,
+  guestEmail?: string
 ) {
   try {
-    if (!cartId || !productId || quantity < 0) {
+    if (!cartItemId || quantity < 0) {
       throw new AppError("INVALID_PARAMS", "Invalid parameters", 400);
     }
 
     if (quantity === 0) {
       // Remove item instead
-      return removeFromCart(cartId, productId, variantId);
+      return removeFromCart(cartItemId, userId, guestEmail);
     }
 
-    // Get current cart
-    const { data: cart, error: cartError } = await supabase
-      .from("carts")
-      .select("items")
-      .eq("id", cartId)
-      .single();
-
-    if (cartError || !cart) {
-      throw new AppError("CART_NOT_FOUND", "Cart not found", 404);
-    }
-
-    const items = Array.isArray(cart.items) ? cart.items : [];
-    const key = `${productId}:${variantId || "none"}`;
-
-    const itemIndex = items.findIndex(
-      (item: any) => `${item.product_id}:${item.variant_id || "none"}` === key
-    );
-
-    if (itemIndex < 0) {
-      throw new AppError("ITEM_NOT_IN_CART", "Item not in cart", 404);
-    }
-
-    items[itemIndex].quantity = quantity;
-
-    // Update cart
-    const { data: updated, error: updateError } = await supabase
-      .from("carts")
-      .update({
-        items,
-        last_activity: new Date().toISOString(),
-      })
-      .eq("id", cartId)
-      .select()
-      .single();
+    // Update cart item quantity
+    const { error: updateError } = await supabase
+      .from("cart_items")
+      .update({ quantity })
+      .eq("id", cartItemId)
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null);
 
     if (updateError) {
       throw new AppError("CART_UPDATE_FAILED", updateError.message, 500);
     }
 
-    return updated;
+    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("UPDATE_CART_ERROR", getErrorMessage(error), 500);
@@ -234,53 +181,28 @@ export async function updateCartItemQuantity(
 // ===================================================================
 
 export async function removeFromCart(
-  cartId: string,
-  productId: string,
-  variantId?: string
+  cartItemId: string,
+  userId?: string,
+  guestEmail?: string
 ) {
   try {
-    if (!cartId || !productId) {
-      throw new AppError("INVALID_PARAMS", "Cart ID and product ID required", 400);
+    if (!cartItemId) {
+      throw new AppError("INVALID_PARAMS", "Cart item ID required", 400);
     }
 
-    // Get current cart
-    const { data: cart, error: cartError } = await supabase
-      .from("carts")
-      .select("items")
-      .eq("id", cartId)
-      .single();
+    // Remove cart item
+    const { error: deleteError } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("id", cartItemId)
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null);
 
-    if (cartError || !cart) {
-      throw new AppError("CART_NOT_FOUND", "Cart not found", 404);
+    if (deleteError) {
+      throw new AppError("CART_DELETE_FAILED", deleteError.message, 500);
     }
 
-    const items = Array.isArray(cart.items) ? cart.items : [];
-    const key = `${productId}:${variantId || "none"}`;
-
-    const filtered = items.filter(
-      (item: any) => `${item.product_id}:${item.variant_id || "none"}` !== key
-    );
-
-    if (filtered.length === items.length) {
-      throw new AppError("ITEM_NOT_IN_CART", "Item not in cart", 404);
-    }
-
-    // Update cart
-    const { data: updated, error: updateError } = await supabase
-      .from("carts")
-      .update({
-        items: filtered,
-        last_activity: new Date().toISOString(),
-      })
-      .eq("id", cartId)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw new AppError("CART_UPDATE_FAILED", updateError.message, 500);
-    }
-
-    return updated;
+    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("REMOVE_CART_ITEM_ERROR", getErrorMessage(error), 500);
@@ -292,13 +214,25 @@ export async function removeFromCart(
 // ===================================================================
 
 export async function syncCart(
-  cartId: string,
+  userId: string,
+  guestEmail: string | null,
   clientItems: Array<{ product_id: string; variant_id?: string; quantity: number }>
 ) {
   try {
-    if (!cartId || !Array.isArray(clientItems)) {
-      throw new AppError("INVALID_PARAMS", "Cart ID and items array required", 400);
+    if (!userId && !guestEmail) {
+      throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
+
+    if (!Array.isArray(clientItems)) {
+      throw new AppError("INVALID_PARAMS", "Items array required", 400);
+    }
+
+    // Clear existing cart items for this user/guest
+    await supabase
+      .from("cart_items")
+      .delete()
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null);
 
     // Validate and enrich items with current prices
     const validatedItems = [];
@@ -309,7 +243,7 @@ export async function syncCart(
       // Get product price (server-side, don't trust client)
       const { data: product, error: productError } = await supabase
         .from("products")
-        .select("id, price, is_active")
+        .select("id, base_price, is_active")
         .eq("id", item.product_id)
         .single();
 
@@ -317,49 +251,44 @@ export async function syncCart(
         throw new AppError("PRODUCT_NOT_FOUND", `Product ${item.product_id} not available`, 404);
       }
 
-      let price = product.price;
+      let price = product.base_price;
 
-      // Check variant price override
+      // Check variant price adjustment
       if (item.variant_id) {
         const { data: variant } = await supabase
-          .from("variants")
-          .select("price_override")
+          .from("product_variants")
+          .select("price_adjustment")
           .eq("id", item.variant_id)
           .eq("product_id", item.product_id)
           .single();
 
-        if (variant?.price_override) {
-          price = variant.price_override;
+        if (variant?.price_adjustment) {
+          price = Number(product.base_price) + Number(variant.price_adjustment);
         }
       }
 
       validatedItems.push({
+        user_id: userId || null,
+        guest_email: guestEmail || null,
         product_id: item.product_id,
-        variant_id: item.variant_id,
+        variant_id: item.variant_id || null,
         quantity: item.quantity,
         price, // Server-calculated price
       });
     }
 
-    // Consolidate items (combine duplicates)
-    const consolidated = consolidateCartItems(validatedItems as any);
+    // Insert validated items
+    if (validatedItems.length > 0) {
+      const { error: insertError } = await supabase
+        .from("cart_items")
+        .insert(validatedItems);
 
-    // Update cart
-    const { data: updated, error: updateError } = await supabase
-      .from("carts")
-      .update({
-        items: consolidated,
-        last_activity: new Date().toISOString(),
-      })
-      .eq("id", cartId)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw new AppError("CART_SYNC_FAILED", updateError.message, 500);
+      if (insertError) {
+        throw new AppError("CART_SYNC_FAILED", insertError.message, 500);
+      }
     }
 
-    return updated;
+    return { success: true, itemCount: validatedItems.length };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("SYNC_CART_ERROR", getErrorMessage(error), 500);
@@ -370,27 +299,23 @@ export async function syncCart(
 // CLEAR CART
 // ===================================================================
 
-export async function clearCart(cartId: string) {
+export async function clearCart(userId: string, guestEmail?: string) {
   try {
-    if (!cartId) {
-      throw new AppError("INVALID_PARAMS", "Cart ID required", 400);
+    if (!userId && !guestEmail) {
+      throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
 
-    const { data: updated, error } = await supabase
-      .from("carts")
-      .update({
-        items: [],
-        last_activity: new Date().toISOString(),
-      })
-      .eq("id", cartId)
-      .select()
-      .single();
+    const { error } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null);
 
     if (error) {
       throw new AppError("CART_CLEAR_FAILED", error.message, 500);
     }
 
-    return updated;
+    return { success: true };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("CLEAR_CART_ERROR", getErrorMessage(error), 500);
@@ -412,35 +337,53 @@ export async function validateCartInventory(
     const errors = [];
 
     for (const item of items) {
-      // Check inventory availability
-      let query = supabase
-        .from("product_inventory")
-        .select("quantity, reserved")
-        .eq("product_id", item.product_id);
-
       if (item.variant_id) {
-        query = query.eq("variant_id", item.variant_id);
+        // Check variant stock
+        const { data: variant, error: variantError } = await supabase
+          .from("product_variants")
+          .select("stock_quantity, is_active")
+          .eq("id", item.variant_id)
+          .eq("product_id", item.product_id)
+          .single();
+
+        if (variantError || !variant || !variant.is_active) {
+          errors.push({
+            productId: item.product_id,
+            error: "Variant not found or out of stock",
+          });
+          continue;
+        }
+
+        if (variant.stock_quantity < item.quantity) {
+          errors.push({
+            productId: item.product_id,
+            error: `Only ${variant.stock_quantity} units available, requested ${item.quantity}`,
+            available: variant.stock_quantity,
+          });
+        }
       } else {
-        query = query.is("variant_id", null);
-      }
+        // Check base product stock
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("stock_quantity, is_active")
+          .eq("id", item.product_id)
+          .single();
 
-      const { data: inventory, error: inventoryError } = await query.single();
+        if (productError || !product || !product.is_active) {
+          errors.push({
+            productId: item.product_id,
+            error: "Product not found or out of stock",
+          });
+          continue;
+        }
 
-      if (inventoryError || !inventory) {
-        errors.push({
-          productId: item.product_id,
-          error: "Product not found or out of stock",
-        });
-        continue;
-      }
-
-      const available = inventory.quantity - inventory.reserved;
-      if (available < item.quantity) {
-        errors.push({
-          productId: item.product_id,
-          error: `Only ${available} units available, requested ${item.quantity}`,
-          available,
-        });
+        if (product.stock_quantity < item.quantity) {
+          errors.push({
+            productId: item.product_id,
+            error: `Only ${product.stock_quantity} units available, requested ${item.quantity}`,
+            available: product.stock_quantity,
+          });
+        }
       }
     }
 

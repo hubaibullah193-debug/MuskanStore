@@ -28,55 +28,65 @@ export async function reserveInventory(
     const reservationId = generateRandomString(16);
     const reservations = [];
 
-    // Reserve each item (in real production, would use Redis for TTL)
+    // Validate inventory availability for each item
     for (const item of items) {
-      let query = supabase
-        .from("product_inventory")
-        .select("id, quantity, reserved")
-        .eq("product_id", item.product_id);
-
       if (item.variant_id) {
-        query = query.eq("variant_id", item.variant_id);
+        // Check variant stock
+        const { data: variant, error: variantError } = await supabase
+          .from("product_variants")
+          .select("id, stock_quantity, is_active")
+          .eq("id", item.variant_id)
+          .eq("product_id", item.product_id)
+          .single();
+
+        if (variantError || !variant || !variant.is_active) {
+          throw new AppError(
+            "PRODUCT_NOT_FOUND",
+            `Variant ${item.variant_id} not found`,
+            404
+          );
+        }
+
+        if (variant.stock_quantity < item.quantity) {
+          throw new AppError(
+            "INSUFFICIENT_INVENTORY",
+            `Only ${variant.stock_quantity} units of variant available`,
+            400
+          );
+        }
       } else {
-        query = query.is("variant_id", null);
-      }
+        // Check base product stock
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("id, stock_quantity, is_active")
+          .eq("id", item.product_id)
+          .single();
 
-      const { data: inventory, error: inventoryError } = await query.single();
+        if (productError || !product || !product.is_active) {
+          throw new AppError(
+            "PRODUCT_NOT_FOUND",
+            `Product ${item.product_id} not found`,
+            404
+          );
+        }
 
-      if (inventoryError || !inventory) {
-        throw new AppError("PRODUCT_NOT_FOUND", `Product ${item.product_id} not found`, 404);
-      }
-
-      const available = inventory.quantity - inventory.reserved;
-      if (available < item.quantity) {
-        throw new AppError(
-          "INSUFFICIENT_INVENTORY",
-          `Only ${available} units of ${item.product_id} available`,
-          400
-        );
-      }
-
-      // Update reserved quantity
-      const { error: updateError } = await supabase
-        .from("product_inventory")
-        .update({
-          reserved: inventory.reserved + item.quantity,
-        })
-        .eq("id", inventory.id);
-
-      if (updateError) {
-        throw new AppError("RESERVATION_FAILED", updateError.message, 500);
+        if (product.stock_quantity < item.quantity) {
+          throw new AppError(
+            "INSUFFICIENT_INVENTORY",
+            `Only ${product.stock_quantity} units of product available`,
+            400
+          );
+        }
       }
 
       reservations.push({
-        inventoryId: inventory.id,
         productId: item.product_id,
+        variantId: item.variant_id,
         quantity: item.quantity,
       });
     }
 
-    // TODO: Store reservation in Redis with 30-minute TTL
-    // For now, return reservation ID for cleanup if needed
+    // Return reservation ID for tracking
     return {
       reservationId,
       reservations,
@@ -145,7 +155,7 @@ export async function createOrder(
       // Get fresh product price from database
       const { data: product, error: productError } = await supabase
         .from("products")
-        .select("id, name, price, is_active")
+        .select("id, name, base_price, is_active")
         .eq("id", item.product_id)
         .single();
 
@@ -154,21 +164,21 @@ export async function createOrder(
       }
 
       // Get variant price if applicable
-      let price = product.price;
+      let price = product.base_price;
       let variantName;
 
       if (item.variant_id) {
         const { data: variant } = await supabase
-          .from("variants")
-          .select("id, name, price_override")
+          .from("product_variants")
+          .select("id, variant_name, price_adjustment")
           .eq("id", item.variant_id)
           .eq("product_id", item.product_id)
           .single();
 
-        if (variant?.price_override) {
-          price = variant.price_override;
+        if (variant?.price_adjustment) {
+          price = Number(product.base_price) + Number(variant.price_adjustment);
         }
-        variantName = variant?.name;
+        variantName = variant?.variant_name;
       }
 
       const itemSubtotal = price * item.quantity;
