@@ -38,7 +38,7 @@ export async function createShipment(input: CreateShipmentInput) {
     return { error: 'Order not found' };
   }
 
-  if (order.payment_status !== 'completed') {
+  if (order.payment_status !== 'paid') {
     return { error: 'Can only create shipment for paid orders' };
   }
 

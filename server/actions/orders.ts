@@ -274,7 +274,14 @@ export async function createOrder(
     }
 
     // Send order confirmation email
-    const customerEmail = userId ? order.user_email : guestEmail;
+    let customerEmail = guestEmail;
+    if (userId && !customerEmail) {
+      const { data } = await supabase.auth.admin.getUserById(userId);
+      if (data?.user?.email) {
+        customerEmail = data.user.email;
+      }
+    }
+
     if (customerEmail) {
       await sendOrderConfirmation({
         orderNumber: order.order_number,

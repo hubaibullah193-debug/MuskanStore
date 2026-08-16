@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Create order
     const order = await createOrder(
       userId,
-      userEmail,
+      userId ? null : guestEmail,
       items,
       deliveryAddress,
       paymentMethod,

@@ -87,7 +87,12 @@ export async function GET(request: NextRequest) {
 
       // Send payment status email
       if (updatedOrder) {
-        const customerEmail = updatedOrder.guest_email || updatedOrder.user_email;
+        let customerEmail = updatedOrder.guest_email;
+        if (updatedOrder.user_id && !customerEmail) {
+          const { data } = await supabase.auth.admin.getUserById(updatedOrder.user_id);
+          customerEmail = data?.user?.email;
+        }
+
         if (customerEmail) {
           await sendPaymentStatusEmail({
             orderNumber: updatedOrder.order_number,
