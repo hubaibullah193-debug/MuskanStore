@@ -123,19 +123,15 @@ export async function approveRefund(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     // Verify admin access
-    const { data: adminLog } = await supabase
-      .from('admin_audit_logs')
-      .select('id')
-      .eq('admin_id', user?.id)
-      .limit(1)
-      .single();
+    const { verifyAdminAccess } = await import('./auth');
+    const adminAccess = await verifyAdminAccess();
 
-    if (!adminLog) {
+    if (!adminAccess) {
       return { success: false, error: 'Unauthorized - admin access required' };
     }
+    const adminId = adminAccess.userId;
 
     // Get refund and order details
     const { data: refund, error: refundError } = await supabase
@@ -168,7 +164,7 @@ export async function approveRefund(
       .from('refunds')
       .update({
         status: 'approved',
-        admin_id: user?.id,
+        admin_id: adminId,
         approved_at: new Date().toISOString(),
         admin_notes: payload.notes,
       })
@@ -180,7 +176,7 @@ export async function approveRefund(
     }
 
     // Send approval email
-    const customerEmail = order.user_id && user?.email ? user.email : order.guest_email;
+    const customerEmail = order.guest_email;
 
     await sendRefundEmail({
       orderNumber: order?.order_number || '',
@@ -195,7 +191,7 @@ export async function approveRefund(
       action: 'refund_approved',
       entityType: 'refund',
       entityId: payload.refundId,
-      changes: { status: 'approved', adminId: user?.id },
+      changes: { status: 'approved', adminId },
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true };
@@ -214,19 +210,15 @@ export async function rejectRefund(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     // Verify admin access
-    const { data: adminLog } = await supabase
-      .from('admin_audit_logs')
-      .select('id')
-      .eq('admin_id', user?.id)
-      .limit(1)
-      .single();
+    const { verifyAdminAccess } = await import('./auth');
+    const adminAccess = await verifyAdminAccess();
 
-    if (!adminLog) {
+    if (!adminAccess) {
       return { success: false, error: 'Unauthorized - admin access required' };
     }
+    const adminId = adminAccess.userId;
 
     // Get refund and order details
     const { data: refund, error: refundError } = await supabase
@@ -259,7 +251,7 @@ export async function rejectRefund(
       .from('refunds')
       .update({
         status: 'rejected',
-        admin_id: user?.id,
+        admin_id: adminId,
         rejected_at: new Date().toISOString(),
         rejection_reason: payload.rejectionReason,
       })
@@ -271,7 +263,7 @@ export async function rejectRefund(
     }
 
     // Send rejection email
-    const customerEmail = order.user_id && user?.email ? user.email : order.guest_email;
+    const customerEmail = order.guest_email;
 
     await sendRefundEmail({
       orderNumber: order?.order_number || '',
@@ -286,7 +278,7 @@ export async function rejectRefund(
       action: 'refund_rejected',
       entityType: 'refund',
       entityId: payload.refundId,
-      changes: { status: 'rejected', adminId: user?.id },
+      changes: { status: 'rejected', adminId },
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true };
@@ -306,19 +298,15 @@ export async function completeRefund(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     // Verify admin access
-    const { data: adminLog } = await supabase
-      .from('admin_audit_logs')
-      .select('id')
-      .eq('admin_id', user?.id)
-      .limit(1)
-      .single();
+    const { verifyAdminAccess } = await import('./auth');
+    const adminAccess = await verifyAdminAccess();
 
-    if (!adminLog) {
+    if (!adminAccess) {
       return { success: false, error: 'Unauthorized - admin access required' };
     }
+    const adminId = adminAccess.userId;
 
     // Get refund and order details
     const { data: refund, error: refundError } = await supabase
@@ -361,7 +349,7 @@ export async function completeRefund(
     }
 
     // Send completion email
-    const customerEmail = order.user_id && user?.email ? user.email : order.guest_email;
+    const customerEmail = order.guest_email;
 
     await sendRefundEmail({
       orderNumber: order?.order_number || '',

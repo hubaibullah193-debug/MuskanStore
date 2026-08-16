@@ -2,34 +2,20 @@
 // GET refunds with filtering by status
 
 import { createClient } from '@/lib/supabase/server';
+import { isAdmin } from '@/lib/auth/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
     // Verify admin access
-    if (!user) {
+    if (!(await isAdmin())) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { data: adminLog } = await supabase
-      .from('admin_audit_logs')
-      .select('id')
-      .eq('admin_id', user.id)
-      .limit(1)
-      .single();
-
-    if (!adminLog) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: 'Unauthorized - admin access required' },
         { status: 403 }
       );
     }
+
+    const supabase = await createClient();
 
     // Get status filter from query params
     const status = request.nextUrl.searchParams.get('status');

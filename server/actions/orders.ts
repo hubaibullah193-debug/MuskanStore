@@ -395,13 +395,21 @@ export async function getOrderForDisplay(
 export async function updateOrderStatus(
   orderId: string,
   newStatus: string,
-  adminId: string,
+  _adminId: string,
   notes?: string
 ) {
   try {
-    if (!orderId || !newStatus || !adminId) {
-      throw new AppError("INVALID_PARAMS", "Order ID, status, and admin ID required", 400);
+    if (!orderId || !newStatus) {
+      throw new AppError("INVALID_PARAMS", "Order ID and status required", 400);
     }
+
+    // Verify admin access server-side
+    const { verifyAdminAccess } = await import("./auth");
+    const adminAccess = await verifyAdminAccess();
+    if (!adminAccess) {
+      throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+    }
+    const verifiedAdminId = adminAccess.userId;
 
     // Get current order
     const { data: order, error: orderError } = await supabase
@@ -419,7 +427,7 @@ export async function updateOrderStatus(
     statusHistory.push({
       status: newStatus,
       changedAt: new Date().toISOString(),
-      changedBy: adminId,
+      changedBy: verifiedAdminId,
       notes,
     });
 
@@ -448,7 +456,7 @@ export async function updateOrderStatus(
         newStatus,
         notes,
       },
-      adminId
+      verifiedAdminId
     );
 
     return updated;

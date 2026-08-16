@@ -5,14 +5,12 @@ import { isAdmin } from '@/lib/auth/admin';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-
   // Check if user is admin
-  const admin = await isAdmin(supabase);
-  if (!admin) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const supabase = await createClient();
   const body = await req.json();
   const { shipmentId, status, notes } = body;
 

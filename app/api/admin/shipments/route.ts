@@ -3,14 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { isAdmin } from '@/lib/auth/admin';
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient();
-
   // Check if user is admin
-  const admin = await isAdmin(supabase);
-  if (!admin) {
+  if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const supabase = await createClient();
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const orderId = searchParams.get('order_id');

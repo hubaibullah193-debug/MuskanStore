@@ -1,10 +1,19 @@
 // app/api/admin/refunds/complete/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
+import { isAdmin } from '@/lib/auth/admin';
 import { completeRefund } from '@/server/actions/refunds';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify admin access
+    if (!(await isAdmin())) {
+      return NextResponse.json(
+        { error: 'Unauthorized - admin access required' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { refundId } = body;
 

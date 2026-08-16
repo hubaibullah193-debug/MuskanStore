@@ -96,6 +96,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Admin API routes require admin role (return JSON, not a redirect)
+  if (pathname.startsWith("/api/admin")) {
+    const adminUser = await verifyAuth(request);
+    if (!adminUser || adminUser.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
   // Allow public routes
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
