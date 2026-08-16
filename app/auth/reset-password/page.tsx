@@ -1,16 +1,11 @@
 'use client';
 
-/**
- * Reset Password Page
- * Confirm new password with reset token
- */
-
 import { useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { confirmPasswordReset } from '@/lib/auth/server';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -178,3 +173,13 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" />}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+import { Suspense } from 'react';

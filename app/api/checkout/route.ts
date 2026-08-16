@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder, reserveInventory } from '@/server/actions/orders';
 import { validateCartInventory } from '@/server/actions/cart';
-import { generateJazzCashUrl, generateEasypaisaUrl } from '@/server/actions/payments';
+import { generateJazzCashUrl, generateEasypaisaUrl } from '@/lib/payments/url-generators';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
 
 const TAX_RATE = 17; // 17% tax

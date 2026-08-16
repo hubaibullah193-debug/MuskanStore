@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { CheckoutForm } from '@/app/components/checkout-form';
 import { createOrder } from '@/server/actions/orders';
-import { generateJazzCashUrl } from '@/server/actions/payments';
+import { generateJazzCashUrl } from '@/lib/payments/url-generators';
 
 export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
