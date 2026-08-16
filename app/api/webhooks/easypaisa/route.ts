@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // SECURITY: Verify webhook signature using HMAC (NOT just field presence)
-    const secret = process.env.EASYPAISA_MERCHANT_SECRET || "";
+    const secret = process.env.EASYPAISA_SECRET || "";
     if (!secret) {
-      console.error("Easypaisa webhook: EASYPAISA_MERCHANT_SECRET not configured");
+      console.error("Easypaisa webhook: EASYPAISA_SECRET not configured");
       return NextResponse.json(
         { error: "Gateway not configured" },
         { status: 500 }

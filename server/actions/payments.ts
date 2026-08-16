@@ -219,10 +219,10 @@ function verifyEasypaisaSignature(response: Record<string, any>): boolean {
   try {
     // SECURITY: Import and use actual HMAC signature verification
     const { verifyEasypaisaWebhookSignature } = require("@/lib/payments/signature");
-    const secret = process.env.EASYPAISA_MERCHANT_SECRET || "";
+    const secret = process.env.EASYPAISA_SECRET || "";
 
     if (!secret) {
-      console.error("Easypaisa signature verification: EASYPAISA_MERCHANT_SECRET not configured");
+      console.error("Easypaisa signature verification: EASYPAISA_SECRET not configured");
       return false;
     }
 
