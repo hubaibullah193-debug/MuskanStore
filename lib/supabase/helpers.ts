@@ -143,7 +143,11 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
       .single();
   }
 
-  return { error: new Error("Either userId or guestEmail required") };
+  // Return error in Supabase response format
+  return {
+    data: null,
+    error: { message: "Either userId or guestEmail required" } as any,
+  };
 }
 
 export async function updateCartActivity(cartId: string) {

@@ -225,8 +225,8 @@ export function getErrorMessage(error: unknown): string {
 // ===================================================================
 
 export interface CartItem {
-  productId: string;
-  variantId?: string;
+  product_id: string;
+  variant_id?: string;
   quantity: number;
   price: number;
 }
@@ -235,7 +235,7 @@ export function consolidateCartItems(items: CartItem[]): CartItem[] {
   const consolidated = new Map<string, CartItem>();
 
   items.forEach((item) => {
-    const key = `${item.productId}:${item.variantId || "none"}`;
+    const key = `${item.product_id}:${item.variant_id || "none"}`;
     const existing = consolidated.get(key);
 
     if (existing) {

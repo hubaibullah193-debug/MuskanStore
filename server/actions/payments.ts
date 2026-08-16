@@ -101,7 +101,7 @@ export async function initiatePayment(
 function generateJazzCashUrl(orderId: string, amount: number, email: string): string {
   const merchantId = process.env.JAZZ_CASH_MERCHANT_ID || "";
   const password = process.env.JAZZ_CASH_PP_PASSWORD || "";
-  const baseUrl = process.env.NEXT_ENV === "production"
+  const baseUrl = process.env.NODE_ENV === "production"
     ? "https://www.jazzcash.com.pk/ApplicationAPI/API/Purchase/DoMwk"
     : "https://sandbox.jazzcash.com.pk/ApplicationAPI/API/Purchase/DoMwk";
 
@@ -132,7 +132,7 @@ function generateJazzCashUrl(orderId: string, amount: number, email: string): st
 
 function generateEasypaisaUrl(orderId: string, amount: number, email: string): string {
   const merchantId = process.env.EASYPAISA_MERCHANT_ID || "";
-  const baseUrl = process.env.NEXT_ENV === "production"
+  const baseUrl = process.env.NODE_ENV === "production"
     ? "https://www.easypaisa.com.pk/payment"
     : "https://sandbox.easypaisa.com.pk/payment";
 

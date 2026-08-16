@@ -410,7 +410,7 @@ export async function requestRefund(
     // Get order
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("user_id, order_status, total_amount")
+      .select("user_id, order_status, total_amount, status_history")
       .eq("id", orderId)
       .single();
 
@@ -433,7 +433,7 @@ export async function requestRefund(
     }
 
     // Update order status to refund_requested
-    const statusHistory = [];
+    const statusHistory = Array.isArray(order.status_history) ? order.status_history : [];
     statusHistory.push({
       status: "refund_requested",
       changedAt: new Date().toISOString(),

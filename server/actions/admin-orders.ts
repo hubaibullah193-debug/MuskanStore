@@ -193,7 +193,7 @@ export async function approveRefund(
     // Get order
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("order_status, payment_status, total_amount, items")
+      .select("order_status, payment_status, total_amount, items, status_history")
       .eq("id", orderId)
       .single();
 
@@ -219,6 +219,15 @@ export async function approveRefund(
       );
     }
 
+    // Append to status history
+    const statusHistory = Array.isArray(order.status_history) ? order.status_history : [];
+    statusHistory.push({
+      status: "refunded",
+      changedAt: new Date().toISOString(),
+      changedBy: adminId,
+      notes,
+    });
+
     // Update order status to refunded
     const { data: updated, error: updateError } = await supabase
       .from("orders")
@@ -226,14 +235,7 @@ export async function approveRefund(
         order_status: "refunded",
         payment_status: "paid", // COD was paid or prepaid already confirmed
         refund_amount: refundAmount,
-        status_history: [
-          {
-            status: "refunded",
-            changedAt: new Date().toISOString(),
-            changedBy: adminId,
-            notes,
-          },
-        ],
+        status_history: statusHistory,
       })
       .eq("id", orderId)
       .select()

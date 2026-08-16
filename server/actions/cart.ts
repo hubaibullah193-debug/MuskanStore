@@ -23,7 +23,7 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
     let query = supabase.from("carts").select("*");
 
     if (userId) {
-      query = query.eq("user_id", userId).is("user_id", null);
+      query = query.eq("user_id", userId);
     } else if (guestEmail) {
       query = query.eq("guest_email", guestEmail).is("user_id", null);
     }
