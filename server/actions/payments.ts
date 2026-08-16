@@ -98,7 +98,7 @@ export async function initiatePayment(
 // GENERATE JAZZCASH PAYMENT URL
 // ===================================================================
 
-function generateJazzCashUrl(orderId: string, amount: number, email: string): string {
+export function generateJazzCashUrl(orderId: string, amount: number, email?: string): string {
   const merchantId = process.env.JAZZ_CASH_MERCHANT_ID || "";
   const password = process.env.JAZZ_CASH_PP_PASSWORD || "";
   const baseUrl = process.env.NODE_ENV === "production"
@@ -108,29 +108,33 @@ function generateJazzCashUrl(orderId: string, amount: number, email: string): st
   const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/payment/verify?orderId=${orderId}&method=jazz_cash`;
 
   // Build request (simplified; actual implementation would use proper HMAC signing)
-  const params = new URLSearchParams({
+  const params: Record<string, string> = {
     pp_MerchantID: merchantId,
     pp_Version: "1.1",
     pp_TxnRefNo: orderId,
     pp_Amount: (amount * 100).toString(), // In cents
     pp_TxnCurrency: "PKR",
     pp_TxnExpiryDateTime: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-    pp_BillingEmail: email,
     pp_BillingPhoneNumber: "92",
     pp_BillingCity: "Karachi",
     pp_BillingCountry: "PK",
     pp_ReturnURL: callbackUrl,
     pp_Language: "EN",
-  });
+  };
 
-  return `${baseUrl}?${params.toString()}`;
+  if (email) {
+    params.pp_BillingEmail = email;
+  }
+
+  const urlParams = new URLSearchParams(params);
+  return `${baseUrl}?${urlParams.toString()}`;
 }
 
 // ===================================================================
 // GENERATE EASYPAISA PAYMENT URL
 // ===================================================================
 
-function generateEasypaisaUrl(orderId: string, amount: number, email: string): string {
+export function generateEasypaisaUrl(orderId: string, amount: number, email?: string): string {
   const merchantId = process.env.EASYPAISA_MERCHANT_ID || "";
   const baseUrl = process.env.NODE_ENV === "production"
     ? "https://www.easypaisa.com.pk/payment"
@@ -139,15 +143,21 @@ function generateEasypaisaUrl(orderId: string, amount: number, email: string): s
   const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/payment/verify?orderId=${orderId}&method=easypaisa`;
 
   // Build request (simplified)
-  const params = new URLSearchParams({
+  const params: Record<string, string> = {
     merchantID: merchantId,
     transactionID: orderId,
     amount: amount.toString(),
     currency: "PKR",
-    email,
     returnURL: callbackUrl,
     cancelURL: callbackUrl,
-  });
+  };
+
+  if (email) {
+    params.email = email;
+  }
+
+  const urlParams = new URLSearchParams(params);
+  return `${baseUrl}?${urlParams.toString()}`;
 
   return `${baseUrl}?${params.toString()}`;
 }

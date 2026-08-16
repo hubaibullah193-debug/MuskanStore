@@ -10,6 +10,7 @@ import { supabase, supabaseAdmin } from "@/lib/supabase/client";
 import { CheckoutSchema, RefundRequestSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, generateRandomString, calculateTotal } from "@/lib/utils/helpers";
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
+import { sendOrderConfirmation, sendRefundEmail } from "@/server/actions/email";
 
 // ===================================================================
 // RESERVE INVENTORY (CHECKOUT START)
@@ -271,6 +272,29 @@ export async function createOrder(
       );
     }
 
+    // Send order confirmation email
+    const customerEmail = userId ? order.user_email : guestEmail;
+    if (customerEmail) {
+      await sendOrderConfirmation({
+        orderNumber: order.order_number,
+        customerEmail,
+        items: orderItems.map((item) => ({
+          productName: item.product_name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          lineTotal: item.subtotal,
+        })),
+        subtotal,
+        tax: taxAmount,
+        shippingFee: deliveryFee,
+        totalAmount,
+        shippingAddress: deliveryAddress as any,
+      }).catch((error) => {
+        console.error("Failed to send order confirmation email:", error);
+        // Don't throw - order succeeded even if email fails
+      });
+    }
+
     return order;
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -410,7 +434,7 @@ export async function requestRefund(
     // Get order
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("user_id, order_status, total_amount, status_history")
+      .select("user_id, guest_email, order_status, total_amount, status_history")
       .eq("id", orderId)
       .single();
 
@@ -457,6 +481,27 @@ export async function requestRefund(
     }
 
     // TODO: Send email to admin notifying of refund request
+
+    // Send refund request email to customer
+    let customerEmail = order.guest_email;
+    if (order.user_id && !customerEmail) {
+      // Fetch user email from auth.users if not already retrieved
+      const { data } = await supabase.auth.admin.getUserById(order.user_id);
+      customerEmail = data?.user?.email;
+    }
+
+    if (customerEmail) {
+      await sendRefundEmail({
+        orderNumber: updated.order_number,
+        customerEmail,
+        refundAmount: order.total_amount,
+        reason,
+        status: 'requested',
+      }).catch((error) => {
+        console.error("Failed to send refund request email:", error);
+        // Don't throw - refund request succeeded even if email fails
+      });
+    }
 
     return {
       orderId,

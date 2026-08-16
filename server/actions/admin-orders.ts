@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase/client";
 import { OrderStatusUpdateSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 import { logAuditEvent } from "@/lib/supabase/helpers";
+import { sendRefundEmail } from "@/server/actions/email";
 
 // ===================================================================
 // GET ORDERS (PAGINATED, WITH FILTERS)
@@ -193,7 +194,7 @@ export async function approveRefund(
     // Get order
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("order_status, payment_status, total_amount, items, status_history")
+      .select("user_id, guest_email, order_status, payment_status, total_amount, items, status_history, refund_reason, order_number")
       .eq("id", orderId)
       .single();
 
@@ -256,6 +257,27 @@ export async function approveRefund(
       },
       adminId
     );
+
+    // Send refund approval email to customer
+    let customerEmail = updated.guest_email;
+    if (updated.user_id && !customerEmail) {
+      // Fetch user email from auth.users if not already retrieved
+      const { data } = await supabase.auth.admin.getUserById(updated.user_id);
+      customerEmail = data?.user?.email;
+    }
+
+    if (customerEmail) {
+      await sendRefundEmail({
+        orderNumber: updated.order_number,
+        customerEmail,
+        refundAmount,
+        reason: updated.refund_reason,
+        status: 'approved',
+      }).catch((error) => {
+        console.error("Failed to send refund approval email:", error);
+        // Don't throw - refund approval succeeded even if email fails
+      });
+    }
 
     return updated;
   } catch (error) {
