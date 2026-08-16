@@ -1,84 +1,26 @@
-'use client';
-
 /**
  * Admin Layout
- * Navigation sidebar with links to all admin sections
+ * Server component that verifies admin access
+ * Provides navigation sidebar
  */
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { verifyAdminAccess, getCurrentUser } from '@/server/actions/auth';
+import AdminLayoutClient from './layout-client';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Verify admin access
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    redirect('/auth/login?redirectUrl=/admin/dashboard');
+  }
 
-  const navItems = [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/admin/orders', label: 'Orders', icon: '📦' },
-    { href: '/admin/refunds', label: 'Refunds', icon: '💰' },
-    { href: '/admin/products', label: 'Products', icon: '🛍️' },
-    { href: '/admin/inventory', label: 'Inventory', icon: '📈' },
-    { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
-    { href: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
-  ];
+  // Get current user for display
+  const user = await getCurrentUser();
 
-  const isActive = (href: string) => pathname.startsWith(href);
-
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-gray-900 text-white transition-all duration-300 flex flex-col`}
-      >
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-700">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full text-left font-bold text-lg hover:text-gray-300"
-          >
-            {sidebarOpen ? 'Admin' : '⚙️'}
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                isActive(item.href)
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {sidebarOpen && <span>{item.label}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-700">
-          <button className="w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-            {sidebarOpen ? 'Logout' : '🚪'}
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8 max-w-7xl mx-auto">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
+  return <AdminLayoutClient user={user}>{children}</AdminLayoutClient>;
 }
