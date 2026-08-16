@@ -282,6 +282,40 @@ export async function enableProduct(adminId: string, productId: string) {
 // BULK UPLOAD PRODUCTS
 // ===================================================================
 
+// ===================================================================
+// WRAPPER: Disable Product (gets adminId from current user)
+// ===================================================================
+
+export async function disableProductAction(productId: string) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+
+  return disableProduct(adminAccess.userId, productId);
+}
+
+// ===================================================================
+// WRAPPER: Enable Product (gets adminId from current user)
+// ===================================================================
+
+export async function enableProductAction(productId: string) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+
+  return enableProduct(adminAccess.userId, productId);
+}
+
+// ===================================================================
+// BULK UPLOAD PRODUCTS
+// ===================================================================
+
 export async function bulkUploadProducts(
   adminId: string,
   rows: Array<{
