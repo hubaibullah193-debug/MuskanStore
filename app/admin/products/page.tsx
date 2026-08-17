@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories, uploadProductImageAction, removeProductImageAction, getProductImages } from '@/server/actions/admin-products';
+import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories, uploadProductImageAction, removeProductImageAction, getProductImages, bulkUploadProducts } from '@/server/actions/admin-products';
 
 interface Product {
   id: string;
@@ -44,6 +44,10 @@ export default function AdminProductsPage() {
   const [productImages, setProductImages] = useState<Record<string, Array<{ id: string; image_url: string }>>>({});
   const [uploading, setUploading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkResults, setBulkResults] = useState<{ success: number; errors: Array<{ rowNumber: number; sku: string; error: string }> } | null>(null);
+  const csvFileRef = useRef<HTMLInputElement>(null);
 
   // Load products on mount
   useEffect(() => {
@@ -82,6 +86,59 @@ export default function AdminProductsPage() {
       setCategories(data);
     } catch {
       // Non-critical, dropdown will just be empty
+    }
+  };
+
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setBulkUploading(true);
+      setBulkResults(null);
+      setError(null);
+
+      const text = await file.text();
+      const lines = text.split('\n').filter((line) => line.trim());
+
+      if (lines.length < 2) {
+        setError('CSV must have a header row and at least one data row');
+        return;
+      }
+
+      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+      const requiredHeaders = ['name', 'sku', 'category', 'base_price', 'stock'];
+      const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
+
+      if (missingHeaders.length > 0) {
+        setError(`Missing required columns: ${missingHeaders.join(', ')}`);
+        return;
+      }
+
+      const rows = lines.slice(1).map((line) => {
+        const values = line.split(',').map((v) => v.trim());
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => { row[h] = values[i] || ''; });
+        return {
+          name: row.name,
+          sku: row.sku,
+          category: row.category,
+          base_price: parseFloat(row.base_price) || 0,
+          stock: parseInt(row.stock) || 0,
+        };
+      });
+
+      const result = await bulkUploadProducts('admin', rows);
+      setBulkResults({
+        success: result.successCount,
+        errors: result.errors,
+      });
+      loadProducts();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to process CSV');
+    } finally {
+      setBulkUploading(false);
+      if (csvFileRef.current) csvFileRef.current.value = '';
     }
   };
 
@@ -207,16 +264,27 @@ export default function AdminProductsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-600 mt-1">Manage your product catalog</p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditingId(null);
-            setFormData({ name: '', sku: '', price: '', description: '', categoryId: '' });
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          {showForm ? 'Cancel' : '+ Add Product'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setShowBulkUpload(!showBulkUpload);
+              setBulkResults(null);
+            }}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm"
+          >
+            {showBulkUpload ? 'Cancel Upload' : 'Bulk Upload CSV'}
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(!showForm);
+              setEditingId(null);
+              setFormData({ name: '', sku: '', price: '', description: '', categoryId: '' });
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            {showForm ? 'Cancel' : '+ Add Product'}
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -228,6 +296,66 @@ export default function AdminProductsPage() {
       {success && (
         <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
           {success}
+        </div>
+      )}
+
+      {/* Bulk Upload Section */}
+      {showBulkUpload && (
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h2 className="text-xl font-bold mb-2">Bulk Upload Products via CSV</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            CSV must include columns: <code className="bg-gray-100 px-1 rounded">name</code>,{' '}
+            <code className="bg-gray-100 px-1 rounded">sku</code>,{' '}
+            <code className="bg-gray-100 px-1 rounded">category</code>,{' '}
+            <code className="bg-gray-100 px-1 rounded">base_price</code>,{' '}
+            <code className="bg-gray-100 px-1 rounded">stock</code>.
+            Existing SKUs will be skipped.
+          </p>
+          <div className="flex items-center gap-4">
+            <input
+              ref={csvFileRef}
+              type="file"
+              accept=".csv"
+              onChange={handleBulkUpload}
+              disabled={bulkUploading}
+              className="block text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer disabled:opacity-50"
+            />
+            {bulkUploading && <span className="text-sm text-gray-500">Uploading…</span>}
+          </div>
+
+          {/* Bulk upload results */}
+          {bulkResults && (
+            <div className="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
+              <p className="font-medium text-gray-900 mb-1">
+                {bulkResults.success} product{bulkResults.success !== 1 ? 's' : ''} uploaded
+              </p>
+              {bulkResults.errors.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-red-600 font-medium mb-1">
+                    {bulkResults.errors.length} row{bulkResults.errors.length !== 1 ? 's' : ''} failed:
+                  </p>
+                  <ul className="text-sm text-red-600 space-y-1">
+                    {bulkResults.errors.map((err, i) => (
+                      <li key={i}>Row {err.rowNumber} ({err.sku}): {err.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sample CSV */}
+          <details className="mt-4">
+            <summary className="text-sm text-blue-600 cursor-pointer hover:underline">
+              View sample CSV format
+            </summary>
+            <pre className="mt-2 p-3 bg-gray-100 rounded text-xs text-gray-700 overflow-x-auto">
+{`name,sku,category,base_price,stock
+Herbal Shampoo,HC-SHP-001,Hair Care,450,50
+Aloe Vera Face Wash,SC-FW-002,Skin Care,320,75
+Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
+            </pre>
+          </details>
         </div>
       )}
 

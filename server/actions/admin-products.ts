@@ -392,7 +392,7 @@ export async function bulkUploadProducts(
     name: string;
     sku: string;
     category: string;
-    price: number;
+    base_price: number;
     stock: number;
   }>
 ) {
