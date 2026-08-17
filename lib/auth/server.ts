@@ -170,10 +170,9 @@ export async function requestPasswordReset(email: string) {
 // CONFIRM PASSWORD RESET
 // ===================================================================
 
-export async function confirmPasswordReset(token: string, newPassword: string) {
+export async function confirmPasswordReset(tokenHash: string, newPassword: string) {
   try {
-    // Validate input
-    if (!token) {
+    if (!tokenHash) {
       throw new AppError("INVALID_TOKEN", "Reset token is missing or expired", 400);
     }
 
@@ -181,13 +180,23 @@ export async function confirmPasswordReset(token: string, newPassword: string) {
       throw new AppError("WEAK_PASSWORD", "Password must be at least 8 characters", 400);
     }
 
-    // Update password with token
-    const { error } = await supabase.auth.updateUser({
+    // Verify the recovery token to establish a session
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery",
+    });
+
+    if (verifyError) {
+      throw new AppError("TOKEN_VERIFICATION_FAILED", "Reset token is invalid or has expired", 400);
+    }
+
+    // Now that we have a session, update the password
+    const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     });
 
-    if (error) {
-      throw new AppError("PASSWORD_UPDATE_FAILED", error.message, 400);
+    if (updateError) {
+      throw new AppError("PASSWORD_UPDATE_FAILED", updateError.message, 400);
     }
 
     return { message: "Password updated successfully" };

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { Suspense, useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { confirmPasswordReset } from '@/lib/auth/server';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const tokenHash = searchParams.get('token_hash');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,10 +18,10 @@ function ResetPasswordContent() {
   });
 
   useEffect(() => {
-    if (!token) {
+    if (!tokenHash) {
       setError('Invalid or missing reset token. Please request a new password reset.');
     }
-  }, [token]);
+  }, [tokenHash]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,7 +34,7 @@ function ResetPasswordContent() {
     setLoading(true);
 
     try {
-      if (!token) {
+      if (!tokenHash) {
         setError('Reset token is missing');
         return;
       }
@@ -54,7 +54,7 @@ function ResetPasswordContent() {
         return;
       }
 
-      await confirmPasswordReset(token, formData.password);
+      await confirmPasswordReset(tokenHash, formData.password);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Failed to reset password. Please try again.');
@@ -167,13 +167,13 @@ function ResetPasswordContent() {
 
             <button
               type="submit"
-              disabled={loading || !token}
+              disabled={loading || !tokenHash}
               className="w-full text-white py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               style={{
-                backgroundColor: loading || !token ? 'var(--color-accent-light)' : 'var(--color-accent)',
+                backgroundColor: loading || !tokenHash ? 'var(--color-accent-light)' : 'var(--color-accent)',
               }}
-              onMouseEnter={(e) => !(loading || !token) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-              onMouseLeave={(e) => !(loading || !token) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
+              onMouseEnter={(e) => !(loading || !tokenHash) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
+              onMouseLeave={(e) => !(loading || !tokenHash) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
             >
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
@@ -201,5 +201,3 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
-
-import { Suspense } from 'react';
