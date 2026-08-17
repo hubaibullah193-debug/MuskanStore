@@ -7,9 +7,9 @@
  */
 
 import { cookies } from 'next/headers';
+import { ZodError } from 'zod';
 import { supabase, supabaseAdmin } from '@/lib/supabase/client';
 import { SignUpSchema, LogInSchema } from '@/lib/validation/schemas';
-import { AppError } from '@/lib/utils/helpers';
 
 // ===================================================================
 // SIGNUP
@@ -33,11 +33,11 @@ export async function signUpAction(
     });
 
     if (authError) {
-      throw new AppError('AUTH_SIGNUP_FAILED', authError.message, 400);
+      return { success: false, error: authError.message };
     }
 
     if (!authData.user) {
-      throw new AppError('AUTH_SIGNUP_FAILED', 'Failed to create user', 500);
+      return { success: false, error: 'Failed to create user' };
     }
 
     // Create user profile in public.users table
@@ -55,7 +55,7 @@ export async function signUpAction(
     if (profileError) {
       // Delete auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      throw new AppError('AUTH_PROFILE_CREATION_FAILED', profileError.message, 500);
+      return { success: false, error: profileError.message };
     }
 
     return {
@@ -65,8 +65,12 @@ export async function signUpAction(
       message: 'Signup successful. Please log in.',
     };
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError('AUTH_SIGNUP_ERROR', 'An unexpected error occurred during signup', 500);
+    if (error instanceof ZodError) {
+      const message = error.errors.map((e) => e.message).join('. ');
+      return { success: false, error: message };
+    }
+    console.error('signup error:', error);
+    return { success: false, error: 'An unexpected error occurred during signup' };
   }
 }
 
@@ -86,22 +90,22 @@ export async function loginAction(email: string, password: string) {
     });
 
     if (error) {
-      throw new AppError('AUTH_LOGIN_FAILED', 'Invalid email or password', 401);
+      return { success: false, error: 'Invalid email or password' };
     }
 
     if (!data.session) {
-      throw new AppError('AUTH_LOGIN_FAILED', 'Failed to create session', 500);
+      return { success: false, error: 'Failed to create session' };
     }
 
-    // Get user profile
-    const { data: userProfile, error: profileError } = await supabase
+    // Get user profile (use admin client to bypass RLS)
+    const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('id, email, name, phone, role, email_verified')
       .eq('id', data.user.id)
       .single();
 
     if (profileError) {
-      throw new AppError('AUTH_PROFILE_FETCH_FAILED', profileError.message, 500);
+      return { success: false, error: 'Failed to fetch user profile' };
     }
 
     // Store session in secure HTTP-only cookie
@@ -135,8 +139,12 @@ export async function loginAction(email: string, password: string) {
       },
     };
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError('AUTH_LOGIN_ERROR', 'An unexpected error occurred during login', 500);
+    if (error instanceof ZodError) {
+      const message = error.errors.map((e) => e.message).join('. ');
+      return { success: false, error: message };
+    }
+    console.error('login error:', error);
+    return { success: false, error: 'An unexpected error occurred during login' };
   }
 }
 
@@ -148,7 +156,7 @@ export async function logoutAction() {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      throw new AppError('AUTH_LOGOUT_FAILED', error.message, 400);
+      return { success: false, error: error.message };
     }
 
     // Clear auth cookies
@@ -158,8 +166,8 @@ export async function logoutAction() {
 
     return { success: true, message: 'Logged out successfully' };
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError('AUTH_LOGOUT_ERROR', 'Failed to logout', 500);
+    console.error('logout error:', error);
+    return { success: false, error: 'Failed to logout' };
   }
 }
 
@@ -175,8 +183,8 @@ export async function getCurrentSessionAction() {
       return null;
     }
 
-    // Get user profile
-    const { data: userProfile } = await supabase
+    // Get user profile (use admin client to bypass RLS)
+    const { data: userProfile } = await supabaseAdmin
       .from('users')
       .select('id, email, name, phone, role, email_verified')
       .eq('id', data.session.user.id)
@@ -198,6 +206,7 @@ export async function getCurrentSessionAction() {
       },
     };
   } catch (error) {
+    console.error('session fetch error:', error);
     return null;
   }
 }

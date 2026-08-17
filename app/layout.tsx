@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Header } from "./components/header";
-import { Footer } from "./components/footer";
+import { AuthAwareLayout } from "./components/auth-aware-layout";
 
 export const metadata: Metadata = {
   title: "Muskan Care Center",
   description: "Personal hygiene e-commerce store",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -16,11 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <AuthAwareLayout>{children}</AuthAwareLayout>
       </body>
     </html>
   );
