@@ -8,3 +8,8 @@
 6. **Reuse before rebuild**: check existing components, hooks, and Supabase functions before writing new ones.
 7. **Spec before non-trivial work**: any feature beyond a trivial CRUD change gets a short spec (goal, requirements, edge cases) before code.
 8. **Definition of done**: matches spec, passes lint/type-check/tests, RLS/auth verified, and reviewed before merge.
+
+## References
+
+- `AGENTS.md` — Architecture overview, file map, current state, conventions
+- `docs/` — All project documentation (spec, design, implementation plan, auth setup, environment setup, E2E testing guide, research findings)

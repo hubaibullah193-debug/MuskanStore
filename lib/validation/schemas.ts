@@ -194,7 +194,7 @@ export const SignUpSchema = z.object({
     .regex(/[a-z]/, "Password must contain lowercase letter")
     .regex(/[0-9]/, "Password must contain number"),
   name: z.string().min(1, "Name required").max(255),
-  phone: PhoneSchema.optional(),
+  phone: PhoneSchema.optional().or(z.literal('')).transform((v) => v || undefined),
 });
 
 export const LogInSchema = z.object({
