@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
-import { finalizeInventory } from '@/lib/payments/inventory-finalization';
+import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
 
 export async function POST(request: NextRequest) {
@@ -148,6 +148,11 @@ export async function POST(request: NextRequest) {
           status: 'failed',
         }
       );
+
+      // Release inventory reservations since payment failed
+      await releaseInventoryReservations(orderId).catch((error) => {
+        console.error(`Failed to release inventory for order ${orderId}:`, error);
+      });
 
       // Send payment failure email
       let customerEmail = order.guest_email;

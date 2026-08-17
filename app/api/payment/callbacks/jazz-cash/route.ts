@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { verifyJazzCashWebhookSignature } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
-import { finalizeInventory } from '@/lib/payments/inventory-finalization';
+import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
 import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
 
 export const dynamic = 'force-dynamic';
@@ -145,6 +145,11 @@ export async function GET(request: NextRequest) {
           reason: searchParams.get('pp_ResponseDesc'),
         }
       );
+
+      // Release inventory reservations since payment failed
+      await releaseInventoryReservations(orderId).catch((error) => {
+        console.error(`Failed to release inventory for order ${orderId}:`, error);
+      });
 
       // Redirect to retry page
       return NextResponse.redirect(

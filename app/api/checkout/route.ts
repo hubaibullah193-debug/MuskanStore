@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrder, reserveInventory } from '@/server/actions/orders';
+import { createOrder } from '@/server/actions/orders';
 import { validateCartInventory } from '@/server/actions/cart';
 import { generateJazzCashUrl, generateEasypaisaUrl } from '@/lib/payments/url-generators';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
@@ -71,13 +71,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate inventory before reserving
+    // Validate inventory before creating order
     await validateCartInventory(items);
 
-    // Reserve inventory (optional but recommended)
-    await reserveInventory(items);
-
-    // Create order
+    // Create order (creates inventory_reservations, finalizes for COD immediately)
     const order = await createOrder(
       userId,
       userId ? null : guestEmail,
