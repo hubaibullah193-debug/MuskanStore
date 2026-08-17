@@ -12,6 +12,70 @@ import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 import { logAuditEvent } from "@/lib/supabase/helpers";
 
 // ===================================================================
+// GET ALL INVENTORY (admin)
+// ===================================================================
+
+export async function getAllInventory() {
+  try {
+    const { data, error } = await supabase
+      .from("product_inventory")
+      .select(
+        `
+        id,
+        product_id,
+        variant_id,
+        quantity,
+        reserved,
+        low_stock_threshold,
+        products (id, name, sku),
+        product_variants (id, variant_name)
+      `
+      )
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new AppError("FETCH_INVENTORY_FAILED", error.message, 500);
+    }
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      productId: item.product_id,
+      productName: item.products?.name || "Unknown",
+      sku: item.products?.sku || "",
+      quantity: item.quantity,
+      reserved: item.reserved,
+      available: item.quantity - item.reserved,
+      lowStockThreshold: item.low_stock_threshold,
+      status: item.quantity <= item.low_stock_threshold ? ("low" as const) : ("ok" as const),
+      variantId: item.variant_id,
+      variantName: item.product_variants?.variant_name,
+    }));
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("GET_INVENTORY_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
+// WRAPPER: Adjust Inventory (gets adminId from current user)
+// ===================================================================
+
+export async function adjustInventoryAction(
+  productId: string,
+  variantId: string | undefined,
+  newQuantity: number,
+  reason: "Damaged" | "Lost" | "Return" | "Physical Count" | "Correction" | "Other",
+  notes?: string
+) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return adjustInventory(adminAccess.userId, productId, variantId, newQuantity, reason, notes);
+}
+
+// ===================================================================
 // ADJUST INVENTORY
 // ===================================================================
 

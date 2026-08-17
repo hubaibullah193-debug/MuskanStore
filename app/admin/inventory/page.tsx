@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { getAllInventory, adjustInventoryAction } from '@/server/actions/admin-inventory';
 
 interface InventoryItem {
   id: string;
@@ -42,11 +43,10 @@ export default function AdminInventoryPage() {
   const loadInventory = async () => {
     try {
       setLoading(true);
-      // In production, fetch from API endpoint
-      // For now, show empty state
-      setInventory([]);
-    } catch (err) {
-      setError('Failed to load inventory');
+      const data = await getAllInventory();
+      setInventory(data);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load inventory');
     } finally {
       setLoading(false);
     }
@@ -62,13 +62,32 @@ export default function AdminInventoryPage() {
         return;
       }
 
-      // Call adjustment action
+      const item = inventory.find((i) => i.id === itemId);
+      if (!item) {
+        setError('Item not found');
+        return;
+      }
+
+      const newQty = parseInt(adjustmentData.newQuantity);
+      if (isNaN(newQty) || newQty < 0) {
+        setError('Quantity must be a non-negative number');
+        return;
+      }
+
+      await adjustInventoryAction(
+        item.productId,
+        item.variantId,
+        newQty,
+        adjustmentData.reason,
+        adjustmentData.notes || undefined
+      );
+
       setSuccess('Inventory adjusted successfully');
       setAdjusting(null);
       setAdjustmentData({ newQuantity: '', reason: 'Physical Count', notes: '' });
       loadInventory();
-    } catch (err) {
-      setError('Failed to adjust inventory');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to adjust inventory');
     }
   };
 

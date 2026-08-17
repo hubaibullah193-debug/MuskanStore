@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/server/actions/auth';
+import { getCurrentUser, updateUserProfile } from '@/server/actions/auth';
 import { getUserOrders } from '@/server/actions/orders';
 import Link from 'next/link';
 
@@ -76,12 +76,21 @@ export default function AccountPage() {
         return;
       }
 
-      // Call update action
+      const result = await updateUserProfile({
+        name: formData.name,
+        phone: formData.phone || undefined,
+      });
+
+      if (!result.success) {
+        setError(result.error || 'Failed to update profile');
+        return;
+      }
+
       setSuccess('Profile updated successfully');
       setEditMode(false);
       loadData();
-    } catch (err) {
-      setError('Failed to update profile');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update profile');
     }
   };
 

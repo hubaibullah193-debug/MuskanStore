@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { disableProductAction, enableProductAction } from '@/server/actions/admin-products';
+import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories } from '@/server/actions/admin-products';
 
 interface Product {
   id: string;
@@ -40,22 +40,32 @@ export default function AdminProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
 
   // Load products on mount
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // In production, fetch from API endpoint
-      // For now, show empty state
-      setProducts([]);
-    } catch (err) {
-      setError('Failed to load products');
+      const data = await getAllProducts();
+      setProducts(data);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load products');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const data = await getCategories();
+      setCategories(data);
+    } catch {
+      // Non-critical, dropdown will just be empty
     }
   };
 
@@ -70,13 +80,42 @@ export default function AdminProductsPage() {
         return;
       }
 
-      // For now, show placeholder
-      setSuccess('Product saved successfully');
+      const price = parseFloat(formData.price);
+      if (isNaN(price) || price <= 0) {
+        setError('Price must be a positive number');
+        return;
+      }
+
+      if (editingId) {
+        await updateProductAction(editingId, {
+          name: formData.name,
+          sku: formData.sku,
+          base_price: price,
+          description: formData.description || undefined,
+          category_id: formData.categoryId || undefined,
+        });
+        setSuccess('Product updated successfully');
+      } else {
+        if (!formData.categoryId) {
+          setError('Category is required');
+          return;
+        }
+        await addProductAction(
+          formData.name,
+          formData.description || undefined,
+          formData.sku,
+          price,
+          formData.categoryId
+        );
+        setSuccess('Product created successfully');
+      }
+
       setFormData({ name: '', sku: '', price: '', description: '', categoryId: '' });
       setShowForm(false);
       setEditingId(null);
-    } catch (err) {
-      setError('Failed to save product');
+      loadProducts();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save product');
     }
   };
 
@@ -202,8 +241,9 @@ export default function AdminProductsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Category</option>
-                  <option value="electronics">Electronics</option>
-                  <option value="accessories">Accessories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

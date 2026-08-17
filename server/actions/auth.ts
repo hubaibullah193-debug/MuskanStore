@@ -101,3 +101,43 @@ export async function getCurrentUser() {
     return null;
   }
 }
+
+/**
+ * Update current user's profile (name, phone)
+ */
+export async function updateUserProfile(updates: { name?: string; phone?: string }) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+
+    if (!token) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+      return { success: false, error: 'Server configuration error' };
+    }
+
+    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
+    const userId = verified.payload.sub as string;
+
+    if (!userId) {
+      return { success: false, error: 'Invalid session' };
+    }
+
+    const { error } = await supabaseAdmin
+      .from('users')
+      .update(updates)
+      .eq('id', userId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('updateUserProfile error:', error);
+    return { success: false, error: 'Failed to update profile' };
+  }
+}

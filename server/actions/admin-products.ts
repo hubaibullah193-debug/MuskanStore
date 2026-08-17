@@ -279,8 +279,36 @@ export async function enableProduct(adminId: string, productId: string) {
 }
 
 // ===================================================================
-// BULK UPLOAD PRODUCTS
+// GET ALL PRODUCTS (admin)
 // ===================================================================
+
+export async function getAllProducts(filters?: { is_active?: boolean; search?: string }) {
+  try {
+    let query = supabase
+      .from("products")
+      .select("id, name, sku, base_price, is_active, category_id, created_at")
+      .order("created_at", { ascending: false });
+
+    if (filters?.is_active !== undefined) {
+      query = query.eq("is_active", filters.is_active);
+    }
+
+    if (filters?.search) {
+      query = query.or(`name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new AppError("FETCH_PRODUCTS_FAILED", error.message, 500);
+    }
+
+    return data || [];
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("GET_PRODUCTS_ERROR", getErrorMessage(error), 500);
+  }
+}
 
 // ===================================================================
 // WRAPPER: Disable Product (gets adminId from current user)
@@ -310,6 +338,48 @@ export async function enableProductAction(productId: string) {
   }
 
   return enableProduct(adminAccess.userId, productId);
+}
+
+// ===================================================================
+// WRAPPER: Add Product (gets adminId from current user)
+// ===================================================================
+
+export async function addProductAction(
+  name: string,
+  description: string | undefined,
+  sku: string,
+  price: number,
+  categoryId: string
+) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return addProduct(adminAccess.userId, name, description, sku, price, categoryId);
+}
+
+// ===================================================================
+// WRAPPER: Update Product (gets adminId from current user)
+// ===================================================================
+
+export async function updateProductAction(
+  productId: string,
+  updates: {
+    name?: string;
+    description?: string | null;
+    sku?: string;
+    base_price?: number;
+    category_id?: string;
+    is_active?: boolean;
+  }
+) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return updateProduct(adminAccess.userId, productId, updates);
 }
 
 // ===================================================================
@@ -441,6 +511,28 @@ export async function bulkUploadProducts(
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError("BULK_UPLOAD_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
+// GET CATEGORIES (for dropdowns)
+// ===================================================================
+
+export async function getCategories() {
+  try {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, slug")
+      .order("name", { ascending: true });
+
+    if (error) {
+      throw new AppError("FETCH_CATEGORIES_FAILED", error.message, 500);
+    }
+
+    return data || [];
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("GET_CATEGORIES_ERROR", getErrorMessage(error), 500);
   }
 }
 

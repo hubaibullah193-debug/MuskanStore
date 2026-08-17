@@ -93,6 +93,26 @@ export async function updateSettings(
 }
 
 // ===================================================================
+// WRAPPER: Update Settings (gets adminId from current user)
+// ===================================================================
+
+export async function updateSettingsAction(settings: {
+  support_email?: string;
+  support_phone?: string;
+  website_url?: string;
+  tax_rate?: number;
+  delivery_fee?: number;
+  low_stock_threshold?: number;
+}) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return updateSettings(adminAccess.userId, settings);
+}
+
+// ===================================================================
 // GET SERVICE AREAS
 // ===================================================================
 

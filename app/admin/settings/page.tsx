@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getSettings } from '@/server/actions/admin-settings';
+import { getSettings, updateSettingsAction } from '@/server/actions/admin-settings';
 
 interface Settings {
   support_email?: string;
@@ -71,11 +71,19 @@ export default function AdminSettingsPage() {
         return;
       }
 
-      // Call update action
+      await updateSettingsAction({
+        support_email: settings.support_email,
+        support_phone: settings.support_phone,
+        website_url: settings.website_url,
+        tax_rate: settings.tax_rate,
+        delivery_fee: settings.delivery_fee,
+        low_stock_threshold: settings.low_stock_threshold,
+      });
+
       setSuccess('Settings saved successfully');
       loadSettings();
-    } catch (err) {
-      setError('Failed to save settings');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
