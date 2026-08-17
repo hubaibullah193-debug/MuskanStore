@@ -360,6 +360,23 @@ export async function getOrderForDisplay(
       throw new AppError("INVALID_ID", "Order ID required", 400);
     }
 
+    // If no userId provided, try to resolve from auth cookie
+    let resolvedUserId = userId;
+    if (!resolvedUserId && !guestToken) {
+      try {
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+        const authToken = cookieStore.get("auth-token")?.value;
+        if (authToken) {
+          const { decodeJwt } = await import("jose");
+          const payload = decodeJwt(authToken);
+          resolvedUserId = payload.sub || undefined;
+        }
+      } catch {
+        // No cookie or invalid token - proceed without userId
+      }
+    }
+
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*")
@@ -371,7 +388,7 @@ export async function getOrderForDisplay(
     }
 
     // Verify access: customer owns order, guest has valid token, or admin
-    const isOwner = userId && order.user_id === userId;
+    const isOwner = resolvedUserId && order.user_id === resolvedUserId;
     const isGuest = !order.user_id && order.guest_email && guestToken === order.guest_token;
     const tokenValid = order.guest_token_expires_at
       ? new Date(order.guest_token_expires_at) > new Date()
