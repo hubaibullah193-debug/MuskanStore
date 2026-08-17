@@ -8,6 +8,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { mergeGuestCartAction } from "@/app/cart/actions";
 
 // ===================================================================
 // TYPES
@@ -91,6 +92,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session?.user) {
+          // Merge guest cart before setting user (so useCart loads merged result)
+          try {
+            const stored = localStorage.getItem("mstore_cart_guest");
+            if (stored) {
+              const guestItems = JSON.parse(stored);
+              if (Array.isArray(guestItems) && guestItems.length > 0) {
+                await mergeGuestCartAction(session.user.id, guestItems);
+                localStorage.removeItem("mstore_cart_guest");
+              }
+            }
+          } catch (err) {
+            console.error("Cart merge failed:", err);
+            // Don't block login on cart merge failure
+          }
+
           const { data: userProfile } = await supabase
             .from("users")
             .select("id, email, name, phone, role, email_verified")

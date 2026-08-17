@@ -162,6 +162,76 @@ export async function removeFromCartAction(userId: string, cartItemId: string) {
 }
 
 // ===================================================================
+// MERGE GUEST CART INTO USER CART
+// ===================================================================
+
+export async function mergeGuestCartAction(
+  userId: string,
+  guestItems: Array<{
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    price: number;
+  }>
+) {
+  try {
+    if (!userId || !guestItems.length) {
+      return { success: true, mergedCount: 0 };
+    }
+
+    let mergedCount = 0;
+
+    for (const item of guestItems) {
+      // Check if item already exists in user's cart
+      const { data: existing } = await supabaseAdmin
+        .from('cart_items')
+        .select('id, quantity')
+        .eq('user_id', userId)
+        .eq('product_id', item.productId)
+        .eq('variant_id', item.variantId || null)
+        .single();
+
+      if (existing) {
+        // Increment quantity
+        const { error } = await supabaseAdmin
+          .from('cart_items')
+          .update({ quantity: existing.quantity + item.quantity })
+          .eq('id', existing.id);
+
+        if (error) {
+          console.error('Failed to merge cart item:', error);
+        } else {
+          mergedCount++;
+        }
+      } else {
+        // Insert new item
+        const { error } = await supabaseAdmin
+          .from('cart_items')
+          .insert({
+            user_id: userId,
+            product_id: item.productId,
+            variant_id: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+          });
+
+        if (error) {
+          console.error('Failed to insert merged cart item:', error);
+        } else {
+          mergedCount++;
+        }
+      }
+    }
+
+    return { success: true, mergedCount };
+  } catch (error) {
+    console.error('Cart merge failed:', error);
+    // Don't throw — cart merge failure shouldn't block login
+    return { success: false, mergedCount: 0 };
+  }
+}
+
+// ===================================================================
 // CLEAR CART
 // ===================================================================
 
