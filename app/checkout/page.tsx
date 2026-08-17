@@ -69,7 +69,7 @@ export default function CheckoutPage() {
           phone,
         },
         paymentMethod,
-        guestEmail: !user ? email : undefined,
+        guestEmail: email || undefined,
       };
 
       // Call checkout API

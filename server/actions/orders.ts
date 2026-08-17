@@ -6,7 +6,7 @@
  * All operations run server-side with RLS enforcement and atomic transactions
  */
 
-import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { CheckoutSchema, RefundRequestSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, generateRandomString, calculateTotal } from "@/lib/utils/helpers";
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
@@ -32,7 +32,7 @@ export async function reserveInventory(
     for (const item of items) {
       if (item.variant_id) {
         // Check variant stock
-        const { data: variant, error: variantError } = await supabase
+        const { data: variant, error: variantError } = await supabaseAdmin
           .from("product_variants")
           .select("id, stock_quantity, is_active")
           .eq("id", item.variant_id)
@@ -56,7 +56,7 @@ export async function reserveInventory(
         }
       } else {
         // Check base product stock
-        const { data: product, error: productError } = await supabase
+        const { data: product, error: productError } = await supabaseAdmin
           .from("products")
           .select("id, stock_quantity, is_active")
           .eq("id", item.product_id)
@@ -132,7 +132,7 @@ export async function createOrder(
     }
 
     // Validate delivery city in service areas
-    const { data: serviceArea, error: serviceError } = await supabase
+    const { data: serviceArea, error: serviceError } = await supabaseAdmin
       .from("service_areas")
       .select("id")
       .eq("city", deliveryAddress.city)
@@ -153,7 +153,7 @@ export async function createOrder(
 
     for (const item of items) {
       // Get fresh product price from database
-      const { data: product, error: productError } = await supabase
+      const { data: product, error: productError } = await supabaseAdmin
         .from("products")
         .select("id, name, base_price, is_active")
         .eq("id", item.product_id)
@@ -168,7 +168,7 @@ export async function createOrder(
       let variantName;
 
       if (item.variant_id) {
-        const { data: variant } = await supabase
+        const { data: variant } = await supabaseAdmin
           .from("product_variants")
           .select("id, variant_name, price_adjustment")
           .eq("id", item.variant_id)
@@ -209,7 +209,7 @@ export async function createOrder(
       : null;
 
     // Create order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
         order_number: orderNumber,
@@ -245,16 +245,16 @@ export async function createOrder(
     // Create inventory reservations (NOT permanent decrement yet)
     // Inventory only finalizes after verified payment (or immediately for COD)
     for (const item of items) {
-      const { data: reservation, error: reservationError } = await supabase
+      const { data: reservation, error: reservationError } = await supabaseAdmin
         .from("inventory_reservations")
         .insert({
           order_id: order.id,
           product_id: item.product_id,
           variant_id: item.variant_id || null,
           quantity: item.quantity,
-          status: paymentMethod === "cod" ? "finalized" : "reserved",
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min TTL for non-COD
-          finalized_at: paymentMethod === "cod" ? new Date().toISOString() : null,
+          status: "reserved",
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          finalized_at: null,
         })
         .select()
         .single();
@@ -300,7 +300,7 @@ export async function createOrder(
     // Send order confirmation email
     let customerEmail = guestEmail;
     if (userId && !customerEmail) {
-      const { data } = await supabase.auth.admin.getUserById(userId);
+      const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
       if (data?.user?.email) {
         customerEmail = data.user.email;
       }
@@ -360,7 +360,7 @@ export async function getOrderForDisplay(
       throw new AppError("INVALID_ID", "Order ID required", 400);
     }
 
-    const { data: order, error } = await supabase
+    const { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
@@ -412,7 +412,7 @@ export async function updateOrderStatus(
     const verifiedAdminId = adminAccess.userId;
 
     // Get current order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .select("order_status, status_history")
       .eq("id", orderId)
@@ -432,7 +432,7 @@ export async function updateOrderStatus(
     });
 
     // Update order
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         order_status: newStatus,
@@ -484,7 +484,7 @@ export async function requestRefund(
     });
 
     // Get order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .select("user_id, guest_email, order_status, total_amount, status_history")
       .eq("id", orderId)
@@ -517,7 +517,7 @@ export async function requestRefund(
       reason,
     });
 
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         order_status: "refund_requested",
@@ -538,7 +538,7 @@ export async function requestRefund(
     let customerEmail = order.guest_email;
     if (order.user_id && !customerEmail) {
       // Fetch user email from auth.users if not already retrieved
-      const { data } = await supabase.auth.admin.getUserById(order.user_id);
+      const { data } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
       customerEmail = data?.user?.email;
     }
 
@@ -577,7 +577,7 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
     }
 
     // Get order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .select("user_id, order_status, items, total_amount")
       .eq("id", orderId)
@@ -603,7 +603,7 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
     }
 
     // Release inventory reservations or restore stock if already finalized
-    const { data: reservations } = await supabase
+    const { data: reservations } = await supabaseAdmin
       .from("inventory_reservations")
       .select("*")
       .eq("order_id", orderId);
@@ -612,7 +612,7 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
       for (const reservation of reservations) {
         if (reservation.status === "reserved") {
           // Release unrealized reservations
-          await supabase
+          await supabaseAdmin
             .from("inventory_reservations")
             .update({
               status: "released",
@@ -622,14 +622,14 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
         } else if (reservation.status === "finalized") {
           // Restore already-finalized stock
           if (reservation.variant_id) {
-            const { data: variant } = await supabase
+            const { data: variant } = await supabaseAdmin
               .from("product_variants")
               .select("stock_quantity")
               .eq("id", reservation.variant_id)
               .single();
 
             if (variant) {
-              await supabase
+              await supabaseAdmin
                 .from("product_variants")
                 .update({
                   stock_quantity: variant.stock_quantity + reservation.quantity,
@@ -637,14 +637,14 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
                 .eq("id", reservation.variant_id);
             }
           } else {
-            const { data: product } = await supabase
+            const { data: product } = await supabaseAdmin
               .from("products")
               .select("stock_quantity")
               .eq("id", reservation.product_id)
               .single();
 
             if (product) {
-              await supabase
+              await supabaseAdmin
                 .from("products")
                 .update({
                   stock_quantity: product.stock_quantity + reservation.quantity,
@@ -654,7 +654,7 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
           }
 
           // Mark reservation as released
-          await supabase
+          await supabaseAdmin
             .from("inventory_reservations")
             .update({
               status: "released",
@@ -666,7 +666,7 @@ export async function cancelOrder(orderId: string, userId: string, reason?: stri
     }
 
     // Update order status
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         order_status: "cancelled",
@@ -708,7 +708,7 @@ export async function getUserOrders(userId: string) {
       throw new AppError("INVALID_USER", "User ID required", 400);
     }
 
-    const { data: orders, error } = await supabase
+    const { data: orders, error } = await supabaseAdmin
       .from("orders")
       .select("id, order_number, total_amount, order_status, payment_status, created_at, items")
       .eq("user_id", userId)

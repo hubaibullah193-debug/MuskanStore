@@ -54,6 +54,7 @@ async function resendEmail(options: EmailOptions): Promise<EmailResult> {
         subject: options.subject,
         html: options.html,
       }),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {

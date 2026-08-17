@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import { logAudit } from './audit';
 
 interface CreateShipmentInput {
@@ -25,12 +25,9 @@ interface UpdateShipmentInput {
 }
 
 export async function createShipment(input: CreateShipmentInput) {
-  const supabase = await createClient();
-
-  // Verify order exists and belongs to user or is guest order
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('id, user_id, payment_status')
+    .select('id, user_id, payment_status, payment_method')
     .eq('id', input.orderId)
     .single();
 
@@ -38,12 +35,14 @@ export async function createShipment(input: CreateShipmentInput) {
     return { error: 'Order not found' };
   }
 
-  if (order.payment_status !== 'paid') {
-    return { error: 'Can only create shipment for paid orders' };
+  const canShip = order.payment_status === 'paid' ||
+    (order.payment_method === 'cod' && order.payment_status === 'awaiting_cod');
+
+  if (!canShip) {
+    return { error: 'Can only create shipment for paid or COD orders' };
   }
 
-  // Create shipment
-  const { data: shipment, error } = await supabase
+  const { data: shipment, error } = await supabaseAdmin
     .from('shipments')
     .insert({
       order_id: input.orderId,
@@ -76,10 +75,8 @@ export async function createShipment(input: CreateShipmentInput) {
 }
 
 export async function updateShipment(input: UpdateShipmentInput) {
-  const supabase = await createClient();
-
   // Get current shipment
-  const { data: current, error: fetchError } = await supabase
+  const { data: current, error: fetchError } = await supabaseAdmin
     .from('shipments')
     .select('*')
     .eq('id', input.shipmentId)
@@ -117,7 +114,7 @@ export async function updateShipment(input: UpdateShipmentInput) {
   }
 
   // Update shipment
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabaseAdmin
     .from('shipments')
     .update(updates)
     .eq('id', input.shipmentId)
@@ -150,9 +147,7 @@ export async function updateShipment(input: UpdateShipmentInput) {
 }
 
 export async function getShipmentsForOrder(orderId: string) {
-  const supabase = await createClient();
-
-  const { data: shipments, error } = await supabase
+  const { data: shipments, error } = await supabaseAdmin
     .from('shipments')
     .select('*')
     .eq('order_id', orderId)
@@ -166,9 +161,7 @@ export async function getShipmentsForOrder(orderId: string) {
 }
 
 export async function getShipment(shipmentId: string) {
-  const supabase = await createClient();
-
-  const { data: shipment, error } = await supabase
+  const { data: shipment, error } = await supabaseAdmin
     .from('shipments')
     .select('*')
     .eq('id', shipmentId)

@@ -4,7 +4,7 @@
  * Handles idempotency and duplicate webhook protection
  */
 
-import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { AppError } from "@/lib/utils/helpers";
 import crypto from "crypto";
 
@@ -85,28 +85,32 @@ export async function finalizeInventory(orderId: string) {
 
     for (const reservation of reservations) {
       try {
-        // Update product or variant stock
         if (reservation.variant_id) {
-          await supabaseAdmin
+          const { data: variant } = await supabaseAdmin
             .from("product_variants")
-            .update({
-              stock_quantity: supabaseAdmin.rpc("decrement", {
-                amount: reservation.quantity,
-                column_name: "stock_quantity",
-              }),
-            })
+            .select("stock_quantity")
             .eq("id", reservation.variant_id)
-            .eq("product_id", reservation.product_id);
+            .single();
+
+          if (variant) {
+            await supabaseAdmin
+              .from("product_variants")
+              .update({ stock_quantity: Math.max(0, variant.stock_quantity - reservation.quantity) })
+              .eq("id", reservation.variant_id);
+          }
         } else {
-          await supabaseAdmin
+          const { data: product } = await supabaseAdmin
             .from("products")
-            .update({
-              stock_quantity: supabaseAdmin.rpc("decrement", {
-                amount: reservation.quantity,
-                column_name: "stock_quantity",
-              }),
-            })
-            .eq("id", reservation.product_id);
+            .select("stock_quantity")
+            .eq("id", reservation.product_id)
+            .single();
+
+          if (product) {
+            await supabaseAdmin
+              .from("products")
+              .update({ stock_quantity: Math.max(0, product.stock_quantity - reservation.quantity) })
+              .eq("id", reservation.product_id);
+          }
         }
 
         // Mark reservation as finalized

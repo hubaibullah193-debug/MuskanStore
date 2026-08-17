@@ -79,7 +79,7 @@ export const CategoryUpdateSchema = CategoryCreateSchema.partial();
 
 export const BundleItemSchema = z.object({
   product_id: IdSchema,
-  variant_id: IdSchema.optional(),
+  variant_id: IdSchema.nullish(),
   quantity: QuantitySchema,
 });
 
@@ -103,7 +103,7 @@ export const BundleUpdateSchema = BundleCreateSchema.partial().extend({
 
 export const InventoryAdjustmentSchema = z.object({
   product_id: IdSchema,
-  variant_id: IdSchema.optional(),
+  variant_id: IdSchema.nullish(),
   new_quantity: z.number().int().nonnegative("Quantity cannot be negative"),
   reason: z.enum(["Damaged", "Lost", "Return", "Physical Count", "Correction", "Other"]),
   notes: z.string().max(500).optional(),
@@ -115,7 +115,7 @@ export const InventoryAdjustmentSchema = z.object({
 
 export const CartItemSchema = z.object({
   product_id: IdSchema,
-  variant_id: IdSchema.optional(),
+  variant_id: IdSchema.nullish(),
   quantity: QuantitySchema,
 });
 
@@ -146,7 +146,7 @@ export const DeliveryAddressSchema = AddressSchema.extend({
 export const OrderItemSchema = z.object({
   product_id: IdSchema,
   product_name: z.string(),
-  variant_id: IdSchema.optional(),
+  variant_id: IdSchema.nullish(),
   variant_name: z.string().optional(),
   quantity: QuantitySchema,
   price: PriceSchema,

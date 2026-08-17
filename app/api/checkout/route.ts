@@ -9,7 +9,8 @@ import { createOrder, reserveInventory } from '@/server/actions/orders';
 import { validateCartInventory } from '@/server/actions/cart';
 import { generateJazzCashUrl, generateEasypaisaUrl } from '@/lib/payments/url-generators';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
+import { decodeJwt } from 'jose';
 
 const TAX_RATE = 0.17; // 17% tax
 const DELIVERY_FEE = 300; // Rs. 300 delivery fee
@@ -47,10 +48,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authenticated user if available
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id || null;
-    const userEmail = user?.email || guestEmail;
+    // Get authenticated user from cookie JWT
+    let userId: string | null = null;
+    let userEmail: string | undefined;
+    const authToken = request.cookies.get('auth-token')?.value;
+    if (authToken) {
+      try {
+        const payload = decodeJwt(authToken);
+        userId = payload.sub || null;
+        userEmail = payload.email as string | undefined;
+      } catch {
+        // Invalid token, proceed as guest
+      }
+    }
+    userEmail = userEmail || guestEmail;
 
     // Validate email
     if (!userEmail) {
