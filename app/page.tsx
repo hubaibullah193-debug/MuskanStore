@@ -165,7 +165,7 @@ export default async function HomePage() {
               {featuredProducts.map((product) => {
                 const images = (product.product_images || [])
                   .sort((a: any, b: any) => a.display_order - b.display_order);
-                const imageUrl = images.length > 0 ? images[0].image_url : product.image_url;
+                const imageUrl = images.length > 0 ? images[0].image_url : undefined;
                 return (
                 <Link
                   key={product.id}

@@ -246,7 +246,7 @@ export default function AdminProductsPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Wireless Headphones"
+                  placeholder="e.g., Herbal Shampoo"
                 />
               </div>
 
@@ -259,7 +259,7 @@ export default function AdminProductsPage() {
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., WH-001"
+                  placeholder="e.g., HC-SHP-001"
                 />
               </div>
 
