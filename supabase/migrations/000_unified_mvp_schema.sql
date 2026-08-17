@@ -517,11 +517,7 @@ CREATE POLICY users_update_own ON public.users
 
 CREATE POLICY users_admin_all ON public.users
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -533,35 +529,19 @@ CREATE POLICY categories_public_read ON public.categories
 
 CREATE POLICY categories_admin_insert ON public.categories
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY categories_admin_update ON public.categories
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY categories_admin_delete ON public.categories
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -580,35 +560,19 @@ CREATE POLICY products_public_read ON public.products
 
 CREATE POLICY products_admin_insert ON public.products
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY products_admin_update ON public.products
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY products_admin_delete ON public.products
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -630,35 +594,19 @@ CREATE POLICY product_variants_public_read ON public.product_variants
 
 CREATE POLICY product_variants_admin_insert ON public.product_variants
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY product_variants_admin_update ON public.product_variants
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY product_variants_admin_delete ON public.product_variants
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -680,20 +628,12 @@ CREATE POLICY product_images_public_read ON public.product_images
 
 CREATE POLICY product_images_admin_insert ON public.product_images
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY product_images_admin_delete ON public.product_images
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -715,26 +655,14 @@ CREATE POLICY product_inventory_public_read ON public.product_inventory
 
 CREATE POLICY product_inventory_admin_insert ON public.product_inventory
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY product_inventory_admin_update ON public.product_inventory
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -800,11 +728,7 @@ CREATE POLICY orders_user_update ON public.orders
 
 CREATE POLICY orders_admin_all ON public.orders
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -813,11 +737,7 @@ CREATE POLICY orders_admin_all ON public.orders
 
 CREATE POLICY payment_attempts_admin_select ON public.payment_attempts
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -826,11 +746,7 @@ CREATE POLICY payment_attempts_admin_select ON public.payment_attempts
 
 CREATE POLICY inventory_reservations_admin_all ON public.inventory_reservations
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -864,11 +780,7 @@ CREATE POLICY shipments_guest_view ON public.shipments
 
 CREATE POLICY shipments_admin_all ON public.shipments
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -901,11 +813,7 @@ CREATE POLICY refunds_user_insert ON public.refunds
 
 CREATE POLICY refunds_admin_all ON public.refunds
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ------------------------------------------------------------------
@@ -930,11 +838,7 @@ CREATE POLICY email_logs_service_role ON public.email_logs
 
 CREATE POLICY admin_audit_logs_admin_select ON public.admin_audit_logs
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY admin_audit_logs_service_role ON public.admin_audit_logs
@@ -955,11 +859,7 @@ CREATE POLICY webhook_email_tracking_service_role ON public.webhook_email_tracki
 
 CREATE POLICY audit_logs_admin_select ON public.audit_logs
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY audit_logs_service_role ON public.audit_logs
@@ -975,26 +875,14 @@ CREATE POLICY settings_public_read ON public.settings
 
 CREATE POLICY settings_admin_insert ON public.settings
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY settings_admin_update ON public.settings
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY settings_service_role ON public.settings
@@ -1010,35 +898,19 @@ CREATE POLICY service_areas_public_read ON public.service_areas
 
 CREATE POLICY service_areas_admin_insert ON public.service_areas
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY service_areas_admin_update ON public.service_areas
   FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 CREATE POLICY service_areas_admin_delete ON public.service_areas
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email LIKE '%@admin.%'
-    )
+    (auth.jwt()->>'email') LIKE '%@admin.%'
   );
 
 -- ============================================================================

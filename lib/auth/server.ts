@@ -26,7 +26,7 @@ export async function signUpUser(
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: validated.email,
       password: validated.password,
-      email_confirm: false, // Require email verification
+      email_confirm: true,
     });
 
     if (authError) {
