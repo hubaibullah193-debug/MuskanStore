@@ -26,6 +26,7 @@ export default function AdminLayoutClient({ user, children }: AdminLayoutClientP
     { href: '/admin/orders', label: 'Orders', icon: '📦' },
     { href: '/admin/refunds', label: 'Refunds', icon: '💰' },
     { href: '/admin/products', label: 'Products', icon: '🛍️' },
+    { href: '/admin/bundles', label: 'Bundles', icon: '🎁' },
     { href: '/admin/inventory', label: 'Inventory', icon: '📈' },
     { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
     { href: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },

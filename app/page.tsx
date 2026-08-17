@@ -29,8 +29,56 @@ async function getFeaturedProducts() {
   }
 }
 
+async function getActiveBundles() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return [];
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('bundles')
+      .select(
+        `
+        id,
+        name,
+        description,
+        bundle_price,
+        regular_price,
+        discount_percent,
+        bundle_items (
+          product_id,
+          quantity,
+          products (id, name, slug, base_price, product_images(image_url, display_order))
+        )
+      `
+      )
+      .eq('is_active', true)
+      .or(`active_from.is.null,active_from.lte.${now}`)
+      .or(`active_to.is.null,active_to.gte.${now}`)
+      .limit(3);
+
+    if (error) {
+      console.error('Error fetching bundles:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (e) {
+    console.error('Error fetching bundles:', e);
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const featuredProducts = await getFeaturedProducts();
+  const [featuredProducts, bundles] = await Promise.all([
+    getFeaturedProducts(),
+    getActiveBundles(),
+  ]);
 
   return (
     <div className="w-full">
@@ -219,6 +267,78 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* Bundle Deals Section */}
+      {bundles.length > 0 && (
+        <section className="bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Bundle Deals
+              </h2>
+              <p className="text-gray-600">
+                Save more when you buy together. Limited-time bundle offers.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {bundles.map((bundle: any) => {
+                const bundleItems = bundle.bundle_items || [];
+                const firstItemImage = bundleItems[0]?.products?.product_images?.[0]?.image_url;
+                return (
+                  <div
+                    key={bundle.id}
+                    className="rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Bundle image: first item's image or gradient */}
+                    <div className="aspect-[4/3] bg-gray-100 relative">
+                      {firstItemImage ? (
+                        <img
+                          src={firstItemImage}
+                          alt={bundle.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{backgroundImage: 'linear-gradient(135deg, var(--color-accent-light), var(--color-accent))'}}
+                        >
+                          <span className="text-white text-3xl font-bold">🎁</span>
+                        </div>
+                      )}
+                      {bundle.discount_percent > 0 && (
+                        <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                          Save {bundle.discount_percent}%
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        {bundle.name}
+                      </h3>
+                      {bundle.description && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {bundle.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl font-bold text-gray-900">
+                          Rs. {Number(bundle.bundle_price).toFixed(0)}
+                        </span>
+                        <span className="text-sm text-gray-500 line-through">
+                          Rs. {Number(bundle.regular_price).toFixed(0)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {bundleItems.length} products included
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="bg-white py-16 sm:py-20">
