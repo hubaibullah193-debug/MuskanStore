@@ -11,6 +11,8 @@ import { verifyEasypaisaWebhookSignature } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
 import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

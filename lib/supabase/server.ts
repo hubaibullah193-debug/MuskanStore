@@ -8,9 +8,9 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error("Missing Supabase server configuration");
-}
+// Graceful degradation: if env vars are missing the client will be created with
+// empty strings and will fail at runtime when actually used, instead of crashing
+// the entire build during "Collecting page data".
 
 /**
  * Create a server-side Supabase client

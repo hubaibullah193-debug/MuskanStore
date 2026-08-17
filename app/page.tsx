@@ -1,24 +1,32 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 async function getFeaturedProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('featured', true)
-    .limit(6);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (error) {
-    console.error('Error fetching featured products:', error);
+  if (!supabaseUrl || !supabaseAnonKey) {
     return [];
   }
 
-  return data || [];
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('featured', true)
+      .limit(6);
+
+    if (error) {
+      console.error('Error fetching featured products:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (e) {
+    console.error('Error fetching featured products:', e);
+    return [];
+  }
 }
 
 export default async function HomePage() {
