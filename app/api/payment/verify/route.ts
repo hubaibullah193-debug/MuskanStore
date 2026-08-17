@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
+import { finalizeInventory } from '@/lib/payments/inventory-finalization';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
 
 export async function POST(request: NextRequest) {
@@ -101,6 +102,19 @@ export async function POST(request: NextRequest) {
           status: 'success',
         }
       );
+
+      // Finalize inventory: convert reservations to permanent stock reduction
+      try {
+        await finalizeInventory(orderId);
+      } catch (error) {
+        console.error(`Failed to finalize inventory for order ${orderId}:`, error);
+        await logAuditEvent(
+          'inventory_finalization_failed',
+          'order',
+          orderId,
+          { gateway, transactionId, error: String(error) }
+        );
+      }
 
       // Send payment confirmation email
       let customerEmail = order.guest_email;

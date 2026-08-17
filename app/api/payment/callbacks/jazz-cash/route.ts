@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { verifyJazzCashWebhookSignature } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
+import { finalizeInventory } from '@/lib/payments/inventory-finalization';
 import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +88,13 @@ export async function GET(request: NextRequest) {
           responseCode,
         }
       );
+
+      // Finalize inventory: convert reservations to permanent stock reduction
+      try {
+        await finalizeInventory(orderId);
+      } catch (error) {
+        console.error(`Failed to finalize inventory for order ${orderId}:`, error);
+      }
 
       // Send payment status email - deduplicated to prevent duplicate emails from webhook retries
       if (updatedOrder) {
