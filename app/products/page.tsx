@@ -1,7 +1,7 @@
 // app/products/page.tsx
 // Products listing page with filtering and pagination
 
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import { ProductCard } from '@/app/components/product-card';
 
 interface ProductsPageProps {
@@ -17,6 +17,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const offset = (page - 1) * limit;
 
   try {
+    const supabase = await createClient();
     let query = supabase
       .from('products')
       .select('id, name, slug, description, base_price, stock_quantity, is_active, product_images(image_url, display_order)', {

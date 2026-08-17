@@ -1,7 +1,7 @@
 // app/products/[slug]/page.tsx
 // Product detail page with variants, add-to-cart, and related products
 
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/app/components/add-to-cart-button';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   try {
+    const supabase = await createClient();
     const { data: product, error } = await supabase
       .from('products')
       .select(

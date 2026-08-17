@@ -1,16 +1,9 @@
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 
 async function getFeaturedProducts() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return [];
-  }
-
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
       .select('*, product_images(image_url, display_order)')
@@ -30,15 +23,8 @@ async function getFeaturedProducts() {
 }
 
 async function getActiveBundles() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return [];
-  }
-
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = await createClient();
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('bundles')
