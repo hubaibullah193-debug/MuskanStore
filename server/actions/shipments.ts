@@ -22,6 +22,7 @@ interface UpdateShipmentInput {
   shippedDate?: string;
   deliveredDate?: string;
   notes?: string;
+  adminId?: string;
 }
 
 export async function createShipment(input: CreateShipmentInput) {
@@ -69,7 +70,7 @@ export async function createShipment(input: CreateShipmentInput) {
       carrier: input.carrier,
       tracking_number: input.trackingNumber,
     },
-  });
+  }).catch(() => {});
 
   return { shipment };
 }
@@ -141,7 +142,8 @@ export async function updateShipment(input: UpdateShipmentInput) {
     entityType: 'shipment',
     entityId: input.shipmentId,
     changes,
-  });
+    adminId: input.adminId,
+  }).catch(() => {});
 
   return { shipment: updated };
 }

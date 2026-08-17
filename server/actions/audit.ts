@@ -3,13 +3,14 @@
 
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/client';
 
 interface AuditPayload {
   action: string;
   entityType: string;
   entityId: string;
   changes?: Record<string, any>;
+  adminId?: string;
 }
 
 /**
@@ -18,17 +19,17 @@ interface AuditPayload {
  */
 export async function logAudit(payload: AuditPayload): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const adminId = payload.adminId;
 
-    if (!user?.id) {
-      return { success: false, error: 'User not authenticated' };
+    if (!adminId) {
+      console.warn('logAudit called without adminId - audit entry skipped');
+      return { success: false, error: 'adminId is required' };
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('admin_audit_logs')
       .insert({
-        admin_id: user.id,
+        admin_id: adminId,
         action: payload.action,
         entity_type: payload.entityType,
         entity_id: payload.entityId,

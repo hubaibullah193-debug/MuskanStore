@@ -117,6 +117,7 @@ export async function createRefundRequest(
       entityType: 'refund',
       entityId: refund.id,
       changes: { status: 'requested', refundAmount: payload.refundAmount },
+      adminId: user.id,
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true, refundId: refund.id };
@@ -204,6 +205,7 @@ export async function approveRefund(
       entityType: 'refund',
       entityId: payload.refundId,
       changes: { status: 'approved', adminId },
+      adminId,
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true };
@@ -291,6 +293,7 @@ export async function rejectRefund(
       entityType: 'refund',
       entityId: payload.refundId,
       changes: { status: 'rejected', adminId },
+      adminId,
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true };
@@ -377,6 +380,7 @@ export async function completeRefund(
       entityType: 'refund',
       entityId: payload.refundId,
       changes: { status: 'completed', completedAt: new Date().toISOString() },
+      adminId,
     }).catch(err => console.error('Failed to log audit:', err));
 
     return { success: true };
@@ -395,7 +399,6 @@ export async function getRefundsForOrder(
 ): Promise<{ success: boolean; refunds?: any[]; error?: string }> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     const { data: refunds, error } = await supabase
       .from('refunds')

@@ -4,7 +4,7 @@
  * All queries respect RLS policies automatically
  */
 
-import { supabase } from "./client";
+import { supabase, supabaseAdmin } from "./client";
 import { Database } from "@/types/database";
 
 // ===================================================================
@@ -371,7 +371,7 @@ export async function logAuditEvent(
   adminId?: string,
   ipAddress?: string
 ) {
-  return supabase.from("admin_audit_logs").insert({
+  return supabaseAdmin.from("admin_audit_logs").insert({
     admin_id: adminId,
     action,
     entity_type: resourceType,
@@ -391,7 +391,7 @@ export async function recordPaymentAttempt(
   isCountedFailure: boolean = false
 ) {
   // Get current attempt count
-  const { data: attempts } = await supabase
+  const { data: attempts } = await supabaseAdmin
     .from("payment_attempts")
     .select("attempt_number")
     .eq("order_id", orderId)
@@ -400,7 +400,7 @@ export async function recordPaymentAttempt(
 
   const attemptNumber = (attempts?.[0]?.attempt_number || 0) + 1;
 
-  return supabase.from("payment_attempts").insert({
+  return supabaseAdmin.from("payment_attempts").insert({
     order_id: orderId,
     attempt_number: attemptNumber,
     gateway_response_code: gatewayResponseCode,
@@ -428,7 +428,7 @@ export async function logEmailSent(
   referenceId?: string,
   referenceType?: string
 ) {
-  return supabase.from("email_logs").insert({
+  return supabaseAdmin.from("email_logs").insert({
     recipient_email: recipientEmail,
     email_type: emailType,
     subject,
