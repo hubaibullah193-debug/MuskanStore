@@ -127,9 +127,27 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
           <h2 className="text-lg font-semibold mb-2">Order Number</h2>
           <p className="text-2xl font-mono font-bold text-blue-600">{order.order_number}</p>
           {guestToken && (
-            <p className="text-sm text-gray-600 mt-2">
-              Save this number to track your order
-            </p>
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">
+                Your tracking code (save this to track your order):
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm font-mono bg-white px-3 py-2 rounded border border-gray-200 break-all">
+                  {guestToken}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(guestToken);
+                  }}
+                  className="px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Use this code at <Link href="/track-order" className="underline" style={{color: 'var(--color-accent)'}}>Track Order</Link> along with your email to check order status anytime.
+              </p>
+            </div>
           )}
         </div>
 
