@@ -709,6 +709,73 @@ export type Database = {
           updated_at?: string;
         };
       };
+      bundles: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          bundle_price: number;
+          regular_price: number;
+          discount_percent: number;
+          is_active: boolean;
+          active_from: string | null;
+          active_to: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          bundle_price: number;
+          regular_price?: number;
+          discount_percent?: number;
+          is_active?: boolean;
+          active_from?: string | null;
+          active_to?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          bundle_price?: number;
+          regular_price?: number;
+          discount_percent?: number;
+          is_active?: boolean;
+          active_from?: string | null;
+          active_to?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      bundle_items: {
+        Row: {
+          id: string;
+          bundle_id: string;
+          product_id: string;
+          variant_id: string | null;
+          quantity: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          bundle_id: string;
+          product_id: string;
+          variant_id?: string | null;
+          quantity?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          bundle_id?: string;
+          product_id?: string;
+          variant_id?: string | null;
+          quantity?: number;
+          created_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};

@@ -124,43 +124,6 @@ export async function getProductInventory(productId: string, variantId?: string)
 }
 
 // ===================================================================
-// CART HELPERS
-// ===================================================================
-
-export async function getOrCreateCart(userId?: string, guestEmail?: string) {
-  if (userId) {
-    return supabase
-      .from("carts")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-  } else if (guestEmail) {
-    return supabase
-      .from("carts")
-      .select("*")
-      .eq("guest_email", guestEmail)
-      .is("user_id", null)
-      .single();
-  }
-
-  // Return error in Supabase response format
-  return {
-    data: null,
-    error: { message: "Either userId or guestEmail required" } as any,
-  };
-}
-
-export async function updateCartActivity(cartId: string) {
-  return supabase
-    .from("carts")
-    .update({
-      last_activity: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    })
-    .eq("id", cartId);
-}
-
-// ===================================================================
 // ORDER HELPERS
 // ===================================================================
 
@@ -349,14 +312,6 @@ export async function getUserProfile(userId: string) {
     .select("id, email, name, phone, role, email_verified, created_at")
     .eq("id", userId)
     .single();
-}
-
-export async function getUserAddresses(userId: string) {
-  return supabase
-    .from("user_addresses")
-    .select("id, street, city, postal_code, phone, is_default")
-    .eq("user_id", userId)
-    .order("is_default", { ascending: false });
 }
 
 // ===================================================================

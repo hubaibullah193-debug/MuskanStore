@@ -1,5 +1,4 @@
 // app/order-confirmation/[id]/refunds/page.tsx
-'use server';
 
 import { createClient } from '@/lib/supabase/server';
 import { RefundRequestForm } from '../../../components/refund-request-form';
