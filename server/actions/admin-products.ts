@@ -618,7 +618,21 @@ export async function removeProductImage(adminId: string, imageId: string) {
       throw new AppError("IMAGE_NOT_FOUND", "Image not found", 404);
     }
 
-    // Delete image
+    // Delete from storage if it's a storage URL
+    if (image.image_url.includes("/storage/v1/object/public/")) {
+      const urlParts = image.image_url.split("/storage/v1/object/public/");
+      if (urlParts.length === 2) {
+        const filePath = decodeURIComponent(urlParts[1]);
+        const slashIdx = filePath.indexOf("/");
+        if (slashIdx !== -1) {
+          const bucket = filePath.substring(0, slashIdx);
+          const path = filePath.substring(slashIdx + 1);
+          await supabaseAdmin.storage.from(bucket).remove([path]);
+        }
+      }
+    }
+
+    // Delete image record
     const { error: deleteError } = await supabase
       .from("product_images")
       .delete()
@@ -645,4 +659,195 @@ export async function removeProductImage(adminId: string, imageId: string) {
     if (error instanceof AppError) throw error;
     throw new AppError("REMOVE_IMAGE_ERROR", getErrorMessage(error), 500);
   }
+}
+
+// ===================================================================
+// GET PRODUCT IMAGES
+// ===================================================================
+
+export async function getProductImages(productId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("product_images")
+      .select("id, image_url, display_order")
+      .eq("product_id", productId)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      throw new AppError("FETCH_IMAGES_FAILED", error.message, 500);
+    }
+
+    return data || [];
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("GET_PRODUCT_IMAGES_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
+// ENSURE STORAGE BUCKET EXISTS
+// ===================================================================
+
+const PRODUCT_IMAGES_BUCKET = "product-images";
+
+async function ensureProductImagesBucket() {
+  const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+  const exists = buckets?.some((b) => b.name === PRODUCT_IMAGES_BUCKET);
+  if (exists) return;
+
+  const { error } = await supabaseAdmin.storage.createBucket(
+    PRODUCT_IMAGES_BUCKET,
+    { public: true }
+  );
+  if (error && !error.message.includes("already exists")) {
+    throw new AppError(
+      "BUCKET_CREATE_FAILED",
+      `Failed to create storage bucket: ${error.message}`,
+      500
+    );
+  }
+}
+
+// ===================================================================
+// UPLOAD PRODUCT IMAGE
+// ===================================================================
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+export async function uploadProductImage(
+  adminId: string,
+  productId: string,
+  formData: FormData
+) {
+  try {
+    if (!productId) {
+      throw new AppError("INVALID_ID", "Product ID required", 400);
+    }
+
+    const file = formData.get("file") as File | null;
+    if (!file || !(file instanceof File)) {
+      throw new AppError("NO_FILE", "No file provided", 400);
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      throw new AppError("FILE_TOO_SIZE", "File must be under 5MB", 400);
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      throw new AppError(
+        "INVALID_FILE_TYPE",
+        "File must be JPEG, PNG, WebP, or GIF",
+        400
+      );
+    }
+
+    // Verify product exists
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .single();
+
+    if (productError || !product) {
+      throw new AppError("PRODUCT_NOT_FOUND", "Product not found", 404);
+    }
+
+    // Ensure bucket exists
+    await ensureProductImagesBucket();
+
+    // Upload to storage
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${productId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      throw new AppError(
+        "UPLOAD_FAILED",
+        `Storage upload failed: ${uploadError.message}`,
+        500
+      );
+    }
+
+    // Get public URL
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .getPublicUrl(path);
+
+    // Get current max display_order for this product
+    const { data: existingImages } = await supabase
+      .from("product_images")
+      .select("display_order")
+      .eq("product_id", productId)
+      .order("display_order", { ascending: false })
+      .limit(1);
+
+    const nextOrder =
+      existingImages && existingImages.length > 0
+        ? existingImages[0].display_order + 1
+        : 0;
+
+    // Store URL in product_images
+    const { data: image, error: imageError } = await supabase
+      .from("product_images")
+      .insert({
+        product_id: productId,
+        image_url: publicUrl,
+        display_order: nextOrder,
+      })
+      .select()
+      .single();
+
+    if (imageError) {
+      throw new AppError("IMAGE_RECORD_FAILED", imageError.message, 500);
+    }
+
+    // Log audit event
+    await logAuditEvent(
+      "product_image_uploaded",
+      "product_image",
+      image.id,
+      { productId, imageUrl: publicUrl, storagePath: path },
+      adminId
+    );
+
+    return image;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("UPLOAD_IMAGE_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
+// WRAPPER: Upload Product Image
+// ===================================================================
+
+export async function uploadProductImageAction(
+  productId: string,
+  formData: FormData
+) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return uploadProductImage(adminAccess.userId, productId, formData);
+}
+
+// ===================================================================
+// WRAPPER: Remove Product Image
+// ===================================================================
+
+export async function removeProductImageAction(imageId: string) {
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  return removeProductImage(adminAccess.userId, imageId);
 }

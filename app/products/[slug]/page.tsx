@@ -33,6 +33,11 @@ export default async function ProductDetailPage({
           price_adjustment,
           stock_quantity,
           is_active
+        ),
+        product_images (
+          id,
+          image_url,
+          display_order
         )
       `
       )
@@ -48,13 +53,25 @@ export default async function ProductDetailPage({
       (v: any) => v.is_active
     );
 
+    const images = (product.product_images || []).sort(
+      (a: any, b: any) => a.display_order - b.display_order
+    );
+
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-6 rounded-lg">
             {/* Product Image */}
-            <div className="bg-gray-100 rounded-lg aspect-square flex items-center justify-center">
-              <span className="text-gray-400">Product Image</span>
+            <div className="bg-gray-100 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
+              {images.length > 0 ? (
+                <img
+                  src={images[0].image_url}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-gray-400">No image</span>
+              )}
             </div>
 
             {/* Product Details */}

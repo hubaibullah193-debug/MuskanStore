@@ -5,8 +5,8 @@
  * Manage product catalog: list, create, edit, enable/disable, bulk upload
  */
 
-import { useState, useEffect } from 'react';
-import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories } from '@/server/actions/admin-products';
+import { useState, useEffect, useRef } from 'react';
+import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories, uploadProductImageAction, removeProductImageAction, getProductImages } from '@/server/actions/admin-products';
 
 interface Product {
   id: string;
@@ -41,6 +41,9 @@ export default function AdminProductsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [productImages, setProductImages] = useState<Record<string, Array<{ id: string; image_url: string }>>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load products on mount
   useEffect(() => {
@@ -53,6 +56,19 @@ export default function AdminProductsPage() {
       setLoading(true);
       const data = await getAllProducts();
       setProducts(data);
+      // Load images for all products
+      const imagesMap: Record<string, Array<{ id: string; image_url: string }>> = {};
+      await Promise.all(
+        data.map(async (p) => {
+          try {
+            const imgs = await getProductImages(p.id);
+            if (imgs.length > 0) imagesMap[p.id] = imgs;
+          } catch {
+            // Non-critical
+          }
+        })
+      );
+      setProductImages(imagesMap);
     } catch (err: any) {
       setError(err?.message || 'Failed to load products');
     } finally {
@@ -144,6 +160,36 @@ export default function AdminProductsPage() {
       loadProducts();
     } catch (err) {
       setError('Failed to update product status');
+    }
+  };
+
+  const handleUploadImage = async (productId: string, file: File) => {
+    try {
+      setError(null);
+      setUploading(productId);
+      const formData = new FormData();
+      formData.append('file', file);
+      await uploadProductImageAction(productId, formData);
+      setSuccess('Image uploaded successfully');
+      // Reload images for this product
+      const imgs = await getProductImages(productId);
+      setProductImages((prev) => ({ ...prev, [productId]: imgs }));
+    } catch (err: any) {
+      setError(err?.message || 'Failed to upload image');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleRemoveImage = async (productId: string, imageId: string) => {
+    try {
+      setError(null);
+      await removeProductImageAction(imageId);
+      setSuccess('Image removed');
+      const imgs = await getProductImages(productId);
+      setProductImages((prev) => ({ ...prev, [productId]: imgs }));
+    } catch (err: any) {
+      setError(err?.message || 'Failed to remove image');
     }
   };
 
@@ -313,6 +359,7 @@ export default function AdminProductsPage() {
           <table className="w-full">
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Image</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">SKU</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Price</th>
@@ -324,6 +371,40 @@ export default function AdminProductsPage() {
             <tbody>
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    {productImages[product.id]?.length > 0 ? (
+                      <div className="relative group">
+                        <img
+                          src={productImages[product.id][0].image_url}
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <button
+                          onClick={() => handleRemoveImage(product.id, productImages[product.id][0].id)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          x
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) handleUploadImage(product.id, file);
+                          };
+                          input.click();
+                        }}
+                        disabled={uploading === product.id}
+                        className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs"
+                      >
+                        {uploading === product.id ? '...' : '+'}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{product.sku}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">₨{product.base_price.toLocaleString()}</td>

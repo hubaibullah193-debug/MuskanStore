@@ -13,7 +13,7 @@ async function getFeaturedProducts() {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, product_images(image_url, display_order)')
       .eq('featured', true)
       .limit(6);
 
@@ -162,16 +162,20 @@ export default async function HomePage() {
 
           {featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredProducts.map((product) => (
+              {featuredProducts.map((product) => {
+                const images = (product.product_images || [])
+                  .sort((a: any, b: any) => a.display_order - b.display_order);
+                const imageUrl = images.length > 0 ? images[0].image_url : product.image_url;
+                return (
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
                   className="group overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-lg transition"
                 >
                   <div className="aspect-square overflow-hidden bg-gray-100">
-                    {product.image_url ? (
+                    {imageUrl ? (
                       <img
-                        src={product.image_url}
+                        src={imageUrl}
                         alt={product.name}
                         className="h-full w-full object-cover group-hover:scale-105 transition"
                       />
@@ -198,7 +202,8 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
