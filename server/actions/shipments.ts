@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { logAudit } from './audit';
+import { sendShipmentStatusEmail } from './email';
 
 interface CreateShipmentInput {
   orderId: string;
@@ -144,6 +145,36 @@ export async function updateShipment(input: UpdateShipmentInput) {
     changes,
     adminId: input.adminId,
   }).catch(() => {});
+
+  // Send shipment status email when status changes to a customer-facing value
+  const customerStatuses = ['shipped', 'delivered', 'cancelled', 'returned'];
+  if (input.status && customerStatuses.includes(input.status)) {
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('id, order_number, guest_email, user_id')
+      .eq('id', current.order_id)
+      .single();
+
+    if (order) {
+      let customerEmail = order.guest_email;
+      if (order.user_id && !customerEmail) {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
+        customerEmail = data?.user?.email;
+      }
+
+      if (customerEmail) {
+        await sendShipmentStatusEmail({
+          orderNumber: order.order_number,
+          customerEmail,
+          status: input.status as any,
+          trackingNumber: updated.tracking_number || undefined,
+          carrier: updated.carrier || undefined,
+          estimatedDelivery: updated.estimated_delivery || undefined,
+          notes: input.notes || undefined,
+        }).catch((err) => console.error('Failed to send shipment status email:', err));
+      }
+    }
+  }
 
   return { shipment: updated };
 }
