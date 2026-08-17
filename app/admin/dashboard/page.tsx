@@ -9,6 +9,36 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 
+function Sparkline({ data, color, label }: { data: number[]; color: string; label: string }) {
+  const max = Math.max(...data, 1);
+  const width = 280;
+  const height = 60;
+  const barWidth = width / data.length - 1;
+
+  return (
+    <div>
+      <p className="text-sm text-gray-600 mb-1">{label}</p>
+      <svg width={width} height={height} className="block">
+        {data.map((value, i) => {
+          const barHeight = (value / max) * (height - 4);
+          return (
+            <rect
+              key={i}
+              x={i * (barWidth + 1)}
+              y={height - barHeight - 2}
+              width={barWidth}
+              height={barHeight}
+              fill={color}
+              rx={2}
+              opacity={0.8}
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -17,6 +47,8 @@ export default function AdminDashboardPage() {
     refundRequests: 0,
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [dailyStats, setDailyStats] = useState<Array<{ date: string; orders: number; revenue: number }>>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +79,60 @@ export default function AdminDashboardPage() {
 
         // Set recent orders
         setRecentOrders(orders?.slice(0, 10) || []);
+
+        // Fetch daily stats for last 14 days
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        const { data: recentOrdersData } = await supabase
+          .from('orders')
+          .select('created_at, total_amount, order_status')
+          .gte('created_at', fourteenDaysAgo.toISOString())
+          .order('created_at', { ascending: true });
+
+        if (recentOrdersData) {
+          const dayMap: Record<string, { orders: number; revenue: number }> = {};
+          // Initialize all 14 days
+          for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            dayMap[key] = { orders: 0, revenue: 0 };
+          }
+          recentOrdersData.forEach((o) => {
+            const key = o.created_at.split('T')[0];
+            if (dayMap[key]) {
+              dayMap[key].orders++;
+              dayMap[key].revenue += o.total_amount || 0;
+            }
+          });
+          setDailyStats(
+            Object.entries(dayMap).map(([date, v]) => ({ date, ...v }))
+          );
+        }
+
+        // Fetch low stock products
+        const { data: inventory } = await supabase
+          .from('product_inventory')
+          .select('quantity, low_stock_threshold, product_id, variant_id')
+          .lte('quantity', 5)
+          .order('quantity', { ascending: true })
+          .limit(10);
+
+        if (inventory && inventory.length > 0) {
+          const productIds = inventory.map((i) => i.product_id).filter(Boolean);
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, name, sku')
+            .in('id', productIds);
+
+          const productMap = new Map((products || []).map((p) => [p.id, p]));
+          setLowStockProducts(
+            inventory.map((inv) => ({
+              ...inv,
+              product: productMap.get(inv.product_id),
+            })).filter((i) => i.product)
+          );
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load dashboard data');
       } finally {
@@ -132,6 +218,58 @@ export default function AdminDashboardPage() {
             </div>
             <div className="text-4xl">⚠️</div>
           </div>
+        </div>
+      </div>
+
+      {/* Charts & Alerts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Sales Trend */}
+        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Last 14 Days</h2>
+          {dailyStats.length > 0 ? (
+            <div className="space-y-4">
+              <Sparkline
+                data={dailyStats.map((d) => d.orders)}
+                color="var(--color-accent)"
+                label="Orders per day"
+              />
+              <Sparkline
+                data={dailyStats.map((d) => d.revenue / 100)}
+                color="#22c55e"
+                label="Revenue (PKR) per day"
+              />
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No data yet</p>
+          )}
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Low Stock Alerts</h2>
+          {lowStockProducts.length === 0 ? (
+            <p className="text-gray-500 text-sm">All products well stocked</p>
+          ) : (
+            <ul className="space-y-3">
+              {lowStockProducts.map((item, i) => (
+                <li key={i} className="flex items-center justify-between text-sm">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{item.product?.name}</p>
+                    <p className="text-gray-500 text-xs">{item.product?.sku}</p>
+                  </div>
+                  <span
+                    className={`ml-3 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${
+                      item.quantity === 0
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {item.quantity} left
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
