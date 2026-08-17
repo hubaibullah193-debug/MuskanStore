@@ -54,7 +54,7 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
             placeholder="you@example.com"
           />
           <p className="text-xs text-gray-500 mt-1">
-            We'll send order updates and receipt to this email
+            We&apos;ll send order updates and receipt to this email
           </p>
         </div>
       </div>

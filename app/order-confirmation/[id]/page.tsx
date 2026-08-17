@@ -294,7 +294,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
         {/* Next Steps */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">What's Next?</h2>
+          <h2 className="text-lg font-semibold mb-4">What&apos;s Next?</h2>
           <ol className="space-y-3 text-gray-700">
             <li className="flex gap-3">
               <span className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">1</span>

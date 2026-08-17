@@ -382,6 +382,34 @@ CREATE TABLE public.service_areas (
 );
 CREATE TRIGGER service_areas_updated_at BEFORE UPDATE ON public.service_areas FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+-- 20. BUNDLES
+CREATE TABLE public.bundles (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name             TEXT NOT NULL,
+  description      TEXT,
+  bundle_price     NUMERIC(10,2) NOT NULL CHECK (bundle_price > 0),
+  regular_price    NUMERIC(10,2) NOT NULL DEFAULT 0,
+  discount_percent NUMERIC(5,2) DEFAULT 0,
+  is_active        BOOLEAN DEFAULT true,
+  active_from      TIMESTAMPTZ,
+  active_to        TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  updated_at       TIMESTAMPTZ DEFAULT now()
+);
+CREATE TRIGGER bundles_updated_at BEFORE UPDATE ON public.bundles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 21. BUNDLE ITEMS
+CREATE TABLE public.bundle_items (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  bundle_id   UUID NOT NULL REFERENCES public.bundles(id) ON DELETE CASCADE,
+  product_id  UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  variant_id  UUID REFERENCES public.product_variants(id) ON DELETE SET NULL,
+  quantity    INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_bundle_items_bundle_id ON public.bundle_items(bundle_id);
+CREATE INDEX idx_bundle_items_product_id ON public.bundle_items(product_id);
+
 -- ============================================================================
 -- RLS — ENABLE ON EVERY TABLE
 -- ============================================================================
@@ -405,6 +433,8 @@ ALTER TABLE public.webhook_email_tracking  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_areas           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bundles                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bundle_items            ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
 -- RLS POLICIES
@@ -423,7 +453,7 @@ CREATE POLICY categories_admin_delete ON public.categories FOR DELETE USING ((au
 
 -- PRODUCTS
 CREATE POLICY products_public_read ON public.products FOR SELECT USING (
-  is_active = true OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  is_active = true OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY products_admin_insert ON public.products FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
 CREATE POLICY products_admin_update ON public.products FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
@@ -432,7 +462,7 @@ CREATE POLICY products_admin_delete ON public.products FOR DELETE USING ((auth.j
 -- PRODUCT VARIANTS
 CREATE POLICY product_variants_public_read ON public.product_variants FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.products WHERE id = product_variants.product_id AND is_active = true)
-  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY product_variants_admin_insert ON public.product_variants FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
 CREATE POLICY product_variants_admin_update ON public.product_variants FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
@@ -441,7 +471,7 @@ CREATE POLICY product_variants_admin_delete ON public.product_variants FOR DELET
 -- PRODUCT IMAGES
 CREATE POLICY product_images_public_read ON public.product_images FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.products WHERE id = product_images.product_id AND is_active = true)
-  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY product_images_admin_insert ON public.product_images FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
 CREATE POLICY product_images_admin_delete ON public.product_images FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
@@ -449,7 +479,7 @@ CREATE POLICY product_images_admin_delete ON public.product_images FOR DELETE US
 -- PRODUCT INVENTORY
 CREATE POLICY product_inventory_public_read ON public.product_inventory FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.products WHERE id = product_inventory.product_id AND is_active = true)
-  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY product_inventory_admin_insert ON public.product_inventory FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
 CREATE POLICY product_inventory_admin_update ON public.product_inventory FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
@@ -463,7 +493,7 @@ CREATE POLICY cart_items_user_delete ON public.cart_items FOR DELETE USING (auth
 -- ORDERS
 CREATE POLICY orders_user_select ON public.orders FOR SELECT USING (
   auth.uid() = user_id OR auth.jwt()->>'email' = guest_email
-  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY orders_user_insert ON public.orders FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
 CREATE POLICY orders_user_update ON public.orders FOR UPDATE USING (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email) WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
@@ -492,7 +522,7 @@ CREATE POLICY refunds_user_select ON public.refunds FOR SELECT USING (
   requested_by = auth.uid()
   OR (requested_by IS NULL AND order_id IN (SELECT id FROM public.orders WHERE guest_email = auth.jwt()->>'email'))
   OR order_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid())
-  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
 );
 CREATE POLICY refunds_user_insert ON public.refunds FOR INSERT WITH CHECK (
   requested_by = auth.uid() AND order_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid())
@@ -529,6 +559,20 @@ CREATE POLICY service_areas_admin_insert ON public.service_areas FOR INSERT WITH
 CREATE POLICY service_areas_admin_update ON public.service_areas FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
 CREATE POLICY service_areas_admin_delete ON public.service_areas FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
 
+-- BUNDLES
+CREATE POLICY bundles_public_read ON public.bundles FOR SELECT USING (is_active = true OR (auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY bundles_admin_insert ON public.bundles FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY bundles_admin_update ON public.bundles FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY bundles_admin_delete ON public.bundles FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- BUNDLE ITEMS
+CREATE POLICY bundle_items_public_read ON public.bundle_items FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.bundles WHERE id = bundle_items.bundle_id AND is_active = true)
+  OR (auth.jwt()->>'email') LIKE '%@admin.%'
+);
+CREATE POLICY bundle_items_admin_insert ON public.bundle_items FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY bundle_items_admin_delete ON public.bundle_items FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
 -- ============================================================================
 -- GRANTS
 -- ============================================================================
@@ -540,6 +584,8 @@ GRANT SELECT ON public.product_variants TO authenticated, anon;
 GRANT SELECT ON public.product_images TO authenticated, anon;
 GRANT SELECT ON public.settings TO authenticated, anon;
 GRANT SELECT ON public.service_areas TO authenticated, anon;
+GRANT SELECT ON public.bundles TO authenticated, anon;
+GRANT SELECT ON public.bundle_items TO authenticated, anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.cart_items TO authenticated;
 GRANT SELECT, INSERT ON public.orders TO authenticated;
 GRANT SELECT, INSERT ON public.refunds TO authenticated;

@@ -50,12 +50,12 @@ export default function ForgotPasswordPage() {
 
             <div className="space-y-4 text-center">
               <p className="text-gray-600">
-                We've sent a password reset link to your email. Check your inbox and follow the
+                We&apos;ve sent a password reset link to your email. Check your inbox and follow the
                 instructions to reset your password.
               </p>
 
               <p className="text-sm text-gray-500">
-                The link expires in 30 minutes. If you don't see the email, check your spam folder.
+                The link expires in 30 minutes. If you don&apos;t see the email, check your spam folder.
               </p>
 
               <div className="pt-4">
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className="text-gray-600 text-sm mb-4">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
 
             <div>
@@ -158,7 +158,7 @@ export default function ForgotPasswordPage() {
         {/* Sign Up Link */}
         <div className="text-center mt-6">
           <p className="text-gray-600 text-sm">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-medium">
               Sign up
             </Link>

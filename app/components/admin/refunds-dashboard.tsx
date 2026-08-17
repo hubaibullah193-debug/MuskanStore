@@ -35,6 +35,7 @@ export function RefundsDashboard() {
 
   useEffect(() => {
     fetchRefunds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchRefunds = async () => {

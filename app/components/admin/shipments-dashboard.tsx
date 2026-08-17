@@ -56,6 +56,7 @@ export function ShipmentsDashboard() {
 
   useEffect(() => {
     fetchShipments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   async function fetchShipments() {
