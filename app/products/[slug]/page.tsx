@@ -1,9 +1,10 @@
 // app/products/[slug]/page.tsx
-// Product detail page with variants and add-to-cart
+// Product detail page with variants, add-to-cart, and related products
 
 import { supabase } from '@/lib/supabase/client';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/app/components/add-to-cart-button';
+import Link from 'next/link';
 
 interface ProductDetailPageProps {
   params: {
@@ -26,6 +27,7 @@ export default async function ProductDetailPage({
         base_price,
         stock_quantity,
         is_active,
+        category_id,
         product_variants (
           id,
           sku,
@@ -56,6 +58,40 @@ export default async function ProductDetailPage({
     const images = (product.product_images || []).sort(
       (a: any, b: any) => a.display_order - b.display_order
     );
+
+    // Fetch related products from same category (exclude current, max 4)
+    let relatedProducts: any[] = [];
+    if (product.category_id) {
+      const { data: related } = await supabase
+        .from('products')
+        .select(
+          `
+          id,
+          name,
+          slug,
+          description,
+          base_price,
+          stock_quantity,
+          is_active,
+          product_images (
+            id,
+            image_url,
+            display_order
+          )
+        `
+        )
+        .eq('category_id', product.category_id)
+        .eq('is_active', true)
+        .neq('id', product.id)
+        .limit(4);
+
+      relatedProducts = (related || []).map((p: any) => ({
+        ...p,
+        imageUrl: p.product_images?.length
+          ? p.product_images.sort((a: any, b: any) => a.display_order - b.display_order)[0].image_url
+          : undefined,
+      }));
+    }
 
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -161,6 +197,40 @@ export default async function ProductDetailPage({
               />
             </div>
           </div>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">You Might Also Like</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {relatedProducts.map((rp) => (
+                  <Link key={rp.id} href={`/products/${rp.slug}`}>
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="aspect-square bg-gray-100">
+                        {rp.imageUrl ? (
+                          <img
+                            src={rp.imageUrl}
+                            alt={rp.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                            No image
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="font-medium text-gray-900 text-sm line-clamp-2">{rp.name}</h3>
+                        <p className="text-sm font-bold text-gray-900 mt-1">
+                          Rs. {Number(rp.base_price).toFixed(0)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
