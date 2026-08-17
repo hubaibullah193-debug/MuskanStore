@@ -1,0 +1,788 @@
+-- ============================================================================
+-- COMBINED MIGRATION FOR MSTORE
+-- Run this in Supabase Dashboard > SQL Editor
+-- Contains: 000_unified_mvp_schema.sql + 004_seed_sample_products.sql + 012_seed_service_areas.sql
+-- ============================================================================
+
+-- ============================================================================
+-- 000_unified_mvp_schema.sql — Full schema from scratch
+-- ============================================================================
+
+-- Drop existing tables (order respects FK constraints)
+DROP TABLE IF EXISTS public.webhook_email_tracking CASCADE;
+DROP TABLE IF EXISTS public.webhook_processing CASCADE;
+DROP TABLE IF EXISTS public.inventory_reservations CASCADE;
+DROP TABLE IF EXISTS public.payment_attempts CASCADE;
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.refunds CASCADE;
+DROP TABLE IF EXISTS public.shipments CASCADE;
+DROP TABLE IF EXISTS public.email_logs CASCADE;
+DROP TABLE IF EXISTS public.admin_audit_logs CASCADE;
+DROP TABLE IF EXISTS public.audit_logs CASCADE;
+DROP TABLE IF EXISTS public.settings CASCADE;
+DROP TABLE IF EXISTS public.service_areas CASCADE;
+DROP TABLE IF EXISTS public.order_items CASCADE;
+DROP TABLE IF EXISTS public.cart_items CASCADE;
+DROP TABLE IF EXISTS public.product_images CASCADE;
+DROP TABLE IF EXISTS public.product_inventory CASCADE;
+DROP TABLE IF EXISTS public.product_variants CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
+
+-- Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Functions
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 1. USERS
+CREATE TABLE public.users (
+  id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email      TEXT NOT NULL UNIQUE,
+  name       TEXT,
+  phone      TEXT,
+  role       TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  email_verified BOOLEAN DEFAULT false,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TRIGGER users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 2. CATEGORIES
+CREATE TABLE public.categories (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name       TEXT NOT NULL,
+  parent_id  UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+  slug       TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_categories_parent_id ON public.categories(parent_id);
+CREATE INDEX idx_categories_slug ON public.categories(slug);
+CREATE TRIGGER categories_updated_at BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 3. PRODUCTS
+CREATE TABLE public.products (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name            TEXT NOT NULL,
+  slug            TEXT NOT NULL UNIQUE,
+  description     TEXT,
+  base_price      NUMERIC(10,2) NOT NULL CHECK (base_price > 0),
+  sku             TEXT NOT NULL UNIQUE,
+  category_id     UUID NOT NULL REFERENCES public.categories(id) ON DELETE RESTRICT,
+  stock_quantity  INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+  featured        BOOLEAN DEFAULT false,
+  is_active       BOOLEAN DEFAULT true,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_products_slug ON public.products(slug);
+CREATE INDEX idx_products_is_active ON public.products(is_active);
+CREATE INDEX idx_products_category_id ON public.products(category_id);
+CREATE INDEX idx_products_featured ON public.products(featured) WHERE featured = true;
+CREATE TRIGGER products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 4. PRODUCT VARIANTS
+CREATE TABLE public.product_variants (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id       UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  variant_name     TEXT NOT NULL,
+  sku              TEXT NOT NULL UNIQUE,
+  price_adjustment NUMERIC(10,2) DEFAULT 0,
+  stock_quantity   INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+  is_active        BOOLEAN DEFAULT true,
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  updated_at       TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_product_variants_product_id ON public.product_variants(product_id);
+CREATE INDEX idx_product_variants_sku ON public.product_variants(sku);
+CREATE TRIGGER product_variants_updated_at BEFORE UPDATE ON public.product_variants FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 5. PRODUCT IMAGES
+CREATE TABLE public.product_images (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id    UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  image_url     TEXT NOT NULL,
+  display_order INTEGER DEFAULT 0,
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_product_images_product_id ON public.product_images(product_id);
+
+-- 6. PRODUCT INVENTORY
+CREATE TABLE public.product_inventory (
+  id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id           UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  variant_id           UUID REFERENCES public.product_variants(id) ON DELETE CASCADE,
+  quantity             INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  reserved             INTEGER NOT NULL DEFAULT 0 CHECK (reserved >= 0),
+  low_stock_threshold  INTEGER DEFAULT 5,
+  created_at           TIMESTAMPTZ DEFAULT now(),
+  updated_at           TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(product_id, variant_id)
+);
+CREATE INDEX idx_product_inventory_product_id ON public.product_inventory(product_id);
+CREATE TRIGGER product_inventory_updated_at BEFORE UPDATE ON public.product_inventory FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 7. CART ITEMS
+CREATE TABLE public.cart_items (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  guest_email TEXT,
+  product_id  UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  variant_id  UUID REFERENCES public.product_variants(id) ON DELETE SET NULL,
+  quantity    INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  price       NUMERIC(10,2) NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  updated_at  TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT cart_owner CHECK (
+    (user_id IS NOT NULL AND guest_email IS NULL) OR
+    (user_id IS NULL AND guest_email IS NOT NULL)
+  )
+);
+CREATE INDEX idx_cart_items_user_id ON public.cart_items(user_id);
+CREATE INDEX idx_cart_items_guest_email ON public.cart_items(guest_email);
+CREATE INDEX idx_cart_items_product_id ON public.cart_items(product_id);
+CREATE TRIGGER cart_items_updated_at BEFORE UPDATE ON public.cart_items FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 8. ORDERS
+CREATE TABLE public.orders (
+  id                       UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_number             TEXT NOT NULL UNIQUE,
+  user_id                  UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  guest_email              TEXT,
+  guest_token              TEXT UNIQUE,
+  guest_token_expires_at   TIMESTAMPTZ,
+  items                    JSONB NOT NULL,
+  delivery_address         JSONB NOT NULL,
+  order_status             TEXT NOT NULL DEFAULT 'pending'
+    CHECK (order_status IN (
+      'pending','pending_payment','confirmed','shipped','delivered',
+      'cancelled','refund_requested','refunded'
+    )),
+  payment_method           TEXT NOT NULL
+    CHECK (payment_method IN ('cod','jazz_cash','easypaisa')),
+  payment_status           TEXT NOT NULL DEFAULT 'pending'
+    CHECK (payment_status IN ('awaiting_cod','pending','paid','failed')),
+  total_amount             NUMERIC(10,2) NOT NULL,
+  subtotal                 NUMERIC(10,2) NOT NULL,
+  tax_amount               NUMERIC(10,2) DEFAULT 0,
+  delivery_fee             NUMERIC(10,2) DEFAULT 0,
+  payment_fee              NUMERIC(10,2) DEFAULT 0,
+  refund_amount            NUMERIC(10,2),
+  refund_reason            TEXT,
+  payment_reference        TEXT,
+  status_history           JSONB DEFAULT '[]'::jsonb,
+  created_at               TIMESTAMPTZ DEFAULT now(),
+  updated_at               TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_orders_user_id ON public.orders(user_id);
+CREATE INDEX idx_orders_guest_email ON public.orders(guest_email);
+CREATE INDEX idx_orders_order_number ON public.orders(order_number);
+CREATE INDEX idx_orders_order_status ON public.orders(order_status);
+CREATE INDEX idx_orders_payment_status ON public.orders(payment_status);
+CREATE INDEX idx_orders_created_at ON public.orders(created_at);
+CREATE TRIGGER orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 9. PAYMENT ATTEMPTS
+CREATE TABLE public.payment_attempts (
+  id                     UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id               UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  attempt_number         INTEGER NOT NULL DEFAULT 1,
+  gateway_response_code  TEXT,
+  error_reason           TEXT,
+  is_counted_failure     BOOLEAN DEFAULT false,
+  attempted_at           TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_payment_attempts_order_id ON public.payment_attempts(order_id);
+CREATE INDEX idx_payment_attempts_attempted_at ON public.payment_attempts(attempted_at);
+CREATE INDEX idx_payment_attempts_is_counted ON public.payment_attempts(is_counted_failure);
+
+-- 10. INVENTORY RESERVATIONS
+CREATE TABLE public.inventory_reservations (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id      UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  product_id    UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  variant_id    UUID REFERENCES public.product_variants(id) ON DELETE CASCADE,
+  quantity      INTEGER NOT NULL CHECK (quantity > 0),
+  status        TEXT NOT NULL DEFAULT 'reserved'
+    CHECK (status IN ('reserved','finalized','released','expired')),
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  expires_at    TIMESTAMPTZ NOT NULL,
+  finalized_at  TIMESTAMPTZ,
+  released_at   TIMESTAMPTZ
+);
+CREATE INDEX idx_inventory_reservations_order_id ON public.inventory_reservations(order_id);
+CREATE INDEX idx_inventory_reservations_product_id ON public.inventory_reservations(product_id);
+CREATE INDEX idx_inventory_reservations_status ON public.inventory_reservations(status);
+CREATE INDEX idx_inventory_reservations_expires_at ON public.inventory_reservations(expires_at);
+
+-- 11. WEBHOOK PROCESSING
+CREATE TABLE public.webhook_processing (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id         UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  transaction_id   TEXT NOT NULL,
+  payment_gateway  TEXT NOT NULL,
+  webhook_hash     TEXT NOT NULL,
+  processed_at     TIMESTAMPTZ DEFAULT now(),
+  status           TEXT NOT NULL DEFAULT 'processed'
+    CHECK (status IN ('processed','duplicate')),
+  CONSTRAINT unique_transaction_per_order UNIQUE (order_id, transaction_id, payment_gateway)
+);
+CREATE INDEX idx_webhook_processing_order_id ON public.webhook_processing(order_id);
+CREATE INDEX idx_webhook_processing_transaction_id ON public.webhook_processing(transaction_id);
+
+-- 12. SHIPMENTS
+CREATE TABLE public.shipments (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id            UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  status              TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','processing','shipped','delivered','returned','lost')),
+  carrier             TEXT NOT NULL DEFAULT 'standard',
+  tracking_number     TEXT,
+  tracking_url        TEXT,
+  estimated_delivery  DATE,
+  shipped_date        TIMESTAMPTZ,
+  delivered_date      TIMESTAMPTZ,
+  weight_kg           NUMERIC(10,2),
+  dimensions_cm       TEXT,
+  notes               TEXT,
+  created_at          TIMESTAMPTZ DEFAULT now(),
+  updated_at          TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_shipments_order_id ON public.shipments(order_id);
+CREATE INDEX idx_shipments_status ON public.shipments(status);
+CREATE INDEX idx_shipments_created_at ON public.shipments(created_at);
+CREATE TRIGGER shipments_updated_at BEFORE UPDATE ON public.shipments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 13. REFUNDS
+CREATE TABLE public.refunds (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id         UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  requested_by     UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  admin_id         UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  status           TEXT NOT NULL DEFAULT 'requested'
+    CHECK (status IN ('requested','approved','rejected','completed')),
+  refund_amount    NUMERIC(10,2) NOT NULL,
+  reason           TEXT NOT NULL,
+  admin_notes      TEXT,
+  rejection_reason TEXT,
+  approved_at      TIMESTAMPTZ,
+  rejected_at      TIMESTAMPTZ,
+  completed_at     TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  updated_at       TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_refunds_order_id ON public.refunds(order_id);
+CREATE INDEX idx_refunds_status ON public.refunds(status);
+CREATE INDEX idx_refunds_requested_by ON public.refunds(requested_by);
+CREATE INDEX idx_refunds_admin_id ON public.refunds(admin_id);
+CREATE INDEX idx_refunds_created_at ON public.refunds(created_at);
+CREATE TRIGGER refunds_updated_at BEFORE UPDATE ON public.refunds FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 14. EMAIL LOGS
+CREATE TABLE public.email_logs (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  recipient_email TEXT NOT NULL,
+  subject         TEXT NOT NULL,
+  email_type      TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','sent','failed','bounced')),
+  reference_id    UUID,
+  reference_type  TEXT,
+  message_id      TEXT,
+  error_message   TEXT,
+  retry_count     INTEGER DEFAULT 0,
+  max_retries     INTEGER DEFAULT 3,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now(),
+  sent_at         TIMESTAMPTZ
+);
+CREATE INDEX idx_email_logs_recipient_email ON public.email_logs(recipient_email);
+CREATE INDEX idx_email_logs_email_type ON public.email_logs(email_type);
+CREATE INDEX idx_email_logs_status ON public.email_logs(status);
+CREATE INDEX idx_email_logs_reference ON public.email_logs(reference_id, reference_type);
+CREATE INDEX idx_email_logs_created_at ON public.email_logs(created_at);
+CREATE TRIGGER email_logs_updated_at BEFORE UPDATE ON public.email_logs FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 15. ADMIN AUDIT LOGS
+CREATE TABLE public.admin_audit_logs (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id    UUID REFERENCES auth.users(id) ON DELETE RESTRICT,
+  action      TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id   UUID,
+  changes     JSONB,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_admin_audit_logs_admin_id ON public.admin_audit_logs(admin_id);
+CREATE INDEX idx_admin_audit_logs_entity_type ON public.admin_audit_logs(entity_type);
+CREATE INDEX idx_admin_audit_logs_created_at ON public.admin_audit_logs(created_at);
+
+-- 16. WEBHOOK EMAIL TRACKING
+CREATE TABLE public.webhook_email_tracking (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id         UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  transaction_id   TEXT NOT NULL,
+  payment_gateway  TEXT NOT NULL,
+  email_type       TEXT NOT NULL,
+  webhook_hash     TEXT NOT NULL,
+  sent_at          TIMESTAMPTZ DEFAULT now(),
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT webhook_email_unique UNIQUE (
+    order_id, transaction_id, payment_gateway, email_type, webhook_hash
+  )
+);
+CREATE INDEX idx_webhook_email_tracking_order_id ON public.webhook_email_tracking(order_id);
+CREATE INDEX idx_webhook_email_tracking_transaction ON public.webhook_email_tracking(transaction_id, payment_gateway);
+CREATE INDEX idx_webhook_email_tracking_email_type ON public.webhook_email_tracking(email_type);
+CREATE INDEX idx_webhook_email_tracking_created_at ON public.webhook_email_tracking(created_at);
+
+-- 17. AUDIT LOGS
+CREATE TABLE public.audit_logs (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id      UUID,
+  action        TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id   UUID NOT NULL,
+  details       JSONB,
+  ip_address    INET,
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_audit_logs_admin_id ON public.audit_logs(admin_id);
+CREATE INDEX idx_audit_logs_resource_type ON public.audit_logs(resource_type);
+CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at);
+
+-- 18. SETTINGS
+CREATE TABLE public.settings (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  key        TEXT UNIQUE NOT NULL,
+  value      JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TRIGGER settings_updated_at BEFORE UPDATE ON public.settings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 19. SERVICE AREAS
+CREATE TABLE public.service_areas (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  city              TEXT UNIQUE NOT NULL,
+  postal_code_range TEXT,
+  is_active         BOOLEAN DEFAULT true,
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  updated_at        TIMESTAMPTZ DEFAULT now()
+);
+CREATE TRIGGER service_areas_updated_at BEFORE UPDATE ON public.service_areas FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- ============================================================================
+-- RLS — ENABLE ON EVERY TABLE
+-- ============================================================================
+
+ALTER TABLE public.users                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_variants        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_images          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_inventory       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cart_items              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_attempts        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory_reservations  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.webhook_processing      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shipments               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.refunds                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_logs              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_audit_logs        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.webhook_email_tracking  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_areas           ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================================
+-- RLS POLICIES
+-- ============================================================================
+
+-- USERS
+CREATE POLICY users_read_own ON public.users FOR SELECT USING (auth.uid() = id OR role = 'admin');
+CREATE POLICY users_update_own ON public.users FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+CREATE POLICY users_admin_all ON public.users FOR ALL USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- CATEGORIES
+CREATE POLICY categories_public_read ON public.categories FOR SELECT USING (true);
+CREATE POLICY categories_admin_insert ON public.categories FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY categories_admin_update ON public.categories FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY categories_admin_delete ON public.categories FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- PRODUCTS
+CREATE POLICY products_public_read ON public.products FOR SELECT USING (
+  is_active = true OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY products_admin_insert ON public.products FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY products_admin_update ON public.products FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY products_admin_delete ON public.products FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- PRODUCT VARIANTS
+CREATE POLICY product_variants_public_read ON public.product_variants FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.products WHERE id = product_variants.product_id AND is_active = true)
+  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY product_variants_admin_insert ON public.product_variants FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY product_variants_admin_update ON public.product_variants FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY product_variants_admin_delete ON public.product_variants FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- PRODUCT IMAGES
+CREATE POLICY product_images_public_read ON public.product_images FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.products WHERE id = product_images.product_id AND is_active = true)
+  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY product_images_admin_insert ON public.product_images FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY product_images_admin_delete ON public.product_images FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- PRODUCT INVENTORY
+CREATE POLICY product_inventory_public_read ON public.product_inventory FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.products WHERE id = product_inventory.product_id AND is_active = true)
+  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY product_inventory_admin_insert ON public.product_inventory FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY product_inventory_admin_update ON public.product_inventory FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- CART ITEMS
+CREATE POLICY cart_items_user_select ON public.cart_items FOR SELECT USING (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+CREATE POLICY cart_items_user_insert ON public.cart_items FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+CREATE POLICY cart_items_user_update ON public.cart_items FOR UPDATE USING (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email) WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+CREATE POLICY cart_items_user_delete ON public.cart_items FOR DELETE USING (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+
+-- ORDERS
+CREATE POLICY orders_user_select ON public.orders FOR SELECT USING (
+  auth.uid() = user_id OR auth.jwt()->>'email' = guest_email
+  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY orders_user_insert ON public.orders FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+CREATE POLICY orders_user_update ON public.orders FOR UPDATE USING (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email) WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'email' = guest_email);
+CREATE POLICY orders_admin_all ON public.orders FOR ALL USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- PAYMENT ATTEMPTS
+CREATE POLICY payment_attempts_admin_select ON public.payment_attempts FOR SELECT USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- INVENTORY RESERVATIONS
+CREATE POLICY inventory_reservations_admin_all ON public.inventory_reservations FOR ALL USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- WEBHOOK PROCESSING
+CREATE POLICY webhook_processing_service_role ON public.webhook_processing FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- SHIPMENTS
+CREATE POLICY shipments_user_view ON public.shipments FOR SELECT USING (
+  order_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid() AND user_id IS NOT NULL)
+);
+CREATE POLICY shipments_guest_view ON public.shipments FOR SELECT USING (
+  order_id IN (SELECT id FROM public.orders WHERE guest_token = current_setting('request.headers')::json->>'x-guest-token' AND user_id IS NULL)
+);
+CREATE POLICY shipments_admin_all ON public.shipments FOR ALL USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- REFUNDS
+CREATE POLICY refunds_user_select ON public.refunds FOR SELECT USING (
+  requested_by = auth.uid()
+  OR (requested_by IS NULL AND order_id IN (SELECT id FROM public.orders WHERE guest_email = auth.jwt()->>'email'))
+  OR order_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid())
+  OR EXISTS (SELECT 1 FROM auth.users WHERE auth.users.id = auth.uid() AND auth.users.email LIKE '%@admin.%')
+);
+CREATE POLICY refunds_user_insert ON public.refunds FOR INSERT WITH CHECK (
+  requested_by = auth.uid() AND order_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid())
+);
+CREATE POLICY refunds_admin_all ON public.refunds FOR ALL USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- EMAIL LOGS
+CREATE POLICY email_logs_user_select ON public.email_logs FOR SELECT USING (
+  (reference_type = 'user' AND reference_id = auth.uid())
+  OR (reference_type = 'order' AND reference_id IN (SELECT id FROM public.orders WHERE user_id = auth.uid()))
+);
+CREATE POLICY email_logs_service_role ON public.email_logs FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- ADMIN AUDIT LOGS
+CREATE POLICY admin_audit_logs_admin_select ON public.admin_audit_logs FOR SELECT USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY admin_audit_logs_service_role ON public.admin_audit_logs FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- WEBHOOK EMAIL TRACKING
+CREATE POLICY webhook_email_tracking_service_role ON public.webhook_email_tracking FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- AUDIT LOGS
+CREATE POLICY audit_logs_admin_select ON public.audit_logs FOR SELECT USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY audit_logs_service_role ON public.audit_logs FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- SETTINGS
+CREATE POLICY settings_public_read ON public.settings FOR SELECT USING (true);
+CREATE POLICY settings_admin_insert ON public.settings FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY settings_admin_update ON public.settings FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY settings_service_role ON public.settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- SERVICE AREAS
+CREATE POLICY service_areas_public_read ON public.service_areas FOR SELECT USING (true);
+CREATE POLICY service_areas_admin_insert ON public.service_areas FOR INSERT WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY service_areas_admin_update ON public.service_areas FOR UPDATE USING ((auth.jwt()->>'email') LIKE '%@admin.%') WITH CHECK ((auth.jwt()->>'email') LIKE '%@admin.%');
+CREATE POLICY service_areas_admin_delete ON public.service_areas FOR DELETE USING ((auth.jwt()->>'email') LIKE '%@admin.%');
+
+-- ============================================================================
+-- GRANTS
+-- ============================================================================
+
+GRANT USAGE ON SCHEMA public TO authenticated, anon;
+GRANT SELECT ON public.categories TO authenticated, anon;
+GRANT SELECT ON public.products TO authenticated, anon;
+GRANT SELECT ON public.product_variants TO authenticated, anon;
+GRANT SELECT ON public.product_images TO authenticated, anon;
+GRANT SELECT ON public.settings TO authenticated, anon;
+GRANT SELECT ON public.service_areas TO authenticated, anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cart_items TO authenticated;
+GRANT SELECT, INSERT ON public.orders TO authenticated;
+GRANT SELECT, INSERT ON public.refunds TO authenticated;
+GRANT SELECT ON public.users TO authenticated;
+GRANT SELECT ON public.email_logs TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+
+-- ============================================================================
+-- REALTIME
+-- ============================================================================
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.shipments;
+
+-- ============================================================================
+-- SEED DATA: Categories, Products, Variants, Inventory, Images
+-- ============================================================================
+
+DELETE FROM public.product_images;
+DELETE FROM public.product_variants;
+DELETE FROM public.product_inventory;
+DELETE FROM public.products;
+DELETE FROM public.categories;
+
+-- Categories
+INSERT INTO public.categories (name, slug) VALUES
+  ('Hair Care',    'hair-care'),
+  ('Skin Care',    'skin-care'),
+  ('Body Care',    'body-care'),
+  ('Soaps',        'soaps'),
+  ('Specialty',    'specialty');
+
+-- Hair Care products
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Herbal Shampoo', 'herbal-shampoo',
+  'Natural herbal shampoo with amla and reetha. Strengthens hair and prevents dandruff. Suitable for all hair types.',
+  450, 'HC-SHP-001', id, 120, true, true
+FROM public.categories WHERE slug = 'hair-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Anti-Dandruff Shampoo', 'anti-dandruff-shampoo',
+  'Medicated anti-dandruff shampoo with zinc pyrithione. Controls flaking and itching with regular use.',
+  520, 'HC-SHP-002', id, 95, true, true
+FROM public.categories WHERE slug = 'hair-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Coconut Hair Oil', 'coconut-hair-oil',
+  'Pure cold-pressed coconut oil for deep conditioning. Nourishes scalp and promotes healthy hair growth.',
+  280, 'HC-OIL-001', id, 200, true, false
+FROM public.categories WHERE slug = 'hair-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Hair Conditioner', 'hair-conditioner',
+  'Moisturizing conditioner with argan oil. Detangles and smooths hair for easy styling.',
+  380, 'HC-CND-001', id, 80, true, false
+FROM public.categories WHERE slug = 'hair-care';
+
+-- Skin Care products
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Charcoal Face Wash', 'charcoal-face-wash',
+  'Deep cleansing face wash with activated charcoal. Removes impurities and unclogs pores. For oily and combination skin.',
+  350, 'SC-FW-001', id, 110, true, true
+FROM public.categories WHERE slug = 'skin-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Aloe Vera Moisturizer', 'aloe-vera-moisturizer',
+  'Lightweight daily moisturizer with pure aloe vera gel. Hydrates without greasy residue. Suitable for all skin types.',
+  420, 'SC-MST-001', id, 85, true, true
+FROM public.categories WHERE slug = 'skin-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Sunscreen SPF 50', 'sunscreen-spf50',
+  'Broad spectrum UV protection with SPF 50. Non-greasy formula, water resistant for up to 80 minutes.',
+  650, 'SC-SUN-001', id, 70, true, false
+FROM public.categories WHERE slug = 'skin-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Under Eye Cream', 'under-eye-cream',
+  'Refreshing under-eye cream with vitamin E and caffeine. Reduces dark circles and puffiness with consistent use.',
+  580, 'SC-EYE-001', id, 55, true, false
+FROM public.categories WHERE slug = 'skin-care';
+
+-- Body Care products
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Body Lotion', 'body-lotion',
+  'Nourishing body lotion with shea butter and cocoa butter. Long-lasting moisture for dry and normal skin.',
+  380, 'BC-BL-001', id, 130, true, true
+FROM public.categories WHERE slug = 'body-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Roll-On Deodorant', 'roll-on-deodorant',
+  '48-hour protection roll-on deodorant. Mild fragrance, alcohol-free formula gentle on sensitive skin.',
+  320, 'BC-DO-001', id, 150, true, false
+FROM public.categories WHERE slug = 'body-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Hand Cream', 'hand-cream',
+  'Intensive hand cream with glycerin and vitamin E. Repairs dry, cracked hands. Non-greasy absorption.',
+  250, 'BC-HC-001', id, 100, true, false
+FROM public.categories WHERE slug = 'body-care';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Foot Cream', 'foot-cream',
+  'Refreshing foot cream with menthol and tea tree oil. Softens rough skin and fights odor.',
+  280, 'BC-FC-001', id, 75, true, false
+FROM public.categories WHERE slug = 'body-care';
+
+-- Soaps
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Neem & Tulsi Soap', 'neem-tulsi-soap',
+  'Traditional antibacterial soap with neem and tulsi extracts. Cleanses deeply and helps prevent skin infections.',
+  150, 'SP-NE-001', id, 250, true, true
+FROM public.categories WHERE slug = 'soaps';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Charcoal Detox Soap', 'charcoal-detox-soap',
+  'Activated charcoal soap for deep pore cleansing. Draws out toxins and impurities. For acne-prone skin.',
+  180, 'SP-CD-001', id, 180, true, false
+FROM public.categories WHERE slug = 'soaps';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Rose & Glycerin Soap', 'rose-glycerin-soap',
+  'Gentle glycerin soap with real rose extracts. Moisturizes while cleansing. Leaves a light floral fragrance.',
+  160, 'SP-RG-001', id, 200, true, false
+FROM public.categories WHERE slug = 'soaps';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Shea Butter Soap', 'shea-butter-soap',
+  'Rich shea butter soap for dry and sensitive skin. Creamy lather that nourishes and protects.',
+  170, 'SP-SB-001', id, 160, true, false
+FROM public.categories WHERE slug = 'soaps';
+
+-- Specialty
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Intimate Wash', 'intimate-wash',
+  'pH-balanced intimate wash with lactic acid. Gentle formula maintains natural balance. Dermatologically tested.',
+  450, 'SP-IW-001', id, 90, true, false
+FROM public.categories WHERE slug = 'specialty';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Scalp Treatment Serum', 'scalp-treatment-serum',
+  'Concentrated scalp serum with salicylic acid and tea tree oil. Targets dandruff and itchiness at the root.',
+  750, 'SP-STS-001', id, 45, true, false
+FROM public.categories WHERE slug = 'specialty';
+
+INSERT INTO public.products (name, slug, description, base_price, sku, category_id, stock_quantity, is_active, featured)
+SELECT 'Lip Balm SPF 15', 'lip-balm-spf15',
+  'Moisturizing lip balm with SPF 15 protection. Shea butter and coconut oil keep lips soft and protected.',
+  190, 'SP-LB-001', id, 220, true, false
+FROM public.categories WHERE slug = 'specialty';
+
+-- Product Variants
+INSERT INTO public.product_variants (product_id, sku, variant_name, price_adjustment, stock_quantity, is_active)
+SELECT p.id, 'HC-SHP-001-100ml', '100ml', -150, 40, true FROM public.products p WHERE p.sku = 'HC-SHP-001'
+UNION ALL
+SELECT p.id, 'HC-SHP-001-250ml', '250ml (Regular)', 0, 60, true FROM public.products p WHERE p.sku = 'HC-SHP-001'
+UNION ALL
+SELECT p.id, 'HC-SHP-001-500ml', '500ml (Family)', 250, 20, true FROM public.products p WHERE p.sku = 'HC-SHP-001';
+
+INSERT INTO public.product_variants (product_id, sku, variant_name, price_adjustment, stock_quantity, is_active)
+SELECT p.id, 'HC-SHP-002-100ml', '100ml', -120, 30, true FROM public.products p WHERE p.sku = 'HC-SHP-002'
+UNION ALL
+SELECT p.id, 'HC-SHP-002-200ml', '200ml', 0, 50, true FROM public.products p WHERE p.sku = 'HC-SHP-002';
+
+INSERT INTO public.product_variants (product_id, sku, variant_name, price_adjustment, stock_quantity, is_active)
+SELECT p.id, 'SC-FW-001-50ml', '50ml', -100, 35, true FROM public.products p WHERE p.sku = 'SC-FW-001'
+UNION ALL
+SELECT p.id, 'SC-FW-001-100ml', '100ml', 0, 60, true FROM public.products p WHERE p.sku = 'SC-FW-001';
+
+INSERT INTO public.product_variants (product_id, sku, variant_name, price_adjustment, stock_quantity, is_active)
+SELECT p.id, 'SP-NE-001-1pc', 'Single Bar', 0, 150, true FROM public.products p WHERE p.sku = 'SP-NE-001'
+UNION ALL
+SELECT p.id, 'SP-NE-001-3pc', 'Pack of 3', 50, 80, true FROM public.products p WHERE p.sku = 'SP-NE-001'
+UNION ALL
+SELECT p.id, 'SP-NE-001-6pc', 'Pack of 6', 120, 20, true FROM public.products p WHERE p.sku = 'SP-NE-001';
+
+INSERT INTO public.product_variants (product_id, sku, variant_name, price_adjustment, stock_quantity, is_active)
+SELECT p.id, 'BC-BL-001-200ml', '200ml', -80, 40, true FROM public.products p WHERE p.sku = 'BC-BL-001'
+UNION ALL
+SELECT p.id, 'BC-BL-001-400ml', '400ml', 0, 60, true FROM public.products p WHERE p.sku = 'BC-BL-001';
+
+-- Product Inventory
+INSERT INTO public.product_inventory (product_id, variant_id, quantity, reserved, low_stock_threshold)
+SELECT p.id, NULL, p.stock_quantity, 0, 10 FROM public.products p;
+
+-- Product Images (Unsplash placeholders)
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'HC-SHP-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'HC-SHP-002';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1600428877878-1a0fd85beda8?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'HC-OIL-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'HC-CND-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228812-2b391910c4f3?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SC-FW-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SC-MST-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SC-SUN-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SC-EYE-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1608181831718-2501ef3a862e?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'BC-BL-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'BC-DO-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'BC-HC-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'BC-FC-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-NE-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1585232004423-244e0e290980?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-CD-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-RG-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-SB-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-IW-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-STS-001';
+INSERT INTO public.product_images (product_id, image_url, display_order)
+SELECT p.id, 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600&h=600&fit=crop', 0 FROM public.products p WHERE p.sku = 'SP-LB-001';
+
+-- ============================================================================
+-- SEED DATA: Service Areas
+-- ============================================================================
+
+INSERT INTO public.service_areas (city, is_active)
+VALUES
+  ('Karachi', true),
+  ('Lahore', true),
+  ('Islamabad', true),
+  ('Rawalpindi', true),
+  ('Faisalabad', true),
+  ('Multan', true),
+  ('Peshawar', true),
+  ('Quetta', true),
+  ('Sialkot', true),
+  ('Gujranwala', true)
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- END OF COMBINED MIGRATION
+-- ============================================================================
