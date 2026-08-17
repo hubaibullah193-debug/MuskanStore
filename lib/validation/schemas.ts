@@ -26,7 +26,7 @@ export const ProductCreateSchema = z.object({
   name: z.string().min(1, "Product name required").max(255),
   description: z.string().optional(),
   sku: z.string().min(1, "SKU required").max(100),
-  price: PriceSchema,
+  base_price: PriceSchema,
   category_id: IdSchema,
 });
 
@@ -39,7 +39,7 @@ export const ProductBulkUploadSchema = z.array(
     name: z.string().min(1),
     sku: z.string().min(1),
     category: z.string().min(1),
-    price: PriceSchema,
+    base_price: PriceSchema,
     stock: QuantitySchema,
   })
 );
@@ -50,9 +50,9 @@ export const ProductBulkUploadSchema = z.array(
 
 export const VariantCreateSchema = z.object({
   product_id: IdSchema,
-  name: z.string().min(1, "Variant name required").max(255),
-  sku_suffix: z.string().max(50).optional(),
-  price_override: z.number().positive().optional(),
+  variant_name: z.string().min(1, "Variant name required").max(255),
+  sku: z.string().max(50).optional(),
+  price_adjustment: z.number().positive().optional(),
 });
 
 export const VariantUpdateSchema = VariantCreateSchema.partial();

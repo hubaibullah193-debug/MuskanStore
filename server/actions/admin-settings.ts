@@ -376,7 +376,7 @@ export async function getAuditLogs(
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from("audit_logs")
+      .from("admin_audit_logs")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -386,7 +386,7 @@ export async function getAuditLogs(
     }
 
     if (filters?.resourceType) {
-      query = query.eq("resource_type", filters.resourceType);
+      query = query.eq("entity_type", filters.resourceType);
     }
 
     if (filters?.adminId) {

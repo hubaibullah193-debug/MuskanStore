@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       // Fetch order details for email
       const { data: shipment } = await supabase
         .from('shipments')
-        .select('*, orders(order_number, customer_email, customer_name)')
+        .select('*, orders(order_number, guest_email)')
         .eq('id', shipmentId)
         .single();
 
@@ -47,8 +47,7 @@ export async function POST(req: NextRequest) {
         const order = shipment.orders;
         await sendShipmentStatusEmail({
           orderNumber: order.order_number,
-          customerEmail: order.customer_email,
-          customerName: order.customer_name,
+          customerEmail: order.guest_email,
           status,
           trackingNumber: shipment.tracking_number,
           carrier: shipment.carrier,

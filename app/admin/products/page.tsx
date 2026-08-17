@@ -12,7 +12,7 @@ interface Product {
   id: string;
   name: string;
   sku: string;
-  price: number;
+  base_price: number;
   is_active: boolean;
   created_at: string;
 }
@@ -84,7 +84,7 @@ export default function AdminProductsPage() {
     setFormData({
       name: product.name,
       sku: product.sku,
-      price: product.price.toString(),
+      price: product.base_price.toString(),
       description: '',
       categoryId: '',
     });
@@ -286,7 +286,7 @@ export default function AdminProductsPage() {
                 <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{product.sku}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">₨{product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">₨{product.base_price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${

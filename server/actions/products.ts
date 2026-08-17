@@ -130,7 +130,7 @@ export async function getRelatedProducts(productId: string, limit: number = 6) {
         `
         id,
         name,
-        price,
+        base_price,
         product_images (image_url)
       `
       )
@@ -168,7 +168,7 @@ export async function checkProductAvailability(
     // Check product exists and is active
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, is_active, price")
+      .select("id, is_active, base_price")
       .eq("id", productId)
       .single();
 
@@ -228,7 +228,7 @@ export async function getProductPrice(productId: string, variantId?: string) {
     // Get product price
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, price, is_active")
+      .select("id, base_price, is_active")
       .eq("id", productId)
       .single();
 
@@ -236,19 +236,19 @@ export async function getProductPrice(productId: string, variantId?: string) {
       throw new AppError("PRODUCT_NOT_FOUND", "Product not available", 404);
     }
 
-    let finalPrice = product.price;
+    let finalPrice = product.base_price;
 
     // Check for variant override
     if (variantId) {
       const { data: variant, error: variantError } = await supabase
-        .from("variants")
-        .select("price_override")
+        .from("product_variants")
+        .select("price_adjustment")
         .eq("id", variantId)
         .eq("product_id", productId)
         .single();
 
-      if (!variantError && variant?.price_override) {
-        finalPrice = variant.price_override;
+      if (!variantError && variant?.price_adjustment) {
+        finalPrice = Number(product.base_price) + Number(variant.price_adjustment);
       }
     }
 

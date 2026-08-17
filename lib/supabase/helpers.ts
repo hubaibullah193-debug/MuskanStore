@@ -24,7 +24,7 @@ export async function getActiveProducts(
       name,
       description,
       sku,
-      price,
+      base_price,
       category_id,
       is_active,
       created_at,
@@ -51,12 +51,12 @@ export async function getProductById(productId: string) {
       name,
       description,
       sku,
-      price,
+      base_price,
       category_id,
       is_active,
       created_at,
       product_images (id, image_url, display_order),
-      variants (id, name, sku_suffix, price_override),
+      product_variants (id, variant_name, sku, price_adjustment),
       product_inventory (quantity, reserved, low_stock_threshold)
     `
     )
@@ -71,7 +71,7 @@ export async function searchProducts(query: string, limit: number = 20) {
       `
       id,
       name,
-      price,
+      base_price,
       product_images (image_url)
     `
     )
@@ -253,7 +253,7 @@ export async function getActiveBundles() {
       bundle_price,
       regular_price,
       discount_percent,
-      bundle_items (product_id, variant_id, quantity, products(name, price), variants(name, price_override))
+      bundle_items (product_id, variant_id, quantity, products(name, base_price), product_variants(variant_name, price_adjustment))
     `
     )
     .eq("is_active", true)
@@ -279,8 +279,8 @@ export async function getBundleById(bundleId: string) {
         product_id,
         variant_id,
         quantity,
-        products (id, name, price),
-        variants (id, name, price_override)
+        products (id, name, base_price),
+        product_variants (id, variant_name, price_adjustment)
       )
     `
     )
@@ -422,16 +422,18 @@ export async function getPaymentAttempts(orderId: string) {
 // ===================================================================
 
 export async function logEmailSent(
-  recipient: string,
+  recipientEmail: string,
   emailType: string,
   subject: string,
-  orderId?: string
+  referenceId?: string,
+  referenceType?: string
 ) {
   return supabase.from("email_logs").insert({
-    recipient,
+    recipient_email: recipientEmail,
     email_type: emailType,
     subject,
-    order_id: orderId,
+    reference_id: referenceId || null,
+    reference_type: referenceType || null,
     status: "sent",
     sent_at: new Date().toISOString(),
   });

@@ -1,6 +1,6 @@
 /**
- * Database Types - Auto-generated compatible with Supabase schema
- * These types match the database schema defined in migrations/001_initial_schema.sql
+ * Database Types — Unified MVP Schema
+ * These types match the schema defined in supabase/migrations/000_unified_mvp_schema.sql
  *
  * To regenerate from Supabase:
  * npx supabase gen types typescript --linked > types/database.ts
@@ -17,6 +17,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      users: {
+        Row: {
+          id: string;
+          email: string;
+          name: string | null;
+          phone: string | null;
+          role: string;
+          email_verified: boolean;
+          avatar_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          email: string;
+          name?: string | null;
+          phone?: string | null;
+          role?: string;
+          email_verified?: boolean;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          name?: string | null;
+          phone?: string | null;
+          role?: string;
+          email_verified?: boolean;
+          avatar_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       categories: {
         Row: {
           id: string;
@@ -47,10 +82,13 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          slug: string;
           description: string | null;
+          base_price: number;
           sku: string;
-          price: number;
           category_id: string;
+          stock_quantity: number;
+          featured: boolean;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -58,10 +96,13 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
+          slug: string;
           description?: string | null;
+          base_price: number;
           sku: string;
-          price: number;
           category_id: string;
+          stock_quantity?: number;
+          featured?: boolean;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -69,40 +110,49 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
+          slug?: string;
           description?: string | null;
+          base_price?: number;
           sku?: string;
-          price?: number;
           category_id?: string;
+          stock_quantity?: number;
+          featured?: boolean;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
       };
-      variants: {
+      product_variants: {
         Row: {
           id: string;
           product_id: string;
-          name: string;
-          sku_suffix: string | null;
-          price_override: number | null;
+          variant_name: string;
+          sku: string;
+          price_adjustment: number;
+          stock_quantity: number;
+          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           product_id: string;
-          name: string;
-          sku_suffix?: string | null;
-          price_override?: number | null;
+          variant_name: string;
+          sku: string;
+          price_adjustment?: number;
+          stock_quantity?: number;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           product_id?: string;
-          name?: string;
-          sku_suffix?: string | null;
-          price_override?: number | null;
+          variant_name?: string;
+          sku?: string;
+          price_adjustment?: number;
+          stock_quantity?: number;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -162,100 +212,39 @@ export type Database = {
           updated_at?: string;
         };
       };
-      bundles: {
+      cart_items: {
         Row: {
           id: string;
-          name: string;
-          description: string | null;
-          bundle_price: number;
-          regular_price: number;
-          discount_percent: number | null;
-          is_active: boolean;
-          active_from: string | null;
-          active_to: string | null;
+          user_id: string | null;
+          guest_email: string | null;
+          product_id: string;
+          variant_id: string | null;
+          quantity: number;
+          price: number;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          name: string;
-          description?: string | null;
-          bundle_price: number;
-          regular_price: number;
-          discount_percent?: number | null;
-          is_active?: boolean;
-          active_from?: string | null;
-          active_to?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          description?: string | null;
-          bundle_price?: number;
-          regular_price?: number;
-          discount_percent?: number | null;
-          is_active?: boolean;
-          active_from?: string | null;
-          active_to?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      bundle_items: {
-        Row: {
-          id: string;
-          bundle_id: string;
-          product_id: string;
-          variant_id: string | null;
-          quantity: number;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          bundle_id: string;
+          user_id?: string | null;
+          guest_email?: string | null;
           product_id: string;
           variant_id?: string | null;
           quantity?: number;
+          price: number;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          bundle_id?: string;
+          user_id?: string | null;
+          guest_email?: string | null;
           product_id?: string;
           variant_id?: string | null;
           quantity?: number;
+          price?: number;
           created_at?: string;
-        };
-      };
-      carts: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          guest_email: string | null;
-          items: Json;
-          created_at: string;
-          last_activity: string;
-          expires_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          guest_email?: string | null;
-          items?: Json;
-          created_at?: string;
-          last_activity?: string;
-          expires_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string | null;
-          guest_email?: string | null;
-          items?: Json;
-          created_at?: string;
-          last_activity?: string;
-          expires_at?: string;
+          updated_at?: string;
         };
       };
       orders: {
@@ -278,6 +267,7 @@ export type Database = {
           payment_fee: number;
           refund_amount: number | null;
           refund_reason: string | null;
+          payment_reference: string | null;
           status_history: Json;
           created_at: string;
           updated_at: string;
@@ -301,6 +291,7 @@ export type Database = {
           payment_fee?: number;
           refund_amount?: number | null;
           refund_reason?: string | null;
+          payment_reference?: string | null;
           status_history?: Json;
           created_at?: string;
           updated_at?: string;
@@ -324,6 +315,7 @@ export type Database = {
           payment_fee?: number;
           refund_amount?: number | null;
           refund_reason?: string | null;
+          payment_reference?: string | null;
           status_history?: Json;
           created_at?: string;
           updated_at?: string;
@@ -358,38 +350,281 @@ export type Database = {
           attempted_at?: string;
         };
       };
-      sessions: {
+      inventory_reservations: {
         Row: {
           id: string;
-          user_id: string;
-          access_token: string;
-          refresh_token: string | null;
+          order_id: string;
+          product_id: string;
+          variant_id: string | null;
+          quantity: number;
+          status: string;
+          created_at: string;
           expires_at: string;
-          last_activity: string;
-          user_agent: string | null;
-          ip_address: string | null;
+          finalized_at: string | null;
+          released_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          product_id: string;
+          variant_id?: string | null;
+          quantity: number;
+          status?: string;
+          created_at?: string;
+          expires_at: string;
+          finalized_at?: string | null;
+          released_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          product_id?: string;
+          variant_id?: string | null;
+          quantity?: number;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          finalized_at?: string | null;
+          released_at?: string | null;
+        };
+      };
+      webhook_processing: {
+        Row: {
+          id: string;
+          order_id: string;
+          transaction_id: string;
+          payment_gateway: string;
+          webhook_hash: string;
+          processed_at: string;
+          status: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          transaction_id: string;
+          payment_gateway: string;
+          webhook_hash: string;
+          processed_at?: string;
+          status?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          transaction_id?: string;
+          payment_gateway?: string;
+          webhook_hash?: string;
+          processed_at?: string;
+          status?: string;
+        };
+      };
+      shipments: {
+        Row: {
+          id: string;
+          order_id: string;
+          status: string;
+          carrier: string;
+          tracking_number: string | null;
+          tracking_url: string | null;
+          estimated_delivery: string | null;
+          shipped_date: string | null;
+          delivered_date: string | null;
+          weight_kg: number | null;
+          dimensions_cm: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          status?: string;
+          carrier?: string;
+          tracking_number?: string | null;
+          tracking_url?: string | null;
+          estimated_delivery?: string | null;
+          shipped_date?: string | null;
+          delivered_date?: string | null;
+          weight_kg?: number | null;
+          dimensions_cm?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          status?: string;
+          carrier?: string;
+          tracking_number?: string | null;
+          tracking_url?: string | null;
+          estimated_delivery?: string | null;
+          shipped_date?: string | null;
+          delivered_date?: string | null;
+          weight_kg?: number | null;
+          dimensions_cm?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      refunds: {
+        Row: {
+          id: string;
+          order_id: string;
+          requested_by: string | null;
+          admin_id: string | null;
+          status: string;
+          refund_amount: number;
+          reason: string;
+          admin_notes: string | null;
+          rejection_reason: string | null;
+          approved_at: string | null;
+          rejected_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          requested_by?: string | null;
+          admin_id?: string | null;
+          status?: string;
+          refund_amount: number;
+          reason: string;
+          admin_notes?: string | null;
+          rejection_reason?: string | null;
+          approved_at?: string | null;
+          rejected_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          requested_by?: string | null;
+          admin_id?: string | null;
+          status?: string;
+          refund_amount?: number;
+          reason?: string;
+          admin_notes?: string | null;
+          rejection_reason?: string | null;
+          approved_at?: string | null;
+          rejected_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient_email: string;
+          subject: string;
+          email_type: string;
+          status: string;
+          reference_id: string | null;
+          reference_type: string | null;
+          message_id: string | null;
+          error_message: string | null;
+          retry_count: number;
+          max_retries: number;
+          created_at: string;
+          updated_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          recipient_email: string;
+          subject: string;
+          email_type: string;
+          status?: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          message_id?: string | null;
+          error_message?: string | null;
+          retry_count?: number;
+          max_retries?: number;
+          created_at?: string;
+          updated_at?: string;
+          sent_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          recipient_email?: string;
+          subject?: string;
+          email_type?: string;
+          status?: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          message_id?: string | null;
+          error_message?: string | null;
+          retry_count?: number;
+          max_retries?: number;
+          created_at?: string;
+          updated_at?: string;
+          sent_at?: string | null;
+        };
+      };
+      admin_audit_logs: {
+        Row: {
+          id: string;
+          admin_id: string | null;
+          action: string;
+          entity_type: string;
+          entity_id: string | null;
+          changes: Json | null;
           created_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
-          access_token: string;
-          refresh_token?: string | null;
-          expires_at: string;
-          last_activity?: string;
-          user_agent?: string | null;
-          ip_address?: string | null;
+          admin_id?: string | null;
+          action: string;
+          entity_type: string;
+          entity_id?: string | null;
+          changes?: Json | null;
           created_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
-          access_token?: string;
-          refresh_token?: string | null;
-          expires_at?: string;
-          last_activity?: string;
-          user_agent?: string | null;
-          ip_address?: string | null;
+          admin_id?: string | null;
+          action?: string;
+          entity_type?: string;
+          entity_id?: string | null;
+          changes?: Json | null;
+          created_at?: string;
+        };
+      };
+      webhook_email_tracking: {
+        Row: {
+          id: string;
+          order_id: string;
+          transaction_id: string;
+          payment_gateway: string;
+          email_type: string;
+          webhook_hash: string;
+          sent_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          transaction_id: string;
+          payment_gateway: string;
+          email_type: string;
+          webhook_hash: string;
+          sent_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          transaction_id?: string;
+          payment_gateway?: string;
+          email_type?: string;
+          webhook_hash?: string;
+          sent_at?: string;
           created_at?: string;
         };
       };
@@ -470,108 +705,6 @@ export type Database = {
           city?: string;
           postal_code_range?: string | null;
           is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      email_logs: {
-        Row: {
-          id: string;
-          order_id: string | null;
-          recipient: string;
-          email_type: string;
-          subject: string | null;
-          status: string;
-          sent_at: string;
-          retry_count: number;
-          failed_reason: string | null;
-        };
-        Insert: {
-          id?: string;
-          order_id?: string | null;
-          recipient: string;
-          email_type: string;
-          subject?: string | null;
-          status?: string;
-          sent_at?: string;
-          retry_count?: number;
-          failed_reason?: string | null;
-        };
-        Update: {
-          id?: string;
-          order_id?: string | null;
-          recipient?: string;
-          email_type?: string;
-          subject?: string | null;
-          status?: string;
-          sent_at?: string;
-          retry_count?: number;
-          failed_reason?: string | null;
-        };
-      };
-      users: {
-        Row: {
-          id: string;
-          email: string;
-          name: string | null;
-          phone: string | null;
-          role: string;
-          email_verified: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          name?: string | null;
-          phone?: string | null;
-          role?: string;
-          email_verified?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          name?: string | null;
-          phone?: string | null;
-          role?: string;
-          email_verified?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      user_addresses: {
-        Row: {
-          id: string;
-          user_id: string;
-          street: string;
-          city: string;
-          postal_code: string | null;
-          phone: string | null;
-          is_default: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          street: string;
-          city: string;
-          postal_code?: string | null;
-          phone?: string | null;
-          is_default?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          street?: string;
-          city?: string;
-          postal_code?: string | null;
-          phone?: string | null;
-          is_default?: boolean;
           created_at?: string;
           updated_at?: string;
         };

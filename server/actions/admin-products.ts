@@ -67,7 +67,7 @@ export async function addProduct(
         name: validated.name,
         description: validated.description,
         sku: validated.sku,
-        price: validated.price,
+        base_price: validated.base_price,
         category_id: validated.category_id,
         is_active: true,
       })
@@ -112,7 +112,7 @@ export async function addProduct(
       {
         name: product.name,
         sku: product.sku,
-        price: product.price,
+        base_price: product.base_price,
         categoryId: product.category_id,
       },
       adminId
@@ -136,7 +136,7 @@ export async function updateProduct(
     name?: string;
     description?: string | null;
     sku?: string;
-    price?: number;
+    base_price?: number;
     category_id?: string;
     is_active?: boolean;
   }
@@ -379,7 +379,7 @@ export async function bulkUploadProducts(
           .insert({
             name: row.name,
             sku: row.sku,
-            price: row.price,
+            base_price: row.base_price,
             category_id: category.id,
             is_active: true,
           })

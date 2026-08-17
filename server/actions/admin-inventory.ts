@@ -195,10 +195,10 @@ export async function getInventoryAdjustmentHistory(
 
     // Get adjustment logs
     const { data: logs, error: logsError } = await supabase
-      .from("audit_logs")
+      .from("admin_audit_logs")
       .select("*")
-      .eq("resource_type", "product_inventory")
-      .eq("resource_id", inventory.id)
+      .eq("entity_type", "product_inventory")
+      .eq("entity_id", inventory.id)
       .eq("action", "inventory_adjusted")
       .order("created_at", { ascending: false })
       .limit(limit);

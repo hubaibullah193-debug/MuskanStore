@@ -190,10 +190,10 @@ export default async function HomePage() {
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-bold text-gray-900">
-                        Rs. {product.price.toLocaleString()}
+                        Rs. {product.base_price.toLocaleString()}
                       </span>
                       <span className="text-sm text-gray-500">
-                        Stock: {product.stock}
+                        Stock: {product.stock_quantity}
                       </span>
                     </div>
                   </div>
