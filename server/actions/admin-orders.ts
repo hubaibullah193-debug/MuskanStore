@@ -318,6 +318,129 @@ export async function getPendingRefunds(limit: number = 50) {
 // GET FAILED PAYMENTS
 // ===================================================================
 
+// ===================================================================
+// EXPORT ORDERS AS CSV
+// ===================================================================
+
+export async function exportOrdersCSV(
+  filters?: {
+    status?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
+) {
+  try {
+    let query = supabase
+      .from("orders")
+      .select("order_number, guest_email, delivery_address, total_amount, order_status, payment_status, payment_method, items, refund_amount, created_at, updated_at")
+      .order("created_at", { ascending: false });
+
+    if (filters?.status) {
+      query = query.eq("order_status", filters.status);
+    }
+    if (filters?.paymentMethod) {
+      query = query.eq("payment_method", filters.paymentMethod);
+    }
+    if (filters?.paymentStatus) {
+      query = query.eq("payment_status", filters.paymentStatus);
+    }
+    if (filters?.dateFrom) {
+      query = query.gte("created_at", filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      query = query.lte("created_at", filters.dateTo);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new AppError("EXPORT_FAILED", error.message, 500);
+    }
+
+    const rows = data || [];
+    if (rows.length === 0) {
+      throw new AppError("NO_DATA", "No orders to export", 404);
+    }
+
+    // Build CSV
+    const headers = [
+      "Order #",
+      "Customer Email",
+      "Recipient Name",
+      "Phone",
+      "Street",
+      "City",
+      "Postal Code",
+      "Total (PKR)",
+      "Order Status",
+      "Payment Status",
+      "Payment Method",
+      "Items",
+      "Refund Amount (PKR)",
+      "Created At",
+      "Updated At",
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    for (const row of rows) {
+      const addr = (row.delivery_address as Record<string, string>) || {};
+      const itemsList = Array.isArray(row.items)
+        ? row.items.map((it: any) => `${it.product_name || it.name || "Item"} x${it.quantity}`).join("; ")
+        : "";
+
+      const csvRow = [
+        csvEscape(row.order_number),
+        csvEscape(row.guest_email || ""),
+        csvEscape(addr.recipient_name || ""),
+        csvEscape(addr.phone || ""),
+        csvEscape(addr.street || ""),
+        csvEscape(addr.city || ""),
+        csvEscape(addr.postal_code || ""),
+        (row.total_amount / 100).toFixed(0),
+        row.order_status,
+        row.payment_status,
+        row.payment_method,
+        csvEscape(itemsList),
+        row.refund_amount ? (row.refund_amount / 100).toFixed(0) : "",
+        row.created_at,
+        row.updated_at,
+      ];
+      csvRows.push(csvRow.join(","));
+    }
+
+    const csvContent = csvRows.join("\n");
+
+    // Audit log
+    await logAuditEvent(
+      "orders_csv_exported",
+      "order_batch",
+      "admin",
+      { rowCount: rows.length, filters },
+      "admin"
+    );
+
+    return csvContent;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("EXPORT_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+function csvEscape(value: string): string {
+  if (!value) return "";
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+// ===================================================================
+// GET FAILED PAYMENTS
+// ===================================================================
+
 export async function getFailedPayments(limit: number = 50) {
   try {
     if (limit < 1 || limit > 500) {
