@@ -5,7 +5,7 @@
  * Manage shopping cart - move from localStorage to Supabase
  */
 
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import { AppError } from '@/lib/utils/helpers';
 
 export interface CartItem {
@@ -26,7 +26,7 @@ export async function getCartAction(userId?: string) {
       return null;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('cart_items')
       .select('id, product_id, variant_id, quantity, price')
       .eq('user_id', userId);
@@ -65,7 +65,7 @@ export async function addToCartAction(
     }
 
     // Check if item already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from('cart_items')
       .select('id, quantity')
       .eq('user_id', userId)
@@ -75,7 +75,7 @@ export async function addToCartAction(
 
     if (existing) {
       // Update quantity
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('cart_items')
         .update({ quantity: existing.quantity + quantity })
         .eq('id', existing.id);
@@ -85,7 +85,7 @@ export async function addToCartAction(
       }
     } else {
       // Insert new item
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('cart_items')
         .insert({
           user_id: userId,
@@ -121,7 +121,7 @@ export async function updateCartItemAction(
       throw new AppError('INVALID_QUANTITY', 'Quantity must be at least 1', 400);
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('cart_items')
       .update({ quantity })
       .eq('id', cartItemId)
@@ -144,7 +144,7 @@ export async function updateCartItemAction(
 
 export async function removeFromCartAction(userId: string, cartItemId: string) {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('cart_items')
       .delete()
       .eq('id', cartItemId)
@@ -167,7 +167,7 @@ export async function removeFromCartAction(userId: string, cartItemId: string) {
 
 export async function clearCartAction(userId: string) {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('cart_items')
       .delete()
       .eq('user_id', userId);

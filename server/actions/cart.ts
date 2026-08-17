@@ -6,7 +6,7 @@
  * Cart is synced with server database and validated server-side
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { CartItemSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, consolidateCartItems } from "@/lib/utils/helpers";
 
@@ -21,7 +21,7 @@ export async function getOrCreateCart(userId?: string, guestEmail?: string) {
     }
 
     // Fetch all cart items for this user/guest
-    let query = supabase.from("cart_items").select("*");
+    let query = supabaseAdmin.from("cart_items").select("*");
 
     if (userId) {
       query = query.eq("user_id", userId);
@@ -67,7 +67,7 @@ export async function addToCart(
     CartItemSchema.parse({ product_id: productId, variant_id: variantId, quantity });
 
     // Validate product and get price
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await supabaseAdmin
       .from("products")
       .select("id, base_price, is_active")
       .eq("id", productId)
@@ -80,7 +80,7 @@ export async function addToCart(
     // Get variant price adjustment if applicable
     let price = product.base_price;
     if (variantId) {
-      const { data: variant } = await supabase
+      const { data: variant } = await supabaseAdmin
         .from("product_variants")
         .select("price_adjustment")
         .eq("id", variantId)
@@ -93,7 +93,7 @@ export async function addToCart(
     }
 
     // Check if item already in cart
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("cart_items")
       .select("id, quantity")
       .eq("user_id", userId || null)
@@ -104,7 +104,7 @@ export async function addToCart(
 
     if (existing) {
       // Update quantity
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from("cart_items")
         .update({ quantity: existing.quantity + quantity })
         .eq("id", existing.id);
@@ -114,7 +114,7 @@ export async function addToCart(
       }
     } else {
       // Add new item
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from("cart_items")
         .insert({
           user_id: userId || null,
@@ -158,7 +158,7 @@ export async function updateCartItemQuantity(
     }
 
     // Update cart item quantity
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("cart_items")
       .update({ quantity })
       .eq("id", cartItemId)
@@ -191,7 +191,7 @@ export async function removeFromCart(
     }
 
     // Remove cart item
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from("cart_items")
       .delete()
       .eq("id", cartItemId)
@@ -228,7 +228,7 @@ export async function syncCart(
     }
 
     // Clear existing cart items for this user/guest
-    await supabase
+    await supabaseAdmin
       .from("cart_items")
       .delete()
       .eq("user_id", userId || null)
@@ -241,7 +241,7 @@ export async function syncCart(
       CartItemSchema.parse(item);
 
       // Get product price (server-side, don't trust client)
-      const { data: product, error: productError } = await supabase
+      const { data: product, error: productError } = await supabaseAdmin
         .from("products")
         .select("id, base_price, is_active")
         .eq("id", item.product_id)
@@ -255,7 +255,7 @@ export async function syncCart(
 
       // Check variant price adjustment
       if (item.variant_id) {
-        const { data: variant } = await supabase
+        const { data: variant } = await supabaseAdmin
           .from("product_variants")
           .select("price_adjustment")
           .eq("id", item.variant_id)
@@ -279,7 +279,7 @@ export async function syncCart(
 
     // Insert validated items
     if (validatedItems.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from("cart_items")
         .insert(validatedItems);
 
@@ -305,7 +305,7 @@ export async function clearCart(userId: string, guestEmail?: string) {
       throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("cart_items")
       .delete()
       .eq("user_id", userId || null)
@@ -339,7 +339,7 @@ export async function validateCartInventory(
     for (const item of items) {
       if (item.variant_id) {
         // Check variant stock
-        const { data: variant, error: variantError } = await supabase
+        const { data: variant, error: variantError } = await supabaseAdmin
           .from("product_variants")
           .select("stock_quantity, is_active")
           .eq("id", item.variant_id)
@@ -363,7 +363,7 @@ export async function validateCartInventory(
         }
       } else {
         // Check base product stock
-        const { data: product, error: productError } = await supabase
+        const { data: product, error: productError } = await supabaseAdmin
           .from("products")
           .select("stock_quantity, is_active")
           .eq("id", item.product_id)
