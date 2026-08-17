@@ -438,7 +438,136 @@ export function refundEmailTemplate(data: RefundEmailData): string {
     </p>
 
     <div class="footer">
-      <p>© 2026 mstore. All rights reserved.</p>
+      <p>&copy; 2026 mstore. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Low stock digest email template (admin notification)
+ */
+interface LowStockDigestData {
+  lowStockItems: Array<{
+    productName: string;
+    sku: string;
+    quantity: number;
+    threshold: number;
+  }>;
+  outOfStockItems: Array<{
+    productName: string;
+    sku: string;
+  }>;
+}
+
+export function lowStockDigestTemplate(data: LowStockDigestData): string {
+  const lowStockRows = data.lowStockItems
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">${item.productName}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; font-family: monospace;">${item.sku}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">
+        <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${item.quantity}</span>
+      </td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">${item.threshold}</td>
+    </tr>`
+    )
+    .join('');
+
+  const outOfStockRows = data.outOfStockItems
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee;">${item.productName}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; font-family: monospace;">${item.sku}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center;">
+        <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 600;">0</span>
+      </td>
+    </tr>`
+    )
+    .join('');
+
+  const totalAlerts = data.lowStockItems.length + data.outOfStockItems.length;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #f59e0b; }
+    .header h1 { margin: 0; color: #92400e; font-size: 20px; }
+    .header p { margin: 4px 0 0 0; color: #78350f; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th { text-align: left; padding: 10px 12px; background: #f8f9fa; border-bottom: 2px solid #ddd; font-weight: 600; font-size: 13px; }
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin: 24px 0 8px 0; }
+    .footer { color: #999; font-size: 12px; margin-top: 24px; padding-top: 12px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Low Stock Digest</h1>
+      <p>${totalAlerts} product${totalAlerts !== 1 ? 's' : ''} need attention</p>
+    </div>
+
+    <p style="color: #666; font-size: 14px;">
+      Here is your daily inventory summary for ${new Date().toLocaleDateString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+    </p>
+
+    ${
+      data.outOfStockItems.length > 0
+        ? `
+      <p class="section-title" style="color: #dc2626;">Out of Stock (${data.outOfStockItems.length})</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th style="text-align: center;">Stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${outOfStockRows}
+        </tbody>
+      </table>
+    `
+        : ''
+    }
+
+    ${
+      data.lowStockItems.length > 0
+        ? `
+      <p class="section-title" style="color: #d97706;">Low Stock (${data.lowStockItems.length})</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th style="text-align: center;">Stock</th>
+            <th style="text-align: center;">Threshold</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lowStockRows}
+        </tbody>
+      </table>
+    `
+        : ''
+    }
+
+    <p style="margin-top: 24px; color: #666; font-size: 14px;">
+      Log in to the <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/admin/inventory" style="color: #2563eb;">admin inventory panel</a> to restock.
+    </p>
+
+    <div class="footer">
+      <p>&copy; 2026 Muskan Care Center. All rights reserved.</p>
     </div>
   </div>
 </body>
