@@ -16,6 +16,13 @@ const TAX_RATE = 0.17; // 17% tax
 const DELIVERY_FEE = 300; // Rs. 300 delivery fee
 const PAYMENT_FEE = 0; // Can be dynamic based on payment method
 
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Method not allowed' },
+    { status: 405 }
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

@@ -269,10 +269,10 @@ export async function getOrderForDisplay(
   orderId: string,
   userId?: string,
   guestToken?: string
-) {
+): Promise<any | null> {
   try {
     if (!orderId) {
-      throw new AppError("INVALID_ID", "Order ID required", 400);
+      return null;
     }
 
     // If no userId provided, try to resolve from auth cookie
@@ -299,7 +299,7 @@ export async function getOrderForDisplay(
       .single();
 
     if (error || !order) {
-      throw new AppError("ORDER_NOT_FOUND", "Order not found", 404);
+      return null;
     }
 
     // Verify access: customer owns order, guest has valid token, or admin
@@ -310,13 +310,13 @@ export async function getOrderForDisplay(
       : false;
 
     if (!isOwner && !(isGuest && tokenValid)) {
-      throw new AppError("UNAUTHORIZED", "Not authorized to view this order", 403);
+      return null;
     }
 
     return order;
   } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError("ORDER_FETCH_ERROR", getErrorMessage(error), 500);
+    console.error("getOrderForDisplay error:", error);
+    return null;
   }
 }
 

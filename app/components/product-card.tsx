@@ -4,7 +4,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useState } from 'react';
 import { useCart } from '@/lib/hooks/useCart';
 
@@ -53,12 +53,10 @@ export function ProductCard({
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden bg-gray-100">
           {imageUrl ? (
-            <Image
+            <img
               src={imageUrl}
               alt={name}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
             />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-400">
