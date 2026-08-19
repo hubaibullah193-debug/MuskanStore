@@ -352,9 +352,12 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                 >
                   Continue Shopping
                 </Link>
-                <button className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700">
+                <Link
+                  href="/contact"
+                  className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg font-medium hover:bg-blue-700"
+                >
                   Contact Support
-                </button>
+                </Link>
               </div>
             </div>
           </div>

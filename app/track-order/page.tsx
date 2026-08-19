@@ -123,7 +123,7 @@ export default function TrackOrderPage() {
         <div className="mt-6 pt-6 border-t">
           <p className="text-sm text-gray-600">
             Don&apos;t have your tracking code?{' '}
-            <Link href="/" className="text-sm underline" style={{color: 'var(--color-accent)'}}>
+            <Link href="/contact" className="text-sm underline" style={{color: 'var(--color-accent)'}}>
               Contact support
             </Link>
           </p>

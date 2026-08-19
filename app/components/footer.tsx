@@ -62,9 +62,9 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
-                <a href="mailto:support@muskancare.com" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
                   Contact Us
-                </a>
+                </Link>
               </li>
               <li>
                 <Link href="/shipping" className="text-sm text-gray-600 hover:text-gray-900">

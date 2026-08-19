@@ -567,6 +567,41 @@ export type Database = {
           sent_at?: string | null;
         };
       };
+      contact_messages: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          subject: string;
+          message: string;
+          order_id: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email: string;
+          subject: string;
+          message: string;
+          order_id?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          subject?: string;
+          message?: string;
+          order_id?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       admin_audit_logs: {
         Row: {
           id: string;
