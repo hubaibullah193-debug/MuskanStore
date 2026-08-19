@@ -67,14 +67,14 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/shipping" className="text-sm text-gray-600 hover:text-gray-900">
                   Shipping Info
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/shipping#returns" className="text-sm text-gray-600 hover:text-gray-900">
                   Returns
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
