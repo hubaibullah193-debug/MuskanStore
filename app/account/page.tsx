@@ -342,10 +342,18 @@ export default function AccountPage() {
                                   ? 'bg-red-100 text-red-800'
                                   : order.status === 'pending_payment'
                                   ? 'bg-yellow-100 text-yellow-800'
+                                  : order.status === 'shipped'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : order.status === 'refund_requested'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : order.status === 'refunded'
+                                  ? 'bg-gray-100 text-gray-800'
                                   : 'bg-blue-100 text-blue-800'
                               }`}
                             >
-                              {order.status === 'pending_payment' ? 'Awaiting Payment' : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              {order.status === 'pending_payment'
+                                ? 'Awaiting Payment'
+                                : order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, ' ')}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm">
@@ -355,10 +363,22 @@ export default function AccountPage() {
                                   ? 'bg-green-100 text-green-800'
                                   : order.payment_status === 'failed'
                                   ? 'bg-red-100 text-red-800'
+                                  : order.payment_status === 'awaiting_cod'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : order.payment_status === 'refunded'
+                                  ? 'bg-gray-100 text-gray-800'
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}
                             >
-                              {order.payment_status === 'pending' ? 'Pending' : order.payment_status === 'paid' ? 'Paid' : 'Failed'}
+                              {order.payment_status === 'pending'
+                                ? 'Pending'
+                                : order.payment_status === 'paid'
+                                ? 'Paid'
+                                : order.payment_status === 'awaiting_cod'
+                                ? 'Awaiting COD'
+                                : order.payment_status === 'refunded'
+                                ? 'Refunded'
+                                : 'Failed'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right">
