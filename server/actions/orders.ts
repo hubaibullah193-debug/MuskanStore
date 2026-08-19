@@ -187,13 +187,15 @@ export async function createOrder(
         await finalizeInventory(order.id);
       } catch (error) {
         console.error(`Failed to finalize inventory for COD order ${order.id}:`, error);
-        // Log but don't fail - order should still succeed
+        // Log the failure but don't fail the order
+        // Inventory will be finalized later via webhook or manual admin action
         await logAuditEvent(
           "inventory_finalization_failed",
           "order",
           order.id,
           { paymentMethod: "cod", error: String(error) }
         );
+        // Still return the order - it's up to admin to finalize inventory manually if needed
       }
     }
 
@@ -221,6 +223,11 @@ export async function createOrder(
       }
     }
 
+    // Fallback: if still no email and we have guestEmail, use it
+    if (!customerEmail && guestEmail) {
+      customerEmail = guestEmail;
+    }
+
     if (customerEmail) {
       await sendOrderConfirmation({
         orderNumber: order.order_number,
@@ -240,6 +247,13 @@ export async function createOrder(
         console.error("Failed to send order confirmation email:", error);
         // Don't throw - order succeeded even if email fails
         // Email logs will capture the failure for retry/debugging
+      });
+    } else {
+      // No email available - log for debugging but don't fail the order
+      console.warn("No customer email available for order confirmation", {
+        orderNumber: order.order_number,
+        userId,
+        guestEmail,
       });
     }
 
