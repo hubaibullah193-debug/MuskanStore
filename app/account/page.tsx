@@ -24,7 +24,7 @@ interface Order {
   order_number: string;
   total_amount: number;
   status: 'pending' | 'pending_payment' | 'confirmed' | 'shipped' | 'delivered' | 'refund_requested' | 'refunded' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'awaiting_cod';
+  payment_status: 'pending' | 'paid' | 'failed' | 'awaiting_cod' | 'refunded';
   created_at: string;
   item_count: number;
 }
@@ -367,6 +367,8 @@ export default function AccountPage() {
                                   ? 'bg-yellow-100 text-yellow-800'
                                   : order.payment_status === 'refunded'
                                   ? 'bg-gray-100 text-gray-800'
+                                  : order.payment_status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
                                   : 'bg-yellow-100 text-yellow-800'
                               }`}
                             >

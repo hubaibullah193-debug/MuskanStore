@@ -152,12 +152,11 @@ export default async function ProductDetailPage({
                     {variants.map((variant: any) => (
                       <div
                         key={variant.id}
-                        className="border border-gray-300 rounded-lg p-3 cursor-pointer"
+                        className="border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-accent"
                         style={{
                           borderColor: 'var(--color-border)',
                           transition: 'border-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
                         }}
-                        className="hover:border-accent"
                       >
                         <p className="font-medium text-gray-900">
                           {variant.variant_name}
