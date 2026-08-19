@@ -103,6 +103,53 @@ export async function getCurrentUser() {
 }
 
 /**
+ * Delete current user's account
+ * Cleans up cart, removes auth user, clears session
+ */
+export async function deleteAccount() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
+
+    if (!token) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+      return { success: false, error: 'Server configuration error' };
+    }
+
+    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
+    const userId = verified.payload.sub as string;
+
+    if (!userId) {
+      return { success: false, error: 'Invalid session' };
+    }
+
+    // Clean up user's cart items
+    await supabaseAdmin.from('cart_items').delete().eq('user_id', userId);
+
+    // Delete user from Supabase Auth
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) {
+      console.error('deleteUser error:', error);
+      return { success: false, error: 'Failed to delete account' };
+    }
+
+    // Clear session cookies
+    cookieStore.delete('auth-token');
+    cookieStore.delete('refresh-token');
+
+    return { success: true };
+  } catch (error) {
+    console.error('deleteAccount error:', error);
+    return { success: false, error: 'Failed to delete account' };
+  }
+}
+
+/**
  * Update current user's profile (name, phone)
  */
 export async function updateUserProfile(updates: { name?: string; phone?: string }) {

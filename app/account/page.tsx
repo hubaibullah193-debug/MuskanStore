@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getCurrentUser, updateUserProfile } from '@/server/actions/auth';
+import { getCurrentUser, updateUserProfile, deleteAccount } from '@/server/actions/auth';
 import { getUserOrders } from '@/server/actions/orders';
 import Link from 'next/link';
 
@@ -40,6 +40,8 @@ export default function AccountPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -91,6 +93,24 @@ export default function AccountPage() {
       loadData();
     } catch (err: any) {
       setError(err?.message || 'Failed to update profile');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      const result = await deleteAccount();
+      if (result.success) {
+        window.location.href = '/';
+      } else {
+        setError(result.error || 'Failed to delete account');
+        setShowDeleteConfirm(false);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to delete account');
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -251,7 +271,10 @@ export default function AccountPage() {
                 >
                   Change Password
                 </Link>
-                <button className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg">
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+                >
                   Delete Account
                 </button>
               </div>
@@ -356,6 +379,35 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Account</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete your account? This action cannot be undone.
+              Your order history will be preserved, but you will lose access to your account.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete My Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
