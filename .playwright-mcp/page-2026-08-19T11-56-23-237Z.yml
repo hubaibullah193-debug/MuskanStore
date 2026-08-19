@@ -1,0 +1,22 @@
+- generic [active] [ref=f25e1]:
+  - main [ref=f25e2]:
+    - generic [ref=f25e4]:
+      - generic [ref=f25e5]:
+        - heading "MStore" [level=1] [ref=f25e6]
+        - paragraph [ref=f25e7]: Reset your password
+      - generic [ref=f25e8]:
+        - generic [ref=f25e9]:
+          - paragraph [ref=f25e10]: Enter your email address and we'll send you a link to reset your password.
+          - generic [ref=f25e11]:
+            - generic [ref=f25e12]: Email Address
+            - textbox "Email Address" [ref=f25e13]:
+              - /placeholder: you@example.com
+          - button "Send Reset Link" [ref=f25e14] [cursor=pointer]
+        - generic [ref=f25e15]: Or
+        - link "Back to Login" [ref=f25e20] [cursor=pointer]:
+          - /url: /auth/login
+      - paragraph [ref=f25e22]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=f25e23] [cursor=pointer]:
+          - /url: /auth/signup
+  - alert [ref=f25e24]

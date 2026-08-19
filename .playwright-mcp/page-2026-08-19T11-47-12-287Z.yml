@@ -1,0 +1,27 @@
+- main [ref=f16e2]:
+  - generic [ref=f16e4]:
+    - generic [ref=f16e5]:
+      - heading "MStore" [level=1] [ref=f16e6]
+      - paragraph [ref=f16e7]: Sign in to your account
+    - generic [ref=f16e8]:
+      - generic [ref=f16e9]:
+        - generic [ref=f16e10]:
+          - generic [ref=f16e11]: Email address
+          - textbox "Email address" [ref=f16e12]:
+            - /placeholder: you@example.com
+        - generic [ref=f16e13]:
+          - generic [ref=f16e14]: Password
+          - generic [ref=f16e15]:
+            - textbox "Password" [ref=f16e16]:
+              - /placeholder: Enter your password
+            - button "Show password" [ref=f16e17] [cursor=pointer]
+        - link "Forgot password?" [ref=f16e22] [cursor=pointer]:
+          - /url: /auth/forgot-password
+        - button "Sign in" [ref=f16e23] [cursor=pointer]
+      - generic [ref=f16e24]: Don't have an account?
+      - link "Create account" [ref=f16e29] [cursor=pointer]:
+        - /url: /auth/signup
+    - paragraph [ref=f16e31]:
+      - text: Or
+      - link "continue as guest" [ref=f16e32] [cursor=pointer]:
+        - /url: /products

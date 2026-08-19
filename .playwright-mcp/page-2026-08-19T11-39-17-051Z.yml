@@ -1,0 +1,84 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content":
+    - /url: "#geist-skip-nav"
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - button [disabled] [ref=e14] [cursor=pointer]
+            - button "Find F" [disabled] [ref=e19]:
+              - generic [ref=e21]:
+                - generic [ref=e25]: Find
+                - generic [ref=e26]: F
+          - navigation [ref=e29]:
+            - generic [ref=e33]:
+              - link "Overview" [ref=e34] [cursor=pointer]:
+                - /url: "#intent:sidebar:projects"
+              - link "Deployments" [ref=e40] [cursor=pointer]:
+                - /url: "#intent:sidebar:deployments"
+              - link "Logs" [ref=e46] [cursor=pointer]:
+                - /url: "#intent:sidebar:logs"
+              - link "Analytics" [ref=e52] [cursor=pointer]:
+                - /url: "#intent:sidebar:analytics"
+              - link "Speed Insights" [ref=e58] [cursor=pointer]:
+                - /url: "#intent:sidebar:speed-insights"
+              - link "Observability" [ref=e64] [cursor=pointer]:
+                - /url: "#intent:sidebar:observability"
+              - link "Firewall" [ref=e73] [cursor=pointer]:
+                - /url: "#intent:sidebar:firewall"
+              - link "CDN" [ref=e80] [cursor=pointer]:
+                - /url: "#intent:sidebar:cdn"
+              - separator [ref=e86]
+              - link "Environment Variables" [ref=e87] [cursor=pointer]:
+                - /url: "#intent:sidebar:environment-variables"
+              - link "Domains" [ref=e93] [cursor=pointer]:
+                - /url: "#intent:sidebar:domains"
+              - link "Connect Beta" [ref=e99] [cursor=pointer]:
+                - /url: "#intent:sidebar:connect"
+                - generic [ref=e103]:
+                  - generic [ref=e104]: Connect
+                  - generic [ref=e105]: Beta
+              - link "Integrations" [ref=e107] [cursor=pointer]:
+                - /url: "#intent:sidebar:integrations"
+              - link "Storage" [ref=e113] [cursor=pointer]:
+                - /url: "#intent:sidebar:storage"
+              - link "Flags" [ref=e119] [cursor=pointer]:
+                - /url: "#intent:sidebar:flags"
+              - link "Agent" [ref=e125] [cursor=pointer]:
+                - /url: "#intent:sidebar:agent"
+              - link "AI Gateway" [ref=e134] [cursor=pointer]:
+                - /url: "#intent:sidebar:ai-gateway"
+              - link "Sandboxes" [ref=e143] [cursor=pointer]:
+                - /url: "#intent:sidebar:sandboxes"
+              - link "Workflows" [ref=e152] [cursor=pointer]:
+                - /url: "#intent:sidebar:workflows"
+              - link "Images Beta" [ref=e158] [cursor=pointer]:
+                - /url: "#intent:sidebar:images"
+                - generic [ref=e162]:
+                  - generic [ref=e163]: Images
+                  - generic [ref=e164]: Beta
+              - separator [ref=e166]
+              - link "Usage" [ref=e167] [cursor=pointer]:
+                - /url: "#intent:sidebar:usage"
+              - link "Support" [ref=e173] [cursor=pointer]:
+                - /url: "#intent:sidebar:support"
+              - link "Settings" [ref=e179] [cursor=pointer]:
+                - /url: "#intent:sidebar:settings"
+        - button [ref=e198] [cursor=pointer]
+      - generic [ref=e211]:
+        - generic [ref=e215]:
+          - heading "Production Deployment" [level=3] [ref=e217]
+          - generic [ref=e229]:
+            - paragraph [ref=e232]: Deployment
+            - generic [ref=e235]: Domains
+            - generic [ref=e240]:
+              - paragraph [ref=e242]: Status
+              - paragraph [ref=e245]: Created
+            - paragraph [ref=e248]: Source
+          - button [disabled] [ref=e254] [cursor=pointer]
+        - generic [ref=e265]:
+          - paragraph [ref=e269]
+          - paragraph [ref=e277]
+          - paragraph [ref=e285]
+  - alert [ref=e409]

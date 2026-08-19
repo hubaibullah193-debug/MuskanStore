@@ -1,0 +1,41 @@
+[      95ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/:0
+[     416ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[     463ms] ModuleBuildError: Module build failed (from ./node_modules/next/dist/build/webpack/loaders/next-swc-loader.js):
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+
+Caused by:
+    Syntax Error
+    at processResult (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:400590)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:402302)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:8645)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:5019)
+    at r.callback (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:4039)
+[     456ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38
+[     460ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62

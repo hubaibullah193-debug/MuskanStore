@@ -1,0 +1,207 @@
+- generic [active] [ref=f9e1]:
+  - banner [ref=f9e2]:
+    - navigation [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - link "Muskan Care" [ref=f9e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f9e7]:
+          - link "Products" [ref=f9e8] [cursor=pointer]:
+            - /url: /products
+          - link "Cart" [ref=f9e9] [cursor=pointer]:
+            - /url: /cart
+          - link "Account" [ref=f9e10] [cursor=pointer]:
+            - /url: /account
+          - link "Orders" [ref=f9e11] [cursor=pointer]:
+            - /url: /orders
+  - main [ref=f9e12]:
+    - generic [ref=f9e14]:
+      - generic [ref=f9e15]:
+        - heading "Products" [level=1] [ref=f9e16]
+        - paragraph [ref=f9e17]: Browse our collection of 19 products
+      - textbox "Search products..." [ref=f9e19]
+      - generic [ref=f9e20]:
+        - link "Herbal Shampoo Herbal Shampoo Natural herbal shampoo with amla and reetha. Strengthens hair and prevents dandruff. Suitable for all hair types. Rs. 450.00 In Stock Add to Cart" [ref=f9e21] [cursor=pointer]:
+          - /url: /products/herbal-shampoo
+          - generic [ref=f9e22]:
+            - img "Herbal Shampoo" [ref=f9e24]
+            - generic [ref=f9e25]:
+              - heading "Herbal Shampoo" [level=3] [ref=f9e26]
+              - paragraph [ref=f9e27]: Natural herbal shampoo with amla and reetha. Strengthens hair and prevents dandruff. Suitable for all hair types.
+              - generic [ref=f9e28]:
+                - generic [ref=f9e29]: Rs. 450.00
+                - generic [ref=f9e30]: In Stock
+              - button "Add to Cart" [ref=f9e31]
+        - link "Anti-Dandruff Shampoo Anti-Dandruff Shampoo Medicated anti-dandruff shampoo with zinc pyrithione. Controls flaking and itching with regular use. Rs. 520.00 In Stock Add to Cart" [ref=f9e32] [cursor=pointer]:
+          - /url: /products/anti-dandruff-shampoo
+          - generic [ref=f9e33]:
+            - img "Anti-Dandruff Shampoo" [ref=f9e35]
+            - generic [ref=f9e36]:
+              - heading "Anti-Dandruff Shampoo" [level=3] [ref=f9e37]
+              - paragraph [ref=f9e38]: Medicated anti-dandruff shampoo with zinc pyrithione. Controls flaking and itching with regular use.
+              - generic [ref=f9e39]:
+                - generic [ref=f9e40]: Rs. 520.00
+                - generic [ref=f9e41]: In Stock
+              - button "Add to Cart" [ref=f9e42]
+        - link "Coconut Hair Oil Coconut Hair Oil Pure cold-pressed coconut oil for deep conditioning. Nourishes scalp and promotes healthy hair growth. Rs. 280.00 In Stock Add to Cart" [ref=f9e43] [cursor=pointer]:
+          - /url: /products/coconut-hair-oil
+          - generic [ref=f9e44]:
+            - img "Coconut Hair Oil" [ref=f9e46]
+            - generic [ref=f9e47]:
+              - heading "Coconut Hair Oil" [level=3] [ref=f9e48]
+              - paragraph [ref=f9e49]: Pure cold-pressed coconut oil for deep conditioning. Nourishes scalp and promotes healthy hair growth.
+              - generic [ref=f9e50]:
+                - generic [ref=f9e51]: Rs. 280.00
+                - generic [ref=f9e52]: In Stock
+              - button "Add to Cart" [ref=f9e53]
+        - link "Hair Conditioner Hair Conditioner Moisturizing conditioner with argan oil. Detangles and smooths hair for easy styling. Rs. 380.00 In Stock Add to Cart" [ref=f9e54] [cursor=pointer]:
+          - /url: /products/hair-conditioner
+          - generic [ref=f9e55]:
+            - img "Hair Conditioner" [ref=f9e57]
+            - generic [ref=f9e58]:
+              - heading "Hair Conditioner" [level=3] [ref=f9e59]
+              - paragraph [ref=f9e60]: Moisturizing conditioner with argan oil. Detangles and smooths hair for easy styling.
+              - generic [ref=f9e61]:
+                - generic [ref=f9e62]: Rs. 380.00
+                - generic [ref=f9e63]: In Stock
+              - button "Add to Cart" [ref=f9e64]
+        - link "Charcoal Face Wash Charcoal Face Wash Deep cleansing face wash with activated charcoal. Removes impurities and unclogs pores. For oily and combination skin. Rs. 350.00 In Stock Add to Cart" [ref=f9e65] [cursor=pointer]:
+          - /url: /products/charcoal-face-wash
+          - generic [ref=f9e66]:
+            - img "Charcoal Face Wash" [ref=f9e68]
+            - generic [ref=f9e69]:
+              - heading "Charcoal Face Wash" [level=3] [ref=f9e70]
+              - paragraph [ref=f9e71]: Deep cleansing face wash with activated charcoal. Removes impurities and unclogs pores. For oily and combination skin.
+              - generic [ref=f9e72]:
+                - generic [ref=f9e73]: Rs. 350.00
+                - generic [ref=f9e74]: In Stock
+              - button "Add to Cart" [ref=f9e75]
+        - link "Aloe Vera Moisturizer Aloe Vera Moisturizer Lightweight daily moisturizer with pure aloe vera gel. Hydrates without greasy residue. Suitable for all skin types. Rs. 420.00 In Stock Add to Cart" [ref=f9e76] [cursor=pointer]:
+          - /url: /products/aloe-vera-moisturizer
+          - generic [ref=f9e77]:
+            - img "Aloe Vera Moisturizer" [ref=f9e79]
+            - generic [ref=f9e80]:
+              - heading "Aloe Vera Moisturizer" [level=3] [ref=f9e81]
+              - paragraph [ref=f9e82]: Lightweight daily moisturizer with pure aloe vera gel. Hydrates without greasy residue. Suitable for all skin types.
+              - generic [ref=f9e83]:
+                - generic [ref=f9e84]: Rs. 420.00
+                - generic [ref=f9e85]: In Stock
+              - button "Add to Cart" [ref=f9e86]
+        - link "Sunscreen SPF 50 Sunscreen SPF 50 Broad spectrum UV protection with SPF 50. Non-greasy formula, water resistant for up to 80 minutes. Rs. 650.00 In Stock Add to Cart" [ref=f9e87] [cursor=pointer]:
+          - /url: /products/sunscreen-spf50
+          - generic [ref=f9e88]:
+            - img "Sunscreen SPF 50" [ref=f9e90]
+            - generic [ref=f9e91]:
+              - heading "Sunscreen SPF 50" [level=3] [ref=f9e92]
+              - paragraph [ref=f9e93]: Broad spectrum UV protection with SPF 50. Non-greasy formula, water resistant for up to 80 minutes.
+              - generic [ref=f9e94]:
+                - generic [ref=f9e95]: Rs. 650.00
+                - generic [ref=f9e96]: In Stock
+              - button "Add to Cart" [ref=f9e97]
+        - link "Under Eye Cream Under Eye Cream Refreshing under-eye cream with vitamin E and caffeine. Reduces dark circles and puffiness with consistent use. Rs. 580.00 In Stock Add to Cart" [ref=f9e98] [cursor=pointer]:
+          - /url: /products/under-eye-cream
+          - generic [ref=f9e99]:
+            - img "Under Eye Cream" [ref=f9e101]
+            - generic [ref=f9e102]:
+              - heading "Under Eye Cream" [level=3] [ref=f9e103]
+              - paragraph [ref=f9e104]: Refreshing under-eye cream with vitamin E and caffeine. Reduces dark circles and puffiness with consistent use.
+              - generic [ref=f9e105]:
+                - generic [ref=f9e106]: Rs. 580.00
+                - generic [ref=f9e107]: In Stock
+              - button "Add to Cart" [ref=f9e108]
+        - link "Body Lotion Body Lotion Nourishing body lotion with shea butter and cocoa butter. Long-lasting moisture for dry and normal skin. Rs. 380.00 In Stock Add to Cart" [ref=f9e109] [cursor=pointer]:
+          - /url: /products/body-lotion
+          - generic [ref=f9e110]:
+            - img "Body Lotion" [ref=f9e112]
+            - generic [ref=f9e113]:
+              - heading "Body Lotion" [level=3] [ref=f9e114]
+              - paragraph [ref=f9e115]: Nourishing body lotion with shea butter and cocoa butter. Long-lasting moisture for dry and normal skin.
+              - generic [ref=f9e116]:
+                - generic [ref=f9e117]: Rs. 380.00
+                - generic [ref=f9e118]: In Stock
+              - button "Add to Cart" [ref=f9e119]
+        - link "Roll-On Deodorant Roll-On Deodorant 48-hour protection roll-on deodorant. Mild fragrance, alcohol-free formula gentle on sensitive skin. Rs. 320.00 In Stock Add to Cart" [ref=f9e120] [cursor=pointer]:
+          - /url: /products/roll-on-deodorant
+          - generic [ref=f9e121]:
+            - img "Roll-On Deodorant" [ref=f9e123]
+            - generic [ref=f9e124]:
+              - heading "Roll-On Deodorant" [level=3] [ref=f9e125]
+              - paragraph [ref=f9e126]: 48-hour protection roll-on deodorant. Mild fragrance, alcohol-free formula gentle on sensitive skin.
+              - generic [ref=f9e127]:
+                - generic [ref=f9e128]: Rs. 320.00
+                - generic [ref=f9e129]: In Stock
+              - button "Add to Cart" [ref=f9e130]
+        - link "Hand Cream Hand Cream Intensive hand cream with glycerin and vitamin E. Repairs dry, cracked hands. Non-greasy absorption. Rs. 250.00 In Stock Add to Cart" [ref=f9e131] [cursor=pointer]:
+          - /url: /products/hand-cream
+          - generic [ref=f9e132]:
+            - img "Hand Cream" [ref=f9e134]
+            - generic [ref=f9e135]:
+              - heading "Hand Cream" [level=3] [ref=f9e136]
+              - paragraph [ref=f9e137]: Intensive hand cream with glycerin and vitamin E. Repairs dry, cracked hands. Non-greasy absorption.
+              - generic [ref=f9e138]:
+                - generic [ref=f9e139]: Rs. 250.00
+                - generic [ref=f9e140]: In Stock
+              - button "Add to Cart" [ref=f9e141]
+        - link "Foot Cream Foot Cream Refreshing foot cream with menthol and tea tree oil. Softens rough skin and fights odor. Rs. 280.00 In Stock Add to Cart" [ref=f9e142] [cursor=pointer]:
+          - /url: /products/foot-cream
+          - generic [ref=f9e143]:
+            - img "Foot Cream" [ref=f9e145]
+            - generic [ref=f9e146]:
+              - heading "Foot Cream" [level=3] [ref=f9e147]
+              - paragraph [ref=f9e148]: Refreshing foot cream with menthol and tea tree oil. Softens rough skin and fights odor.
+              - generic [ref=f9e149]:
+                - generic [ref=f9e150]: Rs. 280.00
+                - generic [ref=f9e151]: In Stock
+              - button "Add to Cart" [ref=f9e152]
+      - generic [ref=f9e153]:
+        - generic [ref=f9e154]: Page 1 of 2
+        - link "Next" [ref=f9e155] [cursor=pointer]:
+          - /url: /products?page=2
+  - contentinfo [ref=f9e156]:
+    - generic [ref=f9e157]:
+      - generic [ref=f9e158]:
+        - generic [ref=f9e159]:
+          - heading "About" [level=3] [ref=f9e160]
+          - paragraph [ref=f9e161]: Muskan Care Center is your trusted source for personal hygiene products.
+        - generic [ref=f9e162]:
+          - heading "Shop" [level=3] [ref=f9e163]
+          - list [ref=f9e164]:
+            - listitem [ref=f9e165]:
+              - link "All Products" [ref=f9e166] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f9e167]:
+              - link "Skincare" [ref=f9e168] [cursor=pointer]:
+                - /url: /products?category=skincare
+            - listitem [ref=f9e169]:
+              - link "Personal Care" [ref=f9e170] [cursor=pointer]:
+                - /url: /products?category=personal
+        - generic [ref=f9e171]:
+          - heading "Account" [level=3] [ref=f9e172]
+          - list [ref=f9e173]:
+            - listitem [ref=f9e174]:
+              - link "My Account" [ref=f9e175] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=f9e176]:
+              - link "Order History" [ref=f9e177] [cursor=pointer]:
+                - /url: /orders
+            - listitem [ref=f9e178]:
+              - link "Sign In" [ref=f9e179] [cursor=pointer]:
+                - /url: /auth/login
+        - generic [ref=f9e180]:
+          - heading "Support" [level=3] [ref=f9e181]
+          - list [ref=f9e182]:
+            - listitem [ref=f9e183]:
+              - link "Contact Us" [ref=f9e184] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=f9e185]:
+              - link "Shipping Info" [ref=f9e186] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=f9e187]:
+              - link "Returns" [ref=f9e188] [cursor=pointer]:
+                - /url: /shipping#returns
+      - generic [ref=f9e190]:
+        - paragraph [ref=f9e191]: © 2026 Muskan Care Center. All rights reserved.
+        - generic [ref=f9e192]:
+          - link "Privacy Policy" [ref=f9e193] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=f9e194] [cursor=pointer]:
+            - /url: "#"

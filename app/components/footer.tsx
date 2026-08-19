@@ -87,10 +87,10 @@ export function Footer() {
               &copy; {new Date().getFullYear()} Muskan Care Center. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+              <a href="/shipping" className="text-sm text-gray-600 hover:text-gray-900">
                 Privacy Policy
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+              <a href="/shipping#returns" className="text-sm text-gray-600 hover:text-gray-900">
                 Terms of Service
               </a>
             </div>

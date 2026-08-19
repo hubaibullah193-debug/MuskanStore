@@ -157,8 +157,7 @@ export default async function ProductDetailPage({
                           borderColor: 'var(--color-border)',
                           transition: 'border-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-accent)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+                        className="hover:border-accent"
                       >
                         <p className="font-medium text-gray-900">
                           {variant.variant_name}

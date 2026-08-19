@@ -1,0 +1,37 @@
+- generic [active]:
+  - alert [ref=f35e1]
+  - dialog [ref=f35e4]:
+    - generic [ref=f35e5]:
+      - generic [ref=f35e6]:
+        - heading "Build Error" [level=1] [ref=f35e7]
+        - paragraph [ref=f35e8]: Failed to compile
+        - generic [ref=f35e9]:
+          - text: Next.js (14.2.35) is outdated
+          - link "(learn more)" [ref=f35e11] [cursor=pointer]:
+            - /url: https://nextjs.org/docs/messages/version-staleness
+      - generic [ref=f35e12]:
+        - generic [ref=f35e13]:
+          - link "./app/privacy-policy/page.tsx" [ref=f35e14] [cursor=pointer]
+          - generic [ref=f35e19]:
+            - generic [ref=f35e20]: "Error:"
+            - text: ×
+            - generic [ref=f35e21]: "Unexpected token `div`. Expected jsx identifier ╭─["
+            - text: C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx
+            - generic [ref=f35e22]: :2:1]
+            - text: "2"
+            - generic [ref=f35e23]: │
+            - text: "3"
+            - generic [ref=f35e24]: "│ export default function PrivacyPolicyPage() {"
+            - text: "4"
+            - generic [ref=f35e25]: │ return (
+            - text: "5"
+            - generic [ref=f35e26]: │ <div className="min-h-screen bg-gray-50 py-8 px-4"> ·
+            - generic [ref=f35e27]: ───
+            - text: "6"
+            - generic [ref=f35e28]: │ <div className="max-w-4xl mx-auto">
+            - text: "7"
+            - generic [ref=f35e29]: │ <div className="bg-white p-8 rounded-lg mb-8">
+            - text: "8"
+            - generic [ref=f35e30]: "│ <h1 className=\"text-3xl font-bold text-gray-900 mb-6\">Privacy Policy</h1> ╰──── Caused by: Syntax Error"
+        - contentinfo [ref=f35e31]:
+          - paragraph [ref=f35e32]: This error occurred during the build process and can only be dismissed by fixing the error.

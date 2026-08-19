@@ -1,0 +1,22 @@
+- generic [active] [ref=f26e1]:
+  - main [ref=f26e2]:
+    - generic [ref=f26e4]:
+      - generic [ref=f26e5]:
+        - heading "MStore" [level=1] [ref=f26e6]
+        - paragraph [ref=f26e7]: Set your new password
+      - generic [ref=f26e8]:
+        - generic [ref=f26e9]: Invalid or missing reset token. Please request a new password reset.
+        - generic [ref=f26e10]:
+          - generic [ref=f26e11]:
+            - generic [ref=f26e12]: New Password
+            - textbox "New Password" [ref=f26e13]:
+              - /placeholder: ••••••••
+            - paragraph [ref=f26e14]: At least 8 characters
+          - generic [ref=f26e15]:
+            - generic [ref=f26e16]: Confirm Password
+            - textbox "Confirm Password" [ref=f26e17]:
+              - /placeholder: ••••••••
+          - button "Reset Password" [disabled] [ref=f26e18]
+        - link "Back to Login" [ref=f26e20] [cursor=pointer]:
+          - /url: /auth/login
+  - alert [ref=f26e21]

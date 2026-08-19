@@ -1,0 +1,219 @@
+[      84ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/privacy-policy:0
+[     429ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[     482ms] ModuleBuildError: Module build failed (from ./node_modules/next/dist/build/webpack/loaders/next-swc-loader.js):
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+
+Caused by:
+    Syntax Error
+    at processResult (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:400590)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:402302)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:8645)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:5019)
+    at r.callback (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:4039)
+[     460ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38
+[     462ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   35854ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:221
+[   36904ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/privacy-policy/page.tsx @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   38210ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/privacy-policy/page.tsx @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   38273ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/_next/static/webpack/621b040d7bd0a720.webpack.hot-update.json:0
+[   38303ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:347
+[   38401ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/privacy-policy:0
+[   38729ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[   38777ms] ModuleBuildError: Module build failed (from ./node_modules/next/dist/build/webpack/loaders/next-swc-loader.js):
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+
+Caused by:
+    Syntax Error
+    at processResult (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:400590)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:402302)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:8645)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:5019)
+    at r.callback (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:4039)
+[   38776ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38
+[   38778ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   56348ms] [LOG] [Fast Refresh] rebuilding @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:221
+[   56946ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/privacy-policy/page.tsx @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   57976ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/privacy-policy/page.tsx @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62
+[   58026ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/_next/static/webpack/621b040d7bd0a720.webpack.hot-update.json:0
+[   58026ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/hot-reloader-client.js:347
+[   58128ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/privacy-policy:0
+[   58434ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:29889
+[   58475ms] ModuleBuildError: Module build failed (from ./node_modules/next/dist/build/webpack/loaders/next-swc-loader.js):
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+
+Caused by:
+    Syntax Error
+    at processResult (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:400590)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\webpack\bundle5.js:28:402302)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:8645)
+    at <unknown> (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:5019)
+    at r.callback (file://C:\Users\s\Documents\mstore\node_modules\next\dist\compiled\loader-runner\LoaderRunner.js:1:4039)
+[   58468ms] [LOG] [HMR] connected @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/pages/websocket.js:38
+[   58470ms] [ERROR] ./app/privacy-policy/page.tsx
+Error: 
+  × Unexpected token `div`. Expected jsx identifier
+   ╭─[C:\Users\s\Documents\mstore\app\privacy-policy\page.tsx:2:1]
+ 2 │ 
+ 3 │ export default function PrivacyPolicyPage() {
+ 4 │   return (
+ 5 │     <div className="min-h-screen bg-gray-50 py-8 px-4">
+   ·      ───
+ 6 │       <div className="max-w-4xl mx-auto">
+ 7 │         <div className="bg-white p-8 rounded-lg mb-8">
+ 8 │           <h1 className="text-3xl font-bold text-gray-900 mb-6">Privacy Policy</h1>
+   ╰────
+
+Caused by:
+    Syntax Error @ webpack-internal:///./node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/hydration-error-info.js:62

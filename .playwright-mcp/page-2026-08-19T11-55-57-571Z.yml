@@ -1,0 +1,67 @@
+- generic [active] [ref=f23e1]:
+  - banner [ref=f23e2]:
+    - navigation [ref=f23e3]:
+      - generic [ref=f23e4]:
+        - link "Muskan Care" [ref=f23e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f23e7]:
+          - link "Products" [ref=f23e8] [cursor=pointer]:
+            - /url: /products
+          - link "Cart" [ref=f23e9] [cursor=pointer]:
+            - /url: /cart
+          - link "Account" [ref=f23e10] [cursor=pointer]:
+            - /url: /account
+          - link "Orders" [ref=f23e11] [cursor=pointer]:
+            - /url: /orders
+  - main [ref=f23e12]:
+    - generic [ref=f23e13]: Loading account...
+  - contentinfo [ref=f23e15]:
+    - generic [ref=f23e16]:
+      - generic [ref=f23e17]:
+        - generic [ref=f23e18]:
+          - heading "About" [level=3] [ref=f23e19]
+          - paragraph [ref=f23e20]: Muskan Care Center is your trusted source for personal hygiene products.
+        - generic [ref=f23e21]:
+          - heading "Shop" [level=3] [ref=f23e22]
+          - list [ref=f23e23]:
+            - listitem [ref=f23e24]:
+              - link "All Products" [ref=f23e25] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f23e26]:
+              - link "Skincare" [ref=f23e27] [cursor=pointer]:
+                - /url: /products?category=skincare
+            - listitem [ref=f23e28]:
+              - link "Personal Care" [ref=f23e29] [cursor=pointer]:
+                - /url: /products?category=personal
+        - generic [ref=f23e30]:
+          - heading "Account" [level=3] [ref=f23e31]
+          - list [ref=f23e32]:
+            - listitem [ref=f23e33]:
+              - link "My Account" [ref=f23e34] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=f23e35]:
+              - link "Order History" [ref=f23e36] [cursor=pointer]:
+                - /url: /orders
+            - listitem [ref=f23e37]:
+              - link "Sign In" [ref=f23e38] [cursor=pointer]:
+                - /url: /auth/login
+        - generic [ref=f23e39]:
+          - heading "Support" [level=3] [ref=f23e40]
+          - list [ref=f23e41]:
+            - listitem [ref=f23e42]:
+              - link "Contact Us" [ref=f23e43] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=f23e44]:
+              - link "Shipping Info" [ref=f23e45] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=f23e46]:
+              - link "Returns" [ref=f23e47] [cursor=pointer]:
+                - /url: /shipping#returns
+      - generic [ref=f23e49]:
+        - paragraph [ref=f23e50]: © 2026 Muskan Care Center. All rights reserved.
+        - generic [ref=f23e51]:
+          - link "Privacy Policy" [ref=f23e52] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=f23e53] [cursor=pointer]:
+            - /url: "#"
+  - alert [ref=f23e54]

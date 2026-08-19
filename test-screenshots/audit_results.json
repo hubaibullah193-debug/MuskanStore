@@ -1,0 +1,132 @@
+[
+  {
+    "page": "01_homepage",
+    "status": "fail",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:17 B:1 L:27 I:0 F:0 | Error element found:  | CHECK ISSUES: No product cards visible"
+  },
+  {
+    "page": "02_products",
+    "status": "fail",
+    "details": "HTTP 500 | Title: '' | H:20 B:3 L:2 I:0 F:0 | Error element found:  | Console errors: 2\n    [error] Failed to load resource: the server responded with a status of 500 (Internal Server Error)\n    [error] The above error occurred in the <NotFoundErrorBoundary> component:\n\n    at eval (webpack-internal:///(app-pages-browser)/./node_modules/next/d"
+  },
+  {
+    "page": "03_product_detail",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:4 B:1 L:18 I:0 F:0 | Error element found: "
+  },
+  {
+    "page": "04_cart",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:5 B:1 L:19 I:0 F:0 | Error element found: "
+  },
+  {
+    "page": "05_checkout",
+    "status": "fail",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:5 B:2 L:18 I:0 F:0 | Error element found:  | CHECK ISSUES: No payment methods visible,No checkout form found"
+  },
+  {
+    "page": "06_track_order",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:5 B:2 L:20 I:2 F:1 | Error element found: "
+  },
+  {
+    "page": "07_signup",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:1 B:3 L:2 I:5 F:1 | Error element found: "
+  },
+  {
+    "page": "08_login",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:1 B:2 L:3 I:2 F:1 | Error element found: "
+  },
+  {
+    "page": "09_forgot_password",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:1 B:1 L:2 I:1 F:1 | Error element found: "
+  },
+  {
+    "page": "10_reset_password",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:1 B:1 L:1 I:2 F:1 | Error element found: "
+  },
+  {
+    "page": "11_account",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:4 B:1 L:19 I:0 F:0 | Error element found: "
+  },
+  {
+    "page": "12_order_confirmation",
+    "status": "pass",
+    "details": "HTTP 200 | Title: 'Muskan Care Center' | H:5 B:1 L:19 I:0 F:0 | Error element found:  | Console errors: 2\n    [error] Failed to load resource: the server responded with a status of 500 (Internal Server Error)\n    [error] Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  },
+  {
+    "page": "13_admin_dashboard",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "14_admin_orders",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "15_admin_products",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "16_admin_inventory",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "17_admin_shipments",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "18_admin_refunds",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "19_admin_audit_logs",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "20_admin_settings",
+    "status": "warn",
+    "details": "Redirected to login (expected for unauth):  -> REDIRECTED to http://localhost:3000/auth/login?redirectUrl=/admin/dashboard"
+  },
+  {
+    "page": "21_api_checkout",
+    "status": "fail",
+    "details": "Exception: Page.goto: Timeout 10000ms exceeded.\nCall log:\n  - navigating to \"http://localhost:3000/api/checkout\", waiting until \"domcontentloaded\"\n"
+  },
+  {
+    "page": "22_api_cart_add",
+    "status": "pass",
+    "details": "HTTP 405 (expected for unauth/GET)"
+  },
+  {
+    "page": "23_api_track_order",
+    "status": "pass",
+    "details": "HTTP 405 (expected for unauth/GET)"
+  },
+  {
+    "page": "24_api_payment_verify",
+    "status": "pass",
+    "details": "HTTP 405 (expected for unauth/GET)"
+  },
+  {
+    "page": "25_api_admin_shipments",
+    "status": "pass",
+    "details": "HTTP 401 (expected for unauth/GET)"
+  },
+  {
+    "page": "26_api_admin_refunds",
+    "status": "pass",
+    "details": "HTTP 401 (expected for unauth/GET)"
+  }
+]

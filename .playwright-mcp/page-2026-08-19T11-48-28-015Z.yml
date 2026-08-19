@@ -1,0 +1,159 @@
+- generic [active] [ref=f20e1]:
+  - banner [ref=f20e2]:
+    - navigation [ref=f20e3]:
+      - generic [ref=f20e4]:
+        - link "Muskan Care" [ref=f20e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f20e7]:
+          - link "Products" [ref=f20e8] [cursor=pointer]:
+            - /url: /products
+          - link "Cart" [ref=f20e9] [cursor=pointer]:
+            - /url: /cart
+          - link "Account" [ref=f20e10] [cursor=pointer]:
+            - /url: /account
+          - link "Orders" [ref=f20e11] [cursor=pointer]:
+            - /url: /orders
+  - main [ref=f20e12]:
+    - generic [ref=f20e14]:
+      - heading "Shipping Info & Returns" [level=1] [ref=f20e15]
+      - generic [ref=f20e16]:
+        - heading "Shipping Policy" [level=2] [ref=f20e17]
+        - generic [ref=f20e18]:
+          - generic [ref=f20e19]:
+            - heading "Delivery Timeframes" [level=3] [ref=f20e20]
+            - list [ref=f20e21]:
+              - listitem [ref=f20e22]:
+                - strong [ref=f20e23]: "Lahore:"
+                - text: 1-2 business days
+              - listitem [ref=f20e24]:
+                - strong [ref=f20e25]: "Other major cities (Karachi, Islamabad, Faisalabad, Rawalpindi):"
+                - text: 2-3 business days
+              - listitem [ref=f20e26]:
+                - strong [ref=f20e27]: "Other areas:"
+                - text: 3-5 business days
+            - paragraph [ref=f20e28]: Orders placed before 2:00 PM PKT are processed the same day. Orders placed after 2:00 PM or on weekends/holidays are processed the next business day.
+          - generic [ref=f20e29]:
+            - heading "Shipping Methods" [level=3] [ref=f20e30]
+            - list [ref=f20e31]:
+              - listitem [ref=f20e32]:
+                - strong [ref=f20e33]: "Standard Delivery:"
+                - text: Rs 300 flat rate across Pakistan
+              - listitem [ref=f20e34]:
+                - strong [ref=f20e35]: "Cash on Delivery (COD):"
+                - text: Available for all areas
+              - listitem [ref=f20e36]:
+                - strong [ref=f20e37]: "Online Payment:"
+                - text: JazzCash, Easypaisa, or bank transfer
+          - generic [ref=f20e38]:
+            - heading "Order Tracking" [level=3] [ref=f20e39]
+            - paragraph [ref=f20e40]:
+              - text: Once your order is shipped, you will receive a tracking code via email. You can track your order at any time using our
+              - link "Track Order" [ref=f20e41] [cursor=pointer]:
+                - /url: /track-order
+              - text: page.
+          - generic [ref=f20e42]:
+            - heading "Important Notes" [level=3] [ref=f20e43]
+            - list [ref=f20e44]:
+              - listitem [ref=f20e45]: We currently deliver within Pakistan only
+              - listitem [ref=f20e46]: Please ensure your delivery address and phone number are accurate
+              - listitem [ref=f20e47]: Our delivery partner will contact you before delivery
+              - listitem [ref=f20e48]: If you are unavailable at the time of delivery, a second attempt will be made
+      - generic [ref=f20e49]:
+        - heading "Returns & Refunds" [level=2] [ref=f20e50]
+        - generic [ref=f20e51]:
+          - generic [ref=f20e52]:
+            - heading "Return Eligibility" [level=3] [ref=f20e53]
+            - list [ref=f20e54]:
+              - listitem [ref=f20e55]:
+                - text: Items must be returned within
+                - strong [ref=f20e56]: 7 days
+                - text: of delivery
+              - listitem [ref=f20e57]: Items must be unused, unopened, and in original packaging
+              - listitem [ref=f20e58]: Opened or used personal hygiene products cannot be returned for hygiene reasons
+              - listitem [ref=f20e59]: Damaged or defective items are eligible for full refund or replacement
+          - generic [ref=f20e60]:
+            - heading "How to Request a Return" [level=3] [ref=f20e61]
+            - list [ref=f20e62]:
+              - listitem [ref=f20e63]:
+                - text: Go to your
+                - link "Account" [ref=f20e64] [cursor=pointer]:
+                  - /url: /account
+                - text: or
+                - link "Order History" [ref=f20e65] [cursor=pointer]:
+                  - /url: /orders
+              - listitem [ref=f20e66]: Find the order containing the item you want to return
+              - listitem [ref=f20e67]: Click "Request Refund" and provide a reason
+              - listitem [ref=f20e68]: Our team will review your request within 2 business days
+          - generic [ref=f20e69]:
+            - heading "Refund Process" [level=3] [ref=f20e70]
+            - list [ref=f20e71]:
+              - listitem [ref=f20e72]: Once approved, refunds are processed within 5-7 business days
+              - listitem [ref=f20e73]: Refunds are credited to the original payment method
+              - listitem [ref=f20e74]: For COD orders, refunds are sent via JazzCash/Easypaisa or bank transfer
+              - listitem [ref=f20e75]: You will receive email notifications at each step of the refund process
+          - generic [ref=f20e76]:
+            - heading "Non-Returnable Items" [level=3] [ref=f20e77]
+            - list [ref=f20e78]:
+              - listitem [ref=f20e79]: Opened or used personal care products
+              - listitem [ref=f20e80]: Products without original packaging
+              - listitem [ref=f20e81]: Items marked as "Final Sale" at time of purchase
+          - generic [ref=f20e82]:
+            - heading "Damaged or Defective Items" [level=3] [ref=f20e83]
+            - paragraph [ref=f20e84]: If you receive a damaged or defective item, please contact us within 48 hours of delivery. Include photos of the damage and your order number. We will arrange a replacement or full refund.
+      - generic [ref=f20e85]:
+        - heading "Need Help?" [level=2] [ref=f20e86]
+        - paragraph [ref=f20e87]: If you have any questions about shipping or returns, our support team is here to help.
+        - generic [ref=f20e88]:
+          - link "Email Support" [ref=f20e89] [cursor=pointer]:
+            - /url: mailto:support@muskancare.com
+          - link "Track Your Order" [ref=f20e90] [cursor=pointer]:
+            - /url: /track-order
+  - contentinfo [ref=f20e91]:
+    - generic [ref=f20e92]:
+      - generic [ref=f20e93]:
+        - generic [ref=f20e94]:
+          - heading "About" [level=3] [ref=f20e95]
+          - paragraph [ref=f20e96]: Muskan Care Center is your trusted source for personal hygiene products.
+        - generic [ref=f20e97]:
+          - heading "Shop" [level=3] [ref=f20e98]
+          - list [ref=f20e99]:
+            - listitem [ref=f20e100]:
+              - link "All Products" [ref=f20e101] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f20e102]:
+              - link "Skincare" [ref=f20e103] [cursor=pointer]:
+                - /url: /products?category=skincare
+            - listitem [ref=f20e104]:
+              - link "Personal Care" [ref=f20e105] [cursor=pointer]:
+                - /url: /products?category=personal
+        - generic [ref=f20e106]:
+          - heading "Account" [level=3] [ref=f20e107]
+          - list [ref=f20e108]:
+            - listitem [ref=f20e109]:
+              - link "My Account" [ref=f20e110] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=f20e111]:
+              - link "Order History" [ref=f20e112] [cursor=pointer]:
+                - /url: /orders
+            - listitem [ref=f20e113]:
+              - link "Sign In" [ref=f20e114] [cursor=pointer]:
+                - /url: /auth/login
+        - generic [ref=f20e115]:
+          - heading "Support" [level=3] [ref=f20e116]
+          - list [ref=f20e117]:
+            - listitem [ref=f20e118]:
+              - link "Contact Us" [ref=f20e119] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=f20e120]:
+              - link "Shipping Info" [ref=f20e121] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=f20e122]:
+              - link "Returns" [ref=f20e123] [cursor=pointer]:
+                - /url: /shipping#returns
+      - generic [ref=f20e125]:
+        - paragraph [ref=f20e126]: © 2026 Muskan Care Center. All rights reserved.
+        - generic [ref=f20e127]:
+          - link "Privacy Policy" [ref=f20e128] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=f20e129] [cursor=pointer]:
+            - /url: "#"

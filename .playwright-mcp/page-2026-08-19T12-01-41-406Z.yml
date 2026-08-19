@@ -1,0 +1,120 @@
+- generic [active] [ref=f27e1]:
+  - banner [ref=f27e2]:
+    - navigation [ref=f27e3]:
+      - generic [ref=f27e4]:
+        - link "Muskan Care" [ref=f27e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f27e7]:
+          - link "Products" [ref=f27e8] [cursor=pointer]:
+            - /url: /products
+          - link "Cart" [ref=f27e9] [cursor=pointer]:
+            - /url: /cart
+          - link "Account" [ref=f27e10] [cursor=pointer]:
+            - /url: /account
+          - link "Orders" [ref=f27e11] [cursor=pointer]:
+            - /url: /orders
+  - main [ref=f27e12]:
+    - generic [ref=f27e14]:
+      - generic [ref=f27e15]:
+        - img "Herbal Shampoo" [ref=f27e17]
+        - generic [ref=f27e18]:
+          - generic [ref=f27e19]:
+            - heading "Herbal Shampoo" [level=1] [ref=f27e20]
+            - paragraph [ref=f27e21]: Natural herbal shampoo with amla and reetha. Strengthens hair and prevents dandruff. Suitable for all hair types.
+          - generic [ref=f27e22]: Rs. 450.00
+          - generic [ref=f27e24]: 120 in stock
+          - generic [ref=f27e26]:
+            - heading "Available Variants" [level=3] [ref=f27e27]
+            - generic [ref=f27e28]:
+              - generic [ref=f27e29]:
+                - paragraph [ref=f27e30]: 100ml
+                - paragraph [ref=f27e31]: "SKU: HC-SHP-001-100ml"
+                - paragraph [ref=f27e32]: Rs. -150.00
+                - paragraph [ref=f27e33]: 40 available
+              - generic [ref=f27e34]:
+                - paragraph [ref=f27e35]: 250ml (Regular)
+                - paragraph [ref=f27e36]: "SKU: HC-SHP-001-250ml"
+                - paragraph [ref=f27e37]: 60 available
+              - generic [ref=f27e38]:
+                - paragraph [ref=f27e39]: 500ml (Family)
+                - paragraph [ref=f27e40]: "SKU: HC-SHP-001-500ml"
+                - paragraph [ref=f27e41]: +Rs. 250.00
+                - paragraph [ref=f27e42]: 20 available
+          - generic [ref=f27e43]:
+            - generic [ref=f27e44]:
+              - generic [ref=f27e45]: "Quantity:"
+              - spinbutton "Quantity:" [ref=f27e46]: "1"
+            - button "Add to Cart" [ref=f27e47] [cursor=pointer]
+      - generic [ref=f27e48]:
+        - heading "You Might Also Like" [level=2] [ref=f27e49]
+        - generic [ref=f27e50]:
+          - link [ref=f27e51] [cursor=pointer]:
+            - /url: /products/anti-dandruff-shampoo
+            - generic [ref=f27e52]:
+              - img "Anti-Dandruff Shampoo" [ref=f27e54]
+              - generic [ref=f27e55]:
+                - heading "Anti-Dandruff Shampoo" [level=3] [ref=f27e56]
+                - paragraph [ref=f27e57]: Rs. 520
+          - link [ref=f27e58] [cursor=pointer]:
+            - /url: /products/coconut-hair-oil
+            - generic [ref=f27e59]:
+              - img "Coconut Hair Oil" [ref=f27e61]
+              - generic [ref=f27e62]:
+                - heading "Coconut Hair Oil" [level=3] [ref=f27e63]
+                - paragraph [ref=f27e64]: Rs. 280
+          - link [ref=f27e65] [cursor=pointer]:
+            - /url: /products/hair-conditioner
+            - generic [ref=f27e66]:
+              - img "Hair Conditioner" [ref=f27e68]
+              - generic [ref=f27e69]:
+                - heading "Hair Conditioner" [level=3] [ref=f27e70]
+                - paragraph [ref=f27e71]: Rs. 380
+  - contentinfo [ref=f27e72]:
+    - generic [ref=f27e73]:
+      - generic [ref=f27e74]:
+        - generic [ref=f27e75]:
+          - heading "About" [level=3] [ref=f27e76]
+          - paragraph [ref=f27e77]: Muskan Care Center is your trusted source for personal hygiene products.
+        - generic [ref=f27e78]:
+          - heading "Shop" [level=3] [ref=f27e79]
+          - list [ref=f27e80]:
+            - listitem [ref=f27e81]:
+              - link "All Products" [ref=f27e82] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=f27e83]:
+              - link "Skincare" [ref=f27e84] [cursor=pointer]:
+                - /url: /products?category=skincare
+            - listitem [ref=f27e85]:
+              - link "Personal Care" [ref=f27e86] [cursor=pointer]:
+                - /url: /products?category=personal
+        - generic [ref=f27e87]:
+          - heading "Account" [level=3] [ref=f27e88]
+          - list [ref=f27e89]:
+            - listitem [ref=f27e90]:
+              - link "My Account" [ref=f27e91] [cursor=pointer]:
+                - /url: /account
+            - listitem [ref=f27e92]:
+              - link "Order History" [ref=f27e93] [cursor=pointer]:
+                - /url: /orders
+            - listitem [ref=f27e94]:
+              - link "Sign In" [ref=f27e95] [cursor=pointer]:
+                - /url: /auth/login
+        - generic [ref=f27e96]:
+          - heading "Support" [level=3] [ref=f27e97]
+          - list [ref=f27e98]:
+            - listitem [ref=f27e99]:
+              - link "Contact Us" [ref=f27e100] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=f27e101]:
+              - link "Shipping Info" [ref=f27e102] [cursor=pointer]:
+                - /url: /shipping
+            - listitem [ref=f27e103]:
+              - link "Returns" [ref=f27e104] [cursor=pointer]:
+                - /url: /shipping#returns
+      - generic [ref=f27e106]:
+        - paragraph [ref=f27e107]: © 2026 Muskan Care Center. All rights reserved.
+        - generic [ref=f27e108]:
+          - link "Privacy Policy" [ref=f27e109] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=f27e110] [cursor=pointer]:
+            - /url: "#"
