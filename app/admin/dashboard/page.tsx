@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import Link from 'next/link';
 
 function Sparkline({ data, color, label }: { data: number[]; color: string; label: string }) {
@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         // Fetch orders
-        const { data: orders, error: ordersError } = await supabase
+        const { data: orders, error: ordersError } = await supabaseAdmin
           .from('orders')
           .select('*')
           .order('created_at', { ascending: false })
@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
         // Fetch daily stats for last 14 days
         const fourteenDaysAgo = new Date();
         fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        const { data: recentOrdersData } = await supabase
+        const { data: recentOrdersData } = await supabaseAdmin
           .from('orders')
           .select('created_at, total_amount, order_status')
           .gte('created_at', fourteenDaysAgo.toISOString())
@@ -111,7 +111,7 @@ export default function AdminDashboardPage() {
         }
 
         // Fetch low stock products
-        const { data: inventory } = await supabase
+        const { data: inventory } = await supabaseAdmin
           .from('product_inventory')
           .select('quantity, low_stock_threshold, product_id, variant_id')
           .lte('quantity', 5)
@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
 
         if (inventory && inventory.length > 0) {
           const productIds = inventory.map((i) => i.product_id).filter(Boolean);
-          const { data: products } = await supabase
+          const { data: products } = await supabaseAdmin
             .from('products')
             .select('id, name, sku')
             .in('id', productIds);

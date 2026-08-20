@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import { exportOrdersCSV } from '@/server/actions/admin-orders';
 
 export default function AdminOrdersPage() {
@@ -22,7 +22,7 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        let query = supabase
+        let query = supabaseAdmin
           .from('orders')
           .select('*')
           .order('created_at', { ascending: false });

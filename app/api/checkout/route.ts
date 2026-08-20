@@ -24,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
   try {
     const body = await request.json();
     const {
