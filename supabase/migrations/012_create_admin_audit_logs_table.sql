@@ -3,7 +3,7 @@
 
 create table public.admin_audit_logs (
   id uuid primary key default gen_random_uuid(),
-  admin_id uuid not null references auth.users(id) on delete cascade,
+  admin_id uuid references auth.users(id) on delete set null,
   action text not null,
   entity_type text not null,
   entity_id text not null,
