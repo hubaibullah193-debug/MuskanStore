@@ -218,7 +218,7 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <p className="font-semibold">
-                      Rs {(order.total_amount / 100).toFixed(0)}
+                      Rs {(order.total_amount).toFixed(0)}
                     </p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

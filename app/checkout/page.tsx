@@ -100,6 +100,9 @@ export default function CheckoutPage() {
       // Order placed (new or replayed) — clear the idempotency key for next time
       sessionStorage.removeItem('checkout_idempotency');
 
+      // Clear the local guest cart so it doesn't persist after purchase
+      localStorage.removeItem('mstore_cart_guest');
+
       // Redirect to confirmation/payment
       window.location.href = result.redirectUrl;
     } catch (err) {

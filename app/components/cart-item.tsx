@@ -20,6 +20,13 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
   return (
     <div className="flex items-center gap-4 border-b border-gray-200 py-4" data-testid="cart-item">
       {/* Product Info */}
+      {item.image && (
+        <img
+          src={item.image}
+          alt={item.name || item.productId}
+          className="h-14 w-14 flex-shrink-0 rounded object-cover"
+        />
+      )}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-gray-900 truncate">
           {item.name || item.productId}

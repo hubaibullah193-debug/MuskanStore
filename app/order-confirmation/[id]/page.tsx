@@ -226,7 +226,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold text-blue-900 mb-2">Cash on Delivery</h2>
             <p className="text-blue-700">
-              You will pay Rs {(order.total_amount / 100).toFixed(0)} when your order arrives.
+              You will pay Rs {(order.total_amount).toFixed(0)} when your order arrives.
             </p>
           </div>
         )}
@@ -245,7 +245,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                   )}
                   <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                 </div>
-                <p className="font-medium">Rs {(item.subtotal / 100).toFixed(0)}</p>
+                <p className="font-medium">Rs {(item.subtotal).toFixed(0)}</p>
               </div>
             ))}
           </div>
@@ -253,23 +253,23 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
           <div className="space-y-2">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal:</span>
-              <span>Rs {(order.subtotal / 100).toFixed(0)}</span>
+              <span>Rs {(order.subtotal).toFixed(0)}</span>
             </div>
             {order.tax_amount > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Tax (17%):</span>
-                <span>Rs {(order.tax_amount / 100).toFixed(0)}</span>
+                <span>Rs {(order.tax_amount).toFixed(0)}</span>
               </div>
             )}
             {order.delivery_fee > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Delivery:</span>
-                <span>Rs {(order.delivery_fee / 100).toFixed(0)}</span>
+                <span>Rs {(order.delivery_fee).toFixed(0)}</span>
               </div>
             )}
             <div className="flex justify-between font-semibold text-lg pt-2 border-t">
               <span>Total:</span>
-              <span>Rs {(order.total_amount / 100).toFixed(0)}</span>
+              <span>Rs {(order.total_amount).toFixed(0)}</span>
             </div>
           </div>
         </div>

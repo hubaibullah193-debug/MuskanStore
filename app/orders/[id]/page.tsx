@@ -201,9 +201,9 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                         <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">Rs {(item.price / 100).toFixed(0)}</p>
+                        <p className="font-medium">Rs {(item.price).toFixed(0)}</p>
                         <p className="text-sm text-gray-600">
-                          Subtotal: Rs {(item.subtotal / 100).toFixed(0)}
+                          Subtotal: Rs {(item.subtotal).toFixed(0)}
                         </p>
                       </div>
                     </div>
@@ -289,31 +289,31 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
               <div className="space-y-3 pb-4 border-b">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal:</span>
-                  <span>Rs {(order.subtotal / 100).toFixed(0)}</span>
+                  <span>Rs {(order.subtotal).toFixed(0)}</span>
                 </div>
                 {order.tax_amount > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Tax (17%):</span>
-                    <span>Rs {(order.tax_amount / 100).toFixed(0)}</span>
+                    <span>Rs {(order.tax_amount).toFixed(0)}</span>
                   </div>
                 )}
                 {order.delivery_fee > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Delivery:</span>
-                    <span>Rs {(order.delivery_fee / 100).toFixed(0)}</span>
+                    <span>Rs {(order.delivery_fee).toFixed(0)}</span>
                   </div>
                 )}
                 {order.payment_fee > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Payment Fee:</span>
-                    <span>Rs {(order.payment_fee / 100).toFixed(0)}</span>
+                    <span>Rs {(order.payment_fee).toFixed(0)}</span>
                   </div>
                 )}
               </div>
 
               <div className="flex justify-between font-semibold text-lg pt-4 mb-6">
                 <span>Total:</span>
-                <span>Rs {(order.total_amount / 100).toFixed(0)}</span>
+                <span>Rs {(order.total_amount).toFixed(0)}</span>
               </div>
 
               <div className="space-y-3 pb-4 border-b">

@@ -34,7 +34,7 @@ export default function AddToCartButton({
       setSuccess(false);
 
       // Use the useCart hook to add item
-      await addItem(productId, variantId, quantity, price);
+      await addItem(productId, variantId, quantity, price, productName);
 
       setSuccess(true);
       setQuantity(1);

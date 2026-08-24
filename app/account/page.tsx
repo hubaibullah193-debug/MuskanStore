@@ -331,7 +331,7 @@ export default function AccountPage() {
                             {new Date(order.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            Rs {(order.total_amount / 100).toFixed(0)}
+                            Rs {(order.total_amount).toFixed(0)}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <span

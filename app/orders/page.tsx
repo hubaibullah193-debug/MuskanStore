@@ -110,7 +110,7 @@ export default function OrdersPage() {
                         {order.item_count} {order.item_count === 1 ? 'item' : 'items'}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        Rs {(order.total_amount / 100).toFixed(0)}
+                        Rs {(order.total_amount).toFixed(0)}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <OrderStatusBadge status={order.status} />

@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
             <div>
               <p className="text-gray-600 text-sm">Total Revenue</p>
               <p className="text-3xl font-bold text-green-600 mt-2">
-                Rs {(stats.totalRevenue / 100).toFixed(0)}
+                Rs {(stats.totalRevenue).toFixed(0)}
               </p>
             </div>
             <div className="text-4xl">💰</div>
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
                 label="Orders per day"
               />
               <Sparkline
-                data={dailyStats.map((d) => d.revenue / 100)}
+                data={dailyStats.map((d) => d.revenue)}
                 color="#22c55e"
                 label="Revenue (PKR) per day"
               />
@@ -283,7 +283,7 @@ export default function AdminDashboardPage() {
                       {order.guest_email || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-semibold">
-                      Rs {(order.total_amount / 100).toFixed(0)}
+                      Rs {order.total_amount.toFixed(0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

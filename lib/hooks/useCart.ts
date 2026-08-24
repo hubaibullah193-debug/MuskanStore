@@ -34,7 +34,7 @@ interface UseCartReturn {
   items: CartItem[];
   loading: boolean;
   error: string | null;
-  addItem: (productId: string, variantId: string | undefined, quantity: number, price: number) => Promise<void>;
+  addItem: (productId: string, variantId: string | undefined, quantity: number, price: number, name?: string, image?: string) => Promise<void>;
   updateItem: (cartItemId: string, quantity: number) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -122,7 +122,7 @@ export function useCart(): UseCartReturn {
 
   // Add item to cart
   const addItem = useCallback(
-    async (productId: string, variantId: string | undefined, quantity: number, price: number) => {
+    async (productId: string, variantId: string | undefined, quantity: number, price: number, name?: string, image?: string) => {
       try {
         setError(null);
 
@@ -148,6 +148,8 @@ export function useCart(): UseCartReturn {
               variantId,
               quantity,
               price,
+              name,
+              image,
             });
           }
 

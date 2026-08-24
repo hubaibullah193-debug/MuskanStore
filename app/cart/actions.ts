@@ -14,6 +14,8 @@ export interface CartItem {
   variantId?: string;
   quantity: number;
   price: number;
+  name?: string;
+  image?: string;
 }
 
 // ===================================================================
@@ -28,7 +30,7 @@ export async function getCartAction(userId?: string) {
 
     const { data, error } = await supabaseAdmin
       .from('cart_items')
-      .select('id, product_id, variant_id, quantity, price')
+      .select('id, product_id, variant_id, quantity, price, products(name, product_images(image_url))')
       .eq('user_id', userId);
 
     if (error) {
@@ -41,6 +43,8 @@ export async function getCartAction(userId?: string) {
       variantId: item.variant_id,
       quantity: item.quantity,
       price: item.price,
+      name: (item as any).products?.name,
+      image: (item as any).products?.product_images?.[0]?.image_url ?? undefined,
     }));
   } catch (error) {
     if (error instanceof AppError) throw error;
