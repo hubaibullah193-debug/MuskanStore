@@ -78,6 +78,7 @@ export default function AdminSettingsPage() {
         tax_rate: settings.tax_rate,
         delivery_fee: settings.delivery_fee,
         low_stock_threshold: settings.low_stock_threshold,
+        email_provider: settings.email_provider,
       });
 
       setSuccess('Settings saved successfully');

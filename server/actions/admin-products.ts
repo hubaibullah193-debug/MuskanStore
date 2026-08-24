@@ -6,7 +6,7 @@
  * All operations restricted to admin role via RLS
  */
 
-import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import {
   ProductCreateSchema,
   ProductUpdateSchema,
@@ -39,8 +39,7 @@ export async function addProduct(
     });
 
     // Check category exists
-    const { data: category, error: categoryError } = await supabase
-      .from("categories")
+    const { data: category, error: categoryError } = await supabaseAdmin.from("categories")
       .select("id")
       .eq("id", categoryId)
       .single();
@@ -50,8 +49,7 @@ export async function addProduct(
     }
 
     // Check SKU uniqueness
-    const { data: existing } = await supabase
-      .from("products")
+    const { data: existing } = await supabaseAdmin.from("products")
       .select("id")
       .eq("sku", validated.sku)
       .single();
@@ -61,8 +59,7 @@ export async function addProduct(
     }
 
     // Create product
-    const { data: product, error: productError } = await supabase
-      .from("products")
+    const { data: product, error: productError } = await supabaseAdmin.from("products")
       .insert({
         name: validated.name,
         description: validated.description,
@@ -79,8 +76,7 @@ export async function addProduct(
     }
 
     // Create default inventory entry
-    const { error: inventoryError } = await supabase
-      .from("product_inventory")
+    const { error: inventoryError } = await supabaseAdmin.from("product_inventory")
       .insert({
         product_id: product.id,
         variant_id: null,
@@ -101,7 +97,7 @@ export async function addProduct(
         display_order: img.order || 0,
       }));
 
-      await supabase.from("product_images").insert(imageRecords);
+      await supabaseAdmin.from("product_images").insert(imageRecords);
     }
 
     // Log audit event
@@ -150,8 +146,7 @@ export async function updateProduct(
     const validated = ProductUpdateSchema.parse(updates);
 
     // Get current product
-    const { data: currentProduct, error: getError } = await supabase
-      .from("products")
+    const { data: currentProduct, error: getError } = await supabaseAdmin.from("products")
       .select("*")
       .eq("id", productId)
       .single();
@@ -162,8 +157,7 @@ export async function updateProduct(
 
     // Check SKU uniqueness if changing
     if (validated.sku && validated.sku !== currentProduct.sku) {
-      const { data: existing } = await supabase
-        .from("products")
+      const { data: existing } = await supabaseAdmin.from("products")
         .select("id")
         .eq("sku", validated.sku)
         .single();
@@ -175,8 +169,7 @@ export async function updateProduct(
 
     // Check category exists if changing
     if (validated.category_id && validated.category_id !== currentProduct.category_id) {
-      const { data: category } = await supabase
-        .from("categories")
+      const { data: category } = await supabaseAdmin.from("categories")
         .select("id")
         .eq("id", validated.category_id)
         .single();
@@ -187,8 +180,7 @@ export async function updateProduct(
     }
 
     // Update product
-    const { data: updated, error: updateError } = await supabase
-      .from("products")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("products")
       .update(validated)
       .eq("id", productId)
       .select()
@@ -226,8 +218,7 @@ export async function disableProduct(adminId: string, productId: string) {
       throw new AppError("INVALID_ID", "Product ID required", 400);
     }
 
-    const { data: updated, error } = await supabase
-      .from("products")
+    const { data: updated, error } = await supabaseAdmin.from("products")
       .update({ is_active: false })
       .eq("id", productId)
       .select()
@@ -257,8 +248,7 @@ export async function enableProduct(adminId: string, productId: string) {
       throw new AppError("INVALID_ID", "Product ID required", 400);
     }
 
-    const { data: updated, error } = await supabase
-      .from("products")
+    const { data: updated, error } = await supabaseAdmin.from("products")
       .update({ is_active: true })
       .eq("id", productId)
       .select()
@@ -284,8 +274,7 @@ export async function enableProduct(adminId: string, productId: string) {
 
 export async function getAllProducts(filters?: { is_active?: boolean; search?: string }) {
   try {
-    let query = supabase
-      .from("products")
+    let query = supabaseAdmin.from("products")
       .select("id, name, sku, base_price, is_active, category_id, created_at")
       .order("created_at", { ascending: false });
 
@@ -412,8 +401,7 @@ export async function bulkUploadProducts(
 
       try {
         // Get category by name
-        const { data: category, error: categoryError } = await supabase
-          .from("categories")
+        const { data: category, error: categoryError } = await supabaseAdmin.from("categories")
           .select("id")
           .eq("name", row.category)
           .single();
@@ -428,8 +416,7 @@ export async function bulkUploadProducts(
         }
 
         // Check if SKU already exists
-        const { data: existing } = await supabase
-          .from("products")
+        const { data: existing } = await supabaseAdmin.from("products")
           .select("id")
           .eq("sku", row.sku)
           .single();
@@ -444,8 +431,7 @@ export async function bulkUploadProducts(
         }
 
         // Create product
-        const { data: product, error: productError } = await supabase
-          .from("products")
+        const { data: product, error: productError } = await supabaseAdmin.from("products")
           .insert({
             name: row.name,
             sku: row.sku,
@@ -466,7 +452,7 @@ export async function bulkUploadProducts(
         }
 
         // Create inventory entry
-        await supabase.from("product_inventory").insert({
+        await supabaseAdmin.from("product_inventory").insert({
           product_id: product.id,
           variant_id: null,
           quantity: row.stock,
@@ -520,8 +506,7 @@ export async function bulkUploadProducts(
 
 export async function getCategories() {
   try {
-    const { data, error } = await supabase
-      .from("categories")
+    const { data, error } = await supabaseAdmin.from("categories")
       .select("id, name, slug")
       .order("name", { ascending: true });
 
@@ -552,8 +537,7 @@ export async function addProductImage(
     }
 
     // Verify product exists
-    const { data: product, error: productError } = await supabase
-      .from("products")
+    const { data: product, error: productError } = await supabaseAdmin.from("products")
       .select("id")
       .eq("id", productId)
       .single();
@@ -563,8 +547,7 @@ export async function addProductImage(
     }
 
     // Add image
-    const { data: image, error: imageError } = await supabase
-      .from("product_images")
+    const { data: image, error: imageError } = await supabaseAdmin.from("product_images")
       .insert({
         product_id: productId,
         image_url: imageUrl,
@@ -608,8 +591,7 @@ export async function removeProductImage(adminId: string, imageId: string) {
     }
 
     // Get image first
-    const { data: image, error: getError } = await supabase
-      .from("product_images")
+    const { data: image, error: getError } = await supabaseAdmin.from("product_images")
       .select("*")
       .eq("id", imageId)
       .single();
@@ -633,8 +615,7 @@ export async function removeProductImage(adminId: string, imageId: string) {
     }
 
     // Delete image record
-    const { error: deleteError } = await supabase
-      .from("product_images")
+    const { error: deleteError } = await supabaseAdmin.from("product_images")
       .delete()
       .eq("id", imageId);
 
@@ -667,8 +648,7 @@ export async function removeProductImage(adminId: string, imageId: string) {
 
 export async function getProductImages(productId: string) {
   try {
-    const { data, error } = await supabase
-      .from("product_images")
+    const { data, error } = await supabaseAdmin.from("product_images")
       .select("id, image_url, display_order")
       .eq("product_id", productId)
       .order("display_order", { ascending: true });
@@ -743,8 +723,7 @@ export async function uploadProductImage(
     }
 
     // Verify product exists
-    const { data: product, error: productError } = await supabase
-      .from("products")
+    const { data: product, error: productError } = await supabaseAdmin.from("products")
       .select("id")
       .eq("id", productId)
       .single();
@@ -780,8 +759,7 @@ export async function uploadProductImage(
       .getPublicUrl(path);
 
     // Get current max display_order for this product
-    const { data: existingImages } = await supabase
-      .from("product_images")
+    const { data: existingImages } = await supabaseAdmin.from("product_images")
       .select("display_order")
       .eq("product_id", productId)
       .order("display_order", { ascending: false })
@@ -793,8 +771,7 @@ export async function uploadProductImage(
         : 0;
 
     // Store URL in product_images
-    const { data: image, error: imageError } = await supabase
-      .from("product_images")
+    const { data: image, error: imageError } = await supabaseAdmin.from("product_images")
       .insert({
         product_id: productId,
         image_url: publicUrl,

@@ -7,12 +7,17 @@
  * the pattern used by other admin server actions.
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 
 export async function getAdminDashboardStats() {
   try {
-    const { data: orders, error: ordersError } = await supabase
+    const { verifyAdminAccess } = await import("./auth");
+    if (!(await verifyAdminAccess())) {
+      throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+    }
+
+    const { data: orders, error: ordersError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .order("created_at", { ascending: false })
@@ -35,8 +40,7 @@ export async function getAdminDashboardStats() {
 
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    const { data: recentOrdersData, error: recentError } = await supabase
-      .from("orders")
+    const { data: recentOrdersData, error: recentError } = await supabaseAdmin.from("orders")
       .select("created_at, total_amount, order_status")
       .gte("created_at", fourteenDaysAgo.toISOString())
       .order("created_at", { ascending: true });
@@ -61,8 +65,7 @@ export async function getAdminDashboardStats() {
     });
     const dailyStats = Object.entries(dayMap).map(([date, v]) => ({ date, ...v }));
 
-    const { data: inventory, error: invError } = await supabase
-      .from("product_inventory")
+    const { data: inventory, error: invError } = await supabaseAdmin.from("product_inventory")
       .select("quantity, low_stock_threshold, product_id, variant_id")
       .lte("quantity", 5)
       .order("quantity", { ascending: true })
@@ -75,8 +78,7 @@ export async function getAdminDashboardStats() {
     let lowStockProducts: any[] = [];
     if (inventory && inventory.length > 0) {
       const productIds = inventory.map((i: any) => i.product_id).filter(Boolean);
-      const { data: products, error: prodError } = await supabase
-        .from("products")
+      const { data: products, error: prodError } = await supabaseAdmin.from("products")
         .select("id, name, sku")
         .in("id", productIds);
 

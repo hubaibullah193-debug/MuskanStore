@@ -43,7 +43,7 @@ export default function AdminAuditLogsPage() {
   }, [filter]);
 
   const filteredLogs = logs.filter((log) =>
-    log.entity_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.entity_id ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (log.admin_id?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
@@ -152,7 +152,7 @@ export default function AdminAuditLogsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{log.entity_type}</p>
-                      <p className="text-xs text-gray-600 font-mono">{log.entity_id}</p>
+                      <p className="text-xs text-gray-600 font-mono">{log.entity_id ?? "—"}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -199,7 +199,7 @@ export default function AdminAuditLogsPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-gray-600 text-sm">Unique Entities</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">
-            {new Set(logs.map((l) => l.entity_id)).size}
+            {new Set(logs.map((l) => l.entity_id ?? "")).size}
           </p>
         </div>
       </div>

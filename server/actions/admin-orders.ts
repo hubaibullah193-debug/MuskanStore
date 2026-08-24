@@ -6,7 +6,7 @@
  * All operations logged to audit trail
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { OrderStatusUpdateSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 import { logAuditEvent } from "@/lib/supabase/helpers";
@@ -34,8 +34,7 @@ export async function getAdminOrders(
 
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("orders")
+    let query = supabaseAdmin.from("orders")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -91,8 +90,7 @@ export async function getAdminOrder(orderId: string) {
       throw new AppError("INVALID_ID", "Order ID required", 400);
     }
 
-    const { data: order, error } = await supabase
-      .from("orders")
+    const { data: order, error } = await supabaseAdmin.from("orders")
       .select(
         `
         *,
@@ -124,8 +122,7 @@ export async function markCODPaid(adminId: string, orderId: string, notes?: stri
     }
 
     // Get order
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
+    const { data: order, error: orderError } = await supabaseAdmin.from("orders")
       .select("payment_method, payment_status")
       .eq("id", orderId)
       .single();
@@ -144,8 +141,7 @@ export async function markCODPaid(adminId: string, orderId: string, notes?: stri
     }
 
     // Update payment status
-    const { data: updated, error: updateError } = await supabase
-      .from("orders")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("orders")
       .update({
         payment_status: "paid",
       })
@@ -192,8 +188,7 @@ export async function approveRefund(
     }
 
     // Get order
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
+    const { data: order, error: orderError } = await supabaseAdmin.from("orders")
       .select("user_id, guest_email, order_status, payment_status, total_amount, items, status_history, refund_reason, order_number")
       .eq("id", orderId)
       .single();
@@ -230,8 +225,7 @@ export async function approveRefund(
     });
 
     // Update order status to refunded
-    const { data: updated, error: updateError } = await supabase
-      .from("orders")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("orders")
       .update({
         order_status: "refunded",
         payment_status: "paid", // COD was paid or prepaid already confirmed
@@ -262,7 +256,7 @@ export async function approveRefund(
     let customerEmail = updated.guest_email;
     if (updated.user_id && !customerEmail) {
       // Fetch user email from auth.users if not already retrieved
-      const { data } = await supabase.auth.admin.getUserById(updated.user_id);
+      const { data } = await supabaseAdmin.auth.admin.getUserById(updated.user_id);
       customerEmail = data?.user?.email;
     }
 
@@ -296,8 +290,7 @@ export async function getPendingRefunds(limit: number = 50) {
       throw new AppError("INVALID_LIMIT", "Limit must be between 1 and 500", 400);
     }
 
-    const { data, error } = await supabase
-      .from("orders")
+    const { data, error } = await supabaseAdmin.from("orders")
       .select("id, order_number, user_id, guest_email, refund_reason, total_amount, created_at")
       .eq("order_status", "refund_requested")
       .order("created_at", { ascending: true })
@@ -332,8 +325,7 @@ export async function exportOrdersCSV(
   }
 ) {
   try {
-    let query = supabase
-      .from("orders")
+    let query = supabaseAdmin.from("orders")
       .select("order_number, guest_email, delivery_address, total_amount, order_status, payment_status, payment_method, items, refund_amount, created_at, updated_at")
       .order("created_at", { ascending: false });
 
@@ -448,8 +440,7 @@ export async function getFailedPayments(limit: number = 50) {
     }
 
     // Get orders with failed payment status
-    const { data: orders, error } = await supabase
-      .from("orders")
+    const { data: orders, error } = await supabaseAdmin.from("orders")
       .select(
         `
         id,

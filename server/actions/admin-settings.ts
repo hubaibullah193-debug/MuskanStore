@@ -5,7 +5,7 @@
  * Manage email, tax, fees, service areas, and other global settings
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { SettingsSchema, ServiceAreaSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 import { logAuditEvent } from "@/lib/supabase/helpers";
@@ -16,8 +16,7 @@ import { logAuditEvent } from "@/lib/supabase/helpers";
 
 export async function getSettings() {
   try {
-    const { data, error } = await supabase
-      .from("settings")
+    const { data, error } = await supabaseAdmin.from("settings")
       .select("key, value");
 
     if (error) {
@@ -61,8 +60,7 @@ export async function updateSettings(
 
     // Update each setting
     for (const [key, value] of Object.entries(validated)) {
-      const { error: upsertError } = await supabase
-        .from("settings")
+      const { error: upsertError } = await supabaseAdmin.from("settings")
         .upsert(
           {
             key: key.toLowerCase(),
@@ -103,6 +101,7 @@ export async function updateSettingsAction(settings: {
   tax_rate?: number;
   delivery_fee?: number;
   low_stock_threshold?: number;
+  email_provider?: "resend" | "sendgrid";
 }) {
   const { verifyAdminAccess } = await import("./auth");
   const adminAccess = await verifyAdminAccess();
@@ -118,8 +117,7 @@ export async function updateSettingsAction(settings: {
 
 export async function getServiceAreas(activeOnly: boolean = false) {
   try {
-    let query = supabase
-      .from("service_areas")
+    let query = supabaseAdmin.from("service_areas")
       .select("*")
       .order("city", { ascending: true });
 
@@ -158,8 +156,7 @@ export async function addServiceArea(
     });
 
     // Check if city already exists
-    const { data: existing } = await supabase
-      .from("service_areas")
+    const { data: existing } = await supabaseAdmin.from("service_areas")
       .select("id")
       .eq("city", validated.city)
       .single();
@@ -169,8 +166,7 @@ export async function addServiceArea(
     }
 
     // Add service area
-    const { data: area, error } = await supabase
-      .from("service_areas")
+    const { data: area, error } = await supabaseAdmin.from("service_areas")
       .insert(validated)
       .select()
       .single();
@@ -209,8 +205,7 @@ export async function toggleServiceArea(adminId: string, areaId: string, isActiv
     }
 
     // Get current area
-    const { data: area, error: getError } = await supabase
-      .from("service_areas")
+    const { data: area, error: getError } = await supabaseAdmin.from("service_areas")
       .select("*")
       .eq("id", areaId)
       .single();
@@ -220,8 +215,7 @@ export async function toggleServiceArea(adminId: string, areaId: string, isActiv
     }
 
     // Update status
-    const { data: updated, error: updateError } = await supabase
-      .from("service_areas")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("service_areas")
       .update({ is_active: isActive })
       .eq("id", areaId)
       .select()
@@ -260,8 +254,7 @@ export async function removeServiceArea(adminId: string, areaId: string) {
     }
 
     // Get area before deletion
-    const { data: area, error: getError } = await supabase
-      .from("service_areas")
+    const { data: area, error: getError } = await supabaseAdmin.from("service_areas")
       .select("*")
       .eq("id", areaId)
       .single();
@@ -271,8 +264,7 @@ export async function removeServiceArea(adminId: string, areaId: string) {
     }
 
     // Delete area
-    const { error: deleteError } = await supabase
-      .from("service_areas")
+    const { error: deleteError } = await supabaseAdmin.from("service_areas")
       .delete()
       .eq("id", areaId);
 
@@ -305,8 +297,7 @@ export async function removeServiceArea(adminId: string, areaId: string) {
 export async function seedServiceAreas(adminId: string) {
   try {
     // Check if service areas already exist
-    const { count } = await supabase
-      .from("service_areas")
+    const { count } = await supabaseAdmin.from("service_areas")
       .select("id", { count: "exact", head: true });
 
     if (count && count > 0) {
@@ -342,8 +333,7 @@ export async function seedServiceAreas(adminId: string) {
       is_active: true,
     }));
 
-    const { data, error } = await supabase
-      .from("service_areas")
+    const { data, error } = await supabaseAdmin.from("service_areas")
       .insert(areaRecords)
       .select();
 
@@ -395,8 +385,7 @@ export async function getAuditLogs(
 
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("admin_audit_logs")
+    let query = supabaseAdmin.from("admin_audit_logs")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

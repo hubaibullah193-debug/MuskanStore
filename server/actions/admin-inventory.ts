@@ -6,7 +6,7 @@
  * All adjustments logged for audit trail
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { InventoryAdjustmentSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage } from "@/lib/utils/helpers";
 import { logAuditEvent } from "@/lib/supabase/helpers";
@@ -17,8 +17,7 @@ import { logAuditEvent } from "@/lib/supabase/helpers";
 
 export async function getAllInventory() {
   try {
-    const { data, error } = await supabase
-      .from("product_inventory")
+    const { data, error } = await supabaseAdmin.from("product_inventory")
       .select(
         `
         id,
@@ -98,8 +97,7 @@ export async function adjustInventory(
     });
 
     // Get current inventory
-    let query = supabase
-      .from("product_inventory")
+    let query = supabaseAdmin.from("product_inventory")
       .select("id, quantity")
       .eq("product_id", productId);
 
@@ -119,8 +117,7 @@ export async function adjustInventory(
     const difference = newQuantity - oldQuantity;
 
     // Update inventory
-    const { data: updated, error: updateError } = await supabase
-      .from("product_inventory")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("product_inventory")
       .update({ quantity: newQuantity })
       .eq("id", inventory.id)
       .select()
@@ -176,8 +173,7 @@ export async function setLowStockThreshold(
     }
 
     // Get inventory
-    let query = supabase
-      .from("product_inventory")
+    let query = supabaseAdmin.from("product_inventory")
       .select("id")
       .eq("product_id", productId);
 
@@ -194,8 +190,7 @@ export async function setLowStockThreshold(
     }
 
     // Update threshold
-    const { data: updated, error: updateError } = await supabase
-      .from("product_inventory")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("product_inventory")
       .update({ low_stock_threshold: threshold })
       .eq("id", inventory.id)
       .select()
@@ -240,8 +235,7 @@ export async function getInventoryAdjustmentHistory(
     }
 
     // Get inventory ID first
-    let query = supabase
-      .from("product_inventory")
+    let query = supabaseAdmin.from("product_inventory")
       .select("id")
       .eq("product_id", productId);
 
@@ -258,8 +252,7 @@ export async function getInventoryAdjustmentHistory(
     }
 
     // Get adjustment logs
-    const { data: logs, error: logsError } = await supabase
-      .from("admin_audit_logs")
+    const { data: logs, error: logsError } = await supabaseAdmin.from("admin_audit_logs")
       .select("*")
       .eq("entity_type", "product_inventory")
       .eq("entity_id", inventory.id)
@@ -285,8 +278,7 @@ export async function getInventoryAdjustmentHistory(
 export async function getLowStockAlerts() {
   try {
     // Get all inventory with product info
-    const { data: allInventory, error } = await supabase
-      .from("product_inventory")
+    const { data: allInventory, error } = await supabaseAdmin.from("product_inventory")
       .select(
         `
         id,

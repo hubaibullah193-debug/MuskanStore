@@ -229,13 +229,36 @@ export const UserProfileUpdateSchema = z.object({
 // SETTINGS SCHEMAS
 // ===================================================================
 
+// Allow empty strings to be treated as "not provided" so partial saves work.
+const emptyToUndefined = (v: unknown) =>
+  v === "" || v === null ? undefined : v;
+
 export const SettingsSchema = z.object({
-  support_email: EmailSchema,
-  support_phone: PhoneSchema,
-  website_url: z.string().url("Invalid website URL"),
-  tax_rate: z.number().nonnegative().max(100),
-  delivery_fee: z.number().nonnegative(),
-  low_stock_threshold: z.number().int().positive(),
+  support_email: z.preprocess(
+    emptyToUndefined,
+    EmailSchema.optional()
+  ),
+  support_phone: z.preprocess(
+    emptyToUndefined,
+    PhoneSchema.optional()
+  ),
+  website_url: z.preprocess(
+    emptyToUndefined,
+    z.string().url("Invalid website URL").optional()
+  ),
+  tax_rate: z.preprocess(
+    emptyToUndefined,
+    z.number().nonnegative().max(100).optional()
+  ),
+  delivery_fee: z.preprocess(
+    emptyToUndefined,
+    z.number().nonnegative().optional()
+  ),
+  low_stock_threshold: z.preprocess(
+    emptyToUndefined,
+    z.number().int().nonnegative().optional()
+  ),
+  email_provider: z.enum(["resend", "sendgrid"]).optional(),
 });
 
 // ===================================================================

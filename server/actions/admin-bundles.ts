@@ -6,7 +6,7 @@
  * All operations logged to audit trail
  */
 
-import { supabase } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import {
   BundleCreateSchema,
   BundleUpdateSchema,
@@ -20,8 +20,7 @@ import { logAuditEvent } from "@/lib/supabase/helpers";
 
 export async function getAllBundles() {
   try {
-    const { data, error } = await supabase
-      .from("bundles")
+    const { data, error } = await supabaseAdmin.from("bundles")
       .select(
         `
         id,
@@ -67,8 +66,7 @@ export async function getBundleAdmin(bundleId: string) {
       throw new AppError("INVALID_ID", "Bundle ID required", 400);
     }
 
-    const { data, error } = await supabase
-      .from("bundles")
+    const { data, error } = await supabaseAdmin.from("bundles")
       .select(
         `
         *,
@@ -134,8 +132,7 @@ export async function createBundle(
     // Compute regular_price from products
     let regularPrice = 0;
     for (const item of data.items) {
-      const { data: product, error: prodError } = await supabase
-        .from("products")
+      const { data: product, error: prodError } = await supabaseAdmin.from("products")
         .select("base_price")
         .eq("id", item.product_id)
         .single();
@@ -152,8 +149,7 @@ export async function createBundle(
 
       // Add variant adjustment if specified
       if (item.variant_id) {
-        const { data: variant } = await supabase
-          .from("product_variants")
+        const { data: variant } = await supabaseAdmin.from("product_variants")
           .select("price_adjustment")
           .eq("id", item.variant_id)
           .single();
@@ -173,8 +169,7 @@ export async function createBundle(
         : 0;
 
     // Insert bundle
-    const { data: bundle, error: bundleError } = await supabase
-      .from("bundles")
+    const { data: bundle, error: bundleError } = await supabaseAdmin.from("bundles")
       .insert({
         name: validated.name,
         description: validated.description,
@@ -200,13 +195,12 @@ export async function createBundle(
       quantity: item.quantity,
     }));
 
-    const { error: itemsError } = await supabase
-      .from("bundle_items")
+    const { error: itemsError } = await supabaseAdmin.from("bundle_items")
       .insert(bundleItems);
 
     if (itemsError) {
       // Rollback bundle
-      await supabase.from("bundles").delete().eq("id", bundle.id);
+      await supabaseAdmin.from("bundles").delete().eq("id", bundle.id);
       throw new AppError("BUNDLE_ITEMS_FAILED", itemsError.message, 500);
     }
 
@@ -254,8 +248,7 @@ export async function updateBundle(
     }
 
     // Get current bundle
-    const { data: current, error: getError } = await supabase
-      .from("bundles")
+    const { data: current, error: getError } = await supabaseAdmin.from("bundles")
       .select("id, bundle_price, regular_price")
       .eq("id", bundleId)
       .single();
@@ -275,8 +268,7 @@ export async function updateBundle(
         ) / 100;
     }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("bundles")
+    const { data: updated, error: updateError } = await supabaseAdmin.from("bundles")
       .update(updateData)
       .eq("id", bundleId)
       .select()
@@ -312,8 +304,7 @@ export async function deleteBundle(adminId: string, bundleId: string) {
     }
 
     // Soft delete - just deactivate
-    const { data: updated, error } = await supabase
-      .from("bundles")
+    const { data: updated, error } = await supabaseAdmin.from("bundles")
       .update({ is_active: false })
       .eq("id", bundleId)
       .select()
