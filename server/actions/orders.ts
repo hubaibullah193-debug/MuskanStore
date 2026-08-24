@@ -7,6 +7,7 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabase/client";
+import { verifySupabaseToken } from "@/lib/auth/verify";
 import { CheckoutSchema, RefundRequestSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, generateRandomString, calculateTotal } from "@/lib/utils/helpers";
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
@@ -315,7 +316,7 @@ export async function getOrderForDisplay(
       return null;
     }
 
-    // If no userId provided, try to resolve from auth cookie
+    // If no userId provided, try to resolve from auth cookie (signature-verified)
     let resolvedUserId = userId;
     if (!resolvedUserId && !guestToken) {
       try {
@@ -323,9 +324,8 @@ export async function getOrderForDisplay(
         const cookieStore = await cookies();
         const authToken = cookieStore.get("auth-token")?.value;
         if (authToken) {
-          const { decodeJwt } = await import("jose");
-          const payload = decodeJwt(authToken);
-          resolvedUserId = payload.sub || undefined;
+          const verified = await verifySupabaseToken(authToken);
+          resolvedUserId = verified?.sub || undefined;
         }
       } catch {
         // No cookie or invalid token - proceed without userId

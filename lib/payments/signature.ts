@@ -1,6 +1,19 @@
 /**
  * Payment Gateway Signature Utilities
- * HMAC signing for JazzCash and Easypaisa
+ * HMAC signing/verification for JazzCash and Easypaisa.
+ *
+ * JazzCash SecureHash (verified against the published "Page Redirection v1.1"
+ * algorithm): all request/response parameters are sorted A-Z (excluding
+ * pp_SecureHash and any empty values), their values are joined with "&", the
+ * Integrity Salt is prepended (salt&v1&v2...), and an HMAC-SHA256 is computed
+ * with the Integrity Salt as the key. The SAME algorithm is used for request
+ * signing and for verifying both the browser return and the async IPN.
+ *
+ * Easypaisa: the merchant integration PDF is NOT publicly published. The
+ * algorithm below mirrors this project's existing generator/verifier so our
+ * own initiation and verification are symmetric. The exact production field
+ * order, signature parameter name, and encoding MUST be confirmed against the
+ * merchant-provided PDF before go-live (see audit report / remaining blockers).
  */
 
 import crypto from 'crypto';
@@ -16,35 +29,84 @@ function timingSafeEqualHex(a: string, b: string): boolean {
   return crypto.timingSafeEqual(ab, bb);
 }
 
+// ===================================================================
+// JAZZCASH
+// ===================================================================
+
 /**
- * Generate JazzCash HMAC signature
- * JazzCash uses SHA256 HMAC with the password as the key
+ * Build the canonical string JazzCash uses for its SecureHash:
+ *   [IntegritySalt, <sorted non-empty param values>].join('&')
+ * Only pp_*-prefixed gateway fields are included (so our own return-URL params
+ * such as sig/ts/method are never part of the hash), and pp_SecureHash itself
+ * is always excluded.
  */
-export function generateJazzCashSignature(
-  merchantId: string,
-  password: string,
-  orderId: string,
-  amount: number,
-  version: string = "1.1"
+function buildJazzCashCanonical(
+  params: Record<string, any>,
+  integritySalt: string
 ): string {
-  // JazzCash signature format: pp_MerchantID|pp_Password|pp_Version|pp_TxnRefNo|pp_Amount|pp_TxnCurrency|pp_TxnDateTime
-  const amountInCents = Math.round(amount * 100);
-  const timestamp = new Date().toISOString().replace(/[:-]/g, '').replace(/\.\d{3}/, '');
+  const sortedKeys = Object.keys(params)
+    .filter(
+      (k) =>
+        k.startsWith('pp_') &&
+        k !== 'pp_SecureHash' &&
+        params[k] !== undefined &&
+        params[k] !== null &&
+        params[k] !== ''
+    )
+    .sort();
 
-  const signatureString = `${merchantId}|${password}|${version}|${orderId}|${amountInCents}|PKR|${timestamp}`;
-
-  const signature = crypto
-    .createHmac('sha256', password)
-    .update(signatureString)
-    .digest('hex')
-    .toUpperCase();
-
-  return signature;
+  const values = sortedKeys.map((k) => String(params[k]));
+  return [integritySalt, ...values].join('&');
 }
 
 /**
- * Generate Easypaisa HMAC signature
- * Easypaisa uses SHA256 HMAC with merchant secret
+ * Generate the JazzCash pp_SecureHash for an outbound redirect request.
+ * @param params all request parameters (excluding pp_SecureHash)
+ * @param integritySalt the merchant Integrity Salt (NOT the PP password)
+ */
+export function generateJazzCashSecureHash(
+  params: Record<string, any>,
+  integritySalt: string
+): string {
+  const message = buildJazzCashCanonical(params, integritySalt);
+  return crypto
+    .createHmac('sha256', integritySalt)
+    .update(message)
+    .digest('hex')
+    .toUpperCase();
+}
+
+/**
+ * Verify a JazzCash SecureHash (request return or async IPN) using the
+ * Integrity Salt. Fail-closed: returns false when the salt or the received
+ * hash is missing, or when the computed hash does not match.
+ */
+export function verifyJazzCashWebhookSignature(
+  integritySalt: string,
+  data: Record<string, any>
+): boolean {
+  try {
+    if (!integritySalt) return false;
+    const received = data?.pp_SecureHash;
+    if (!received) return false;
+
+    const expected = generateJazzCashSecureHash(data, integritySalt);
+    return timingSafeEqualHex(expected, received);
+  } catch (error) {
+    console.error('JazzCash signature verification error:', error);
+    return false;
+  }
+}
+
+// ===================================================================
+// EASYPAISA
+// ===================================================================
+
+/**
+ * Generate Easypaisa request signature (merchantHashedReq).
+ * Mirrors verifyEasypaisaWebhookSignature so initiation and verification are
+ * symmetric. The production Easypaisa spec (field order, signature parameter
+ * name, base64 vs hex encoding) must be confirmed against the merchant PDF.
  */
 export function generateEasypaisaSignature(
   merchantId: string,
@@ -52,99 +114,43 @@ export function generateEasypaisaSignature(
   orderId: string,
   amount: number
 ): string {
-  // Easypaisa signature format: merchantID|transactionID|amount|secret
-  const signatureString = `${merchantId}|${orderId}|${amount.toFixed(2)}|${secret}`;
-
-  const signature = crypto
+  const signatureString = `${merchantId}|${orderId}|${String(amount)}|${secret}`;
+  return crypto
     .createHmac('sha256', secret)
     .update(signatureString)
     .digest('hex')
     .toUpperCase();
-
-  return signature;
 }
 
 /**
- * Verify JazzCash webhook signature
- */
-export function verifyJazzCashWebhookSignature(
-  password: string,
-  webhookData: Record<string, any>
-): boolean {
-  try {
-    const signatureString = `${webhookData.pp_MerchantID}|${password}|${webhookData.pp_Version}|${webhookData.pp_TxnRefNo}|${webhookData.pp_Amount}|${webhookData.pp_TxnCurrency}|${webhookData.pp_TxnDateTime}`;
-
-    const expectedSignature = crypto
-      .createHmac('sha256', password)
-      .update(signatureString)
-      .digest('hex')
-      .toUpperCase();
-
-    return timingSafeEqualHex(
-      expectedSignature,
-      webhookData.pp_SecureHash || ''
-    );
-  } catch (error) {
-    console.error('JazzCash signature verification error:', error);
-    return false;
-  }
-}
-
-/**
- * Verify Easypaisa webhook signature
+ * Verify Easypaisa webhook/return signature. Fail-closed.
  */
 export function verifyEasypaisaWebhookSignature(
   secret: string,
   webhookData: Record<string, any>
 ): boolean {
   try {
-    const signatureString = `${webhookData.merchantID}|${webhookData.transactionID}|${webhookData.amount}|${secret}`;
+    if (!secret) return false;
+    const received = webhookData?.signature || webhookData?.merchantHashedReq;
+    if (!received) return false;
 
-    const expectedSignature = crypto
+    const signatureString = `${webhookData.merchantID}|${webhookData.transactionID}|${String(webhookData.amount)}|${secret}`;
+    const expected = crypto
       .createHmac('sha256', secret)
       .update(signatureString)
       .digest('hex')
       .toUpperCase();
 
-    return timingSafeEqualHex(expectedSignature, webhookData.signature || '');
+    return timingSafeEqualHex(expected, received);
   } catch (error) {
     console.error('Easypaisa signature verification error:', error);
     return false;
   }
 }
 
-/**
- * Verify a generic webhook HMAC-SHA256 signature over the raw request body.
- * Used to authenticate POST /api/payment/verify so that only a party holding
- * PAYMENT_WEBHOOK_SECRET can mark an order as paid.
- * Uses a constant-time comparison to avoid timing attacks.
- */
-export function verifyWebhookSignature(
-  secret: string,
-  rawBody: string,
-  signature: string
-): boolean {
-  try {
-    if (!secret || !signature) return false;
-
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex')
-      .toLowerCase();
-
-    const provided = signature.toLowerCase().replace(/^sha256=/, '');
-
-    const expectedBuf = Buffer.from(expected);
-    const providedBuf = Buffer.from(provided);
-
-    if (expectedBuf.length !== providedBuf.length) return false;
-    return crypto.timingSafeEqual(expectedBuf, providedBuf);
-  } catch (error) {
-    console.error('Webhook signature verification error:', error);
-    return false;
-  }
-}
+// ===================================================================
+// RETURN-URL SIGNING (defense in depth)
+// ===================================================================
 
 /**
  * Sign an outbound payment-gateway return URL so the callback handler can

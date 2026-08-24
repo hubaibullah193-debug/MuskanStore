@@ -10,7 +10,7 @@ import { validateCartInventory } from '@/server/actions/cart';
 import { generateJazzCashUrl, generateEasypaisaUrl } from '@/lib/payments/url-generators';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { decodeJwt } from 'jose';
+import { verifySupabaseToken } from '@/lib/auth/verify';
 
 const TAX_RATE = 0.17; // 17% tax
 const DELIVERY_FEE = 300; // Rs. 300 delivery fee
@@ -59,18 +59,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authenticated user from cookie JWT
+    // Get authenticated user from cookie JWT (signature-verified)
     let userId: string | null = null;
     let userEmail: string | undefined;
     const authToken = request.cookies.get('auth-token')?.value;
     if (authToken) {
-      try {
-        const payload = decodeJwt(authToken);
-        userId = payload.sub || null;
-        userEmail = payload.email as string | undefined;
-      } catch {
-        // Invalid token, proceed as guest
+      const verified = await verifySupabaseToken(authToken);
+      if (verified?.sub) {
+        userId = verified.sub;
       }
+    }
+    // Resolve the customer email from the verified user (falls back to guest email).
+    // Mirrors createOrder's email resolution so we never trust client/JWT claims.
+    if (userId) {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+      userEmail = data?.user?.email;
     }
     userEmail = userEmail || guestEmail;
 

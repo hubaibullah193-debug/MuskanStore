@@ -160,7 +160,8 @@ tokens.css                             # Design system tokens + global resets
 - Admin: dashboard, orders, products, inventory, shipments, refunds, audit-logs, settings
 - Payment gateway stubs (JazzCash, Easypaisa)
 - Email service (Resend) + templates
-- 14 SQL migrations (schema + RLS + features)
+- 15 SQL migrations (schema + RLS + features + secure admin provisioning)
+- Secure admin provisioning — no public admin signup; initial/further admins designated via `npm run provision-admin <email>` (service_role key) or the Supabase dashboard. Customers cannot self-escalate (RLS `users_update_own` forbids role change). See `docs/ADMIN_PROVISIONING.md`.
 - E2E tests (homepage + auth specs)
 - 13 server action modules
 - Design system (tokens.css)

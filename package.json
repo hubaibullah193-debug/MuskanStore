@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "provision-admin": "node scripts/provision-admin.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

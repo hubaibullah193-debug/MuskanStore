@@ -1,30 +1,32 @@
 /**
  * GET /api/payment/callbacks/jazz-cash
- * Callback endpoint for JazzCash payment gateway
- * Customer is redirected here after payment attempt
+ * Browser return endpoint for JazzCash.
+ *
+ * NON-AUTHORITATIVE / status-display only. The server-to-server webhook
+ * (/api/webhooks/jazz-cash) is the authoritative payment confirmation. This
+ * handler only verifies the redirect originated from us (return-URL signature)
+ * and optionally the gateway signature, then redirects the customer to the
+ * correct status page based on the CURRENT order state. It never marks an order
+ * paid, finalizes inventory, or sends email.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
-import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import { verifyJazzCashWebhookSignature, verifyReturnUrl } from '@/lib/payments/signature';
-import { sendPaymentStatusEmail } from '@/server/actions/email';
-import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
-import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
+import { logAuditEvent } from '@/lib/supabase/helpers';
 
 export const dynamic = 'force-dynamic';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const orderId = searchParams.get('pp_TxnRefNo');
     const responseCode = searchParams.get('pp_ResponseCode');
-    const transactionId = searchParams.get('pp_TransactionID');
 
     if (!orderId || !responseCode) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=missing_params`
-      );
+      return NextResponse.redirect(`${SITE_URL}/payment-error?reason=missing_params`);
     }
 
     // SECURITY: Fail-closed verification of the return URL we generated.
@@ -38,145 +40,48 @@ export async function GET(request: NextRequest) {
       !verifyReturnUrl(orderId, 'jazz_cash', returnSig, returnTs, returnUrlSecret)
     ) {
       console.error('JazzCash return URL signature missing or invalid for order:', orderId);
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=invalid_signature`
-      );
+      return NextResponse.redirect(`${SITE_URL}/payment-error?reason=invalid_signature`);
     }
 
-    // SECURITY: If the gateway secret is configured, also require the gateway's
+    // SECURITY: If the Integrity Salt is configured, also require the gateway's
     // own signature. Fail closed - a misconfigured gateway must never be trusted.
-    const password = process.env.JAZZ_CASH_PP_PASSWORD;
-    if (password) {
+    const integritySalt = process.env.JAZZ_CASH_INTEGRITY_SALT;
+    if (integritySalt) {
       const webhookData = Object.fromEntries(searchParams);
-      const isValidSignature = verifyJazzCashWebhookSignature(password, webhookData);
-
-      if (!isValidSignature) {
+      if (!verifyJazzCashWebhookSignature(integritySalt, webhookData)) {
         console.error('JazzCash callback signature verification failed for order:', orderId);
-        return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=invalid_signature`
-        );
+        return NextResponse.redirect(`${SITE_URL}/payment-error?reason=invalid_signature`);
       }
     }
 
-    // Fetch order
-    const { data: order, error: orderError } = await supabase
+    // Fetch CURRENT order state (the webhook is the source of truth).
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select('id, order_status, payment_status')
       .eq('id', orderId)
       .single();
 
     if (orderError || !order) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=order_not_found`
-      );
+      return NextResponse.redirect(`${SITE_URL}/payment-error?reason=order_not_found`);
     }
 
-    // Determine if payment was successful
-    const paymentSuccessful = responseCode === '000';
-    const isCountedFailure = !paymentSuccessful;
-
-    // Record payment attempt
-    await recordPaymentAttempt(
-      orderId,
+    await logAuditEvent('payment_callback_received', 'order', orderId, {
+      gateway: 'jazz_cash',
       responseCode,
-      paymentSuccessful ? undefined : searchParams.get('pp_ResponseDesc') || 'Payment declined',
-      isCountedFailure
-    );
+    }).catch(() => {});
 
-    if (paymentSuccessful) {
-      // Update order status
-      const { data: updatedOrder } = await supabase
-        .from('orders')
-        .update({
-          order_status: 'confirmed',
-          payment_status: 'paid',
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
+    const gatewaySuccess = responseCode === '000';
+    const alreadyPaid =
+      order.payment_status === 'paid' && order.order_status === 'confirmed';
 
-      // Log success
-      await logAuditEvent(
-        'payment_confirmed_jazzcash',
-        'order',
-        orderId,
-        {
-          transactionId,
-          responseCode,
-        }
-      );
-
-      // Finalize inventory: convert reservations to permanent stock reduction
-      try {
-        await finalizeInventory(orderId);
-      } catch (error) {
-        console.error(`Failed to finalize inventory for order ${orderId}:`, error);
-      }
-
-      // Send payment status email - deduplicated to prevent duplicate emails from webhook retries
-      if (updatedOrder) {
-        let customerEmail = updatedOrder.guest_email;
-        if (updatedOrder.user_id && !customerEmail) {
-          const { data } = await supabase.auth.admin.getUserById(updatedOrder.user_id);
-          customerEmail = data?.user?.email;
-        }
-
-        if (customerEmail) {
-          // Check if email already sent for this exact webhook payload
-          const shouldSend = await shouldSendWebhookEmail({
-            orderId,
-            transactionId: transactionId || '',
-            paymentGateway: 'jazz_cash',
-            emailType: 'payment_status',
-            webhookPayload: Object.fromEntries(searchParams),
-          });
-
-          if (shouldSend) {
-            await sendPaymentStatusEmail({
-              orderNumber: updatedOrder.order_number,
-              customerEmail,
-              status: 'completed',
-              paymentMethod: 'JazzCash',
-              totalAmount: updatedOrder.total_amount,
-              paymentReference: transactionId || undefined,
-            }).catch((error) => {
-              console.error('Failed to send payment status email:', error);
-              // Don't throw - payment succeeded even if email fails
-            });
-          }
-        }
-      }
-
-      // Redirect to success page
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/order-confirmation/${orderId}?payment=success`
-      );
-    } else {
-      // Log failure
-      await logAuditEvent(
-        'payment_failed_jazzcash',
-        'order',
-        orderId,
-        {
-          responseCode,
-          reason: searchParams.get('pp_ResponseDesc'),
-        }
-      );
-
-      // Release inventory reservations since payment failed
-      await releaseInventoryReservations(orderId).catch((error) => {
-        console.error(`Failed to release inventory for order ${orderId}:`, error);
-      });
-
-      // Redirect to retry page
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/order-confirmation/${orderId}?payment=failed`
-      );
+    // If the webhook has already confirmed payment, show success.
+    // Otherwise show pending (webhook may still be processing) or failed.
+    if (alreadyPaid || gatewaySuccess) {
+      return NextResponse.redirect(`${SITE_URL}/order-confirmation/${orderId}?payment=success`);
     }
+    return NextResponse.redirect(`${SITE_URL}/order-confirmation/${orderId}?payment=failed`);
   } catch (error) {
     console.error('JazzCash callback error:', error);
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=server_error`
-    );
+    return NextResponse.redirect(`${SITE_URL}/payment-error?reason=server_error`);
   }
 }
