@@ -98,16 +98,51 @@ export async function loginAction(email: string, password: string) {
       return { success: false, error: 'Failed to create session' };
     }
 
-    // Get user profile (use admin client to bypass RLS)
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    // Get or create the user profile. Accounts created outside the app's
+    // signup flow (Supabase dashboard, OAuth, magic link, diagnostic tools)
+    // have no public.users row, which previously made login fail even with
+    // valid credentials. We tolerate that and upsert a profile instead.
+    let { data: userProfile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('id, email, name, phone, role, email_verified')
       .eq('id', data.user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError) {
-      return { success: false, error: 'Failed to fetch user profile' };
+    if (profileError || !userProfile) {
+      const meta = (data.user.user_metadata || {}) as Record<string, unknown>;
+      const { data: created, error: createErr } = await supabaseAdmin
+        .from('users')
+        .upsert(
+          {
+            id: data.user.id,
+            email: data.user.email ?? '',
+            name:
+              (meta.name as string) ||
+              (meta.full_name as string) ||
+              (data.user.email ? data.user.email.split('@')[0] : ''),
+            phone: (data.user.phone as string) ?? null,
+            role: 'customer',
+            email_verified: !!data.user.email_confirmed_at,
+          },
+          { onConflict: 'id' }
+        )
+        .select('id, email, name, phone, role, email_verified')
+        .maybeSingle();
+      if (createErr) {
+        console.error('profile upsert failed:', createErr);
+      } else if (created) {
+        userProfile = created;
+      }
     }
+
+    const profile = userProfile ?? {
+      id: data.user.id,
+      email: data.user.email,
+      name: (data.user.user_metadata?.name as string) ?? null,
+      phone: (data.user.phone as string) ?? null,
+      role: 'customer',
+      email_verified: !!data.user.email_confirmed_at,
+    };
 
     // Store session in secure HTTP-only cookie
     const cookieStore = await cookies();
@@ -133,10 +168,10 @@ export async function loginAction(email: string, password: string) {
       user: {
         id: data.user.id,
         email: data.user.email,
-        name: userProfile?.name,
-        phone: userProfile?.phone,
-        role: userProfile?.role || 'customer',
-        emailVerified: userProfile?.email_verified,
+        name: profile.name,
+        phone: profile.phone,
+        role: profile.role || 'customer',
+        emailVerified: profile.email_verified,
       },
     };
   } catch (error) {
@@ -195,21 +230,33 @@ export async function getCurrentSessionAction() {
       return null;
     }
 
-    // Get user profile (use admin client to bypass RLS)
+    // Get user profile (use admin client to bypass RLS). Fall back to the
+    // auth user record if no profile row exists, so a missing profile never
+    // forces a logout.
     const { data: userProfile } = await supabaseAdmin
       .from('users')
       .select('id, email, name, phone, role, email_verified')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
+
+    let authUser: import('@supabase/supabase-js').User | null = null;
+    if (!userProfile) {
+      const { data: au } = await supabaseAdmin.auth.admin.getUserById(userId);
+      authUser = au?.user ?? null;
+    }
 
     return {
       user: {
-        id: userProfile?.id ?? userId,
-        email: userProfile?.email,
-        name: userProfile?.name,
-        phone: userProfile?.phone,
+        id: userId,
+        email: userProfile?.email ?? authUser?.email ?? null,
+        name:
+          userProfile?.name ??
+          (authUser?.user_metadata?.name as string | undefined) ??
+          null,
+        phone: userProfile?.phone ?? authUser?.phone ?? null,
         role: userProfile?.role || 'customer',
-        emailVerified: userProfile?.email_verified,
+        emailVerified:
+          userProfile?.email_verified ?? !!authUser?.email_confirmed_at,
       },
       session: {
         accessToken: token,
