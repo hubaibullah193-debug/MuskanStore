@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find order by guest email and token
-    const { data: order, error } = await supabase
+    // Find order by guest email and token (service role bypasses RLS so a
+    // guest can look up their own order via the tracking token)
+    const { data: order, error } = await supabaseAdmin
       .from('orders')
       .select('id, order_number, guest_email, guest_token, guest_token_expires_at')
       .eq('guest_email', email)

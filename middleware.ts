@@ -7,19 +7,18 @@ import { verifySupabaseToken } from "@/lib/auth/verify";
  * Protects routes by verifying JWT and role
  *
  * Protected routes:
- * - /checkout/* (authenticated customer)
  * - /account/* (authenticated customer)
- * - /order-confirmation/* (guest + valid token OR authenticated)
  * - /orders/* (authenticated customer)
  * - /admin/* (authenticated admin only)
  *
- * Public routes:
- * - / /products /product/* /auth/* /order-tracking/* /api/*
+ * Public routes (no auth needed, including guest checkout + token-based tracking):
+ * - / /products /product/* /auth/* /api/* /order-confirmation/* /track-order
+ * - /checkout (guests provide email; logged-in users detected via cookie)
  */
 
 const ADMIN_ROUTES = ["/admin"];
-const CUSTOMER_PROTECTED_ROUTES = ["/checkout", "/account", "/orders"];
-const PUBLIC_ROUTES = ["/", "/products", "/product", "/auth", "/api", "/order-tracking"];
+const CUSTOMER_PROTECTED_ROUTES = ["/account", "/orders"];
+const PUBLIC_ROUTES = ["/", "/products", "/product", "/auth", "/api", "/track-order", "/order-confirmation"];
 
 /**
  * Extract and verify JWT from Authorization header or cookies

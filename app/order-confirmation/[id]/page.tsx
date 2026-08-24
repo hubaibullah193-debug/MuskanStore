@@ -320,7 +320,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         {/* Action Buttons */}
         <div className="space-y-3">
           <Link
-            href={guestToken ? `/orders/${order.id}?token=${guestToken}` : `/orders/${order.id}`}
+            href={guestToken ? `/order-confirmation/${order.id}?token=${guestToken}` : `/orders/${order.id}`}
             className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700"
           >
             Track Order
