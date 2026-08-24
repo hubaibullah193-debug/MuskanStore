@@ -7,7 +7,7 @@
 
 import { cookies } from 'next/headers';
 import { supabase, supabaseAdmin } from '@/lib/supabase/client';
-import { jwtVerify } from 'jose';
+import { verifySupabaseToken } from '@/lib/auth/verify';
 
 export async function logoutAction() {
   try {
@@ -38,13 +38,8 @@ export async function verifyAdminAccess(): Promise<{ userId: string; role: strin
       return null;
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return null;
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return null;
@@ -78,13 +73,8 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return null;
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return null;
@@ -115,13 +105,8 @@ export async function deleteAccount() {
       return { success: false, error: 'Not authenticated' };
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return { success: false, error: 'Server configuration error' };
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return { success: false, error: 'Invalid session' };
@@ -161,13 +146,8 @@ export async function updateUserProfile(updates: { name?: string; phone?: string
       return { success: false, error: 'Not authenticated' };
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return { success: false, error: 'Server configuration error' };
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return { success: false, error: 'Invalid session' };

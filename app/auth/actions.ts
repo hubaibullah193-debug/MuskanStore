@@ -8,8 +8,8 @@
 
 import { cookies } from 'next/headers';
 import { ZodError } from 'zod';
-import { jwtVerify } from 'jose';
 import { supabase, supabaseAdmin } from '@/lib/supabase/client';
+import { verifySupabaseToken } from '@/lib/auth/verify';
 import { SignUpSchema, LogInSchema } from '@/lib/validation/schemas';
 
 // ===================================================================
@@ -188,14 +188,8 @@ export async function getCurrentSessionAction() {
       return null;
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      console.error('SUPABASE_JWT_SECRET not configured');
-      return null;
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string | undefined;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return null;
@@ -211,7 +205,7 @@ export async function getCurrentSessionAction() {
     return {
       user: {
         id: userProfile?.id ?? userId,
-        email: userProfile?.email ?? (verified.payload.email as string | undefined),
+        email: userProfile?.email,
         name: userProfile?.name,
         phone: userProfile?.phone,
         role: userProfile?.role || 'customer',
@@ -221,8 +215,8 @@ export async function getCurrentSessionAction() {
         accessToken: token,
         refreshToken: cookieStore.get('refresh-token')?.value ?? '',
         expiresIn:
-          typeof verified.payload.exp === 'number'
-            ? verified.payload.exp - Math.floor(Date.now() / 1000)
+          typeof payload?.exp === 'number'
+            ? payload.exp - Math.floor(Date.now() / 1000)
             : 0,
       },
     };

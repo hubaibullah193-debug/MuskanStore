@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { jwtVerify } from 'jose';
+import { verifySupabaseToken } from '@/lib/auth/verify';
 
 /**
  * Verify the current request's user has admin role.
@@ -17,13 +17,8 @@ export async function isAdmin(): Promise<boolean> {
       return false;
     }
 
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return false;
-    }
-
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub as string;
+    const payload = await verifySupabaseToken(token);
+    const userId = payload?.sub as string | undefined;
 
     if (!userId) {
       return false;

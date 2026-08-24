@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/client";
-import { jwtVerify } from "jose";
+import { verifySupabaseToken } from "@/lib/auth/verify";
 
 /**
  * Authentication & Authorization Middleware
@@ -24,13 +24,16 @@ const PUBLIC_ROUTES = ["/", "/products", "/product", "/auth", "/api", "/order-tr
 /**
  * Extract and verify JWT from Authorization header or cookies
  */
-async function verifyAuth(request: NextRequest) {
+/**
+ * Verify the request's auth token and return the user id (subject).
+ * Uses local JWT verification against the project's JWKS, so it works in the
+ * Edge runtime without a database round-trip. Returns null if unauthenticated.
+ */
+async function verifyUserId(request: NextRequest): Promise<string | null> {
   try {
-    // Try to get token from Authorization header first
     const authHeader = request.headers.get("authorization");
     let token = authHeader?.replace("Bearer ", "");
 
-    // Fallback to session cookie
     if (!token) {
       token = request.cookies.get("auth-token")?.value;
     }
@@ -39,29 +42,26 @@ async function verifyAuth(request: NextRequest) {
       return null;
     }
 
-    // Verify JWT signature using Supabase's JWT secret
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      console.error("SUPABASE_JWT_SECRET not configured");
-      return null;
-    }
+    const payload = await verifySupabaseToken(token);
+    return payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
-    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
-    const userId = verified.payload.sub;
-
-    if (!userId) {
-      return null;
-    }
-
-    // Fetch user role from database
-    const { data: user } = await supabaseAdmin
+/**
+ * Look up the user's role from the database. Only needed for admin routes,
+ * kept separate so customer route protection does not depend on a DB call.
+ */
+async function getUserRole(userId: string): Promise<string | null> {
+  try {
+    const { data } = await supabaseAdmin
       .from("users")
-      .select("id, email, role")
+      .select("role")
       .eq("id", userId)
       .single();
-
-    return user || null;
-  } catch (error) {
+    return data?.role ?? null;
+  } catch {
     return null;
   }
 }
@@ -78,7 +78,8 @@ function isCustomerProtectedRoute(pathname: string): boolean {
 }
 
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  if (pathname === "/") return true;
+  return PUBLIC_ROUTES.some((route) => route !== "/" && pathname.startsWith(route));
 }
 
 /**
@@ -98,8 +99,9 @@ export async function middleware(request: NextRequest) {
 
   // Admin API routes require admin role (return JSON, not a redirect)
   if (pathname.startsWith("/api/admin")) {
-    const adminUser = await verifyAuth(request);
-    if (!adminUser || adminUser.role !== "admin") {
+    const apiUserId = await verifyUserId(request);
+    const apiRole = apiUserId ? await getUserRole(apiUserId) : null;
+    if (!apiUserId || apiRole !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.next();
@@ -111,11 +113,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verify authentication for protected routes
-  const user = await verifyAuth(request);
+  const userId = await verifyUserId(request);
 
   // Admin routes require admin role
   if (isAdminRoute(pathname)) {
-    if (!user || user.role !== "admin") {
+    const role = userId ? await getUserRole(userId) : null;
+    if (!userId || role !== "admin") {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirectUrl", pathname);
       return NextResponse.redirect(loginUrl);
@@ -123,9 +126,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Customer protected routes require authentication
+  // Customer protected routes require authentication only
   if (isCustomerProtectedRoute(pathname)) {
-    if (!user) {
+    if (!userId) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirectUrl", pathname);
       return NextResponse.redirect(loginUrl);
