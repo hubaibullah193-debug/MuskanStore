@@ -305,11 +305,14 @@ export async function clearCart(userId: string | null, guestEmail?: string | nul
       throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
     }
 
-    const { error } = await supabaseAdmin
-      .from("cart_items")
-      .delete()
-      .eq("user_id", userId || null)
-      .eq("guest_email", guestEmail || null);
+    let query = supabaseAdmin.from("cart_items").delete();
+    if (userId) {
+      query = query.eq("user_id", userId);
+    } else if (guestEmail) {
+      query = query.eq("guest_email", guestEmail);
+    }
+
+    const { error } = await query;
 
     if (error) {
       throw new AppError("CART_CLEAR_FAILED", error.message, 500);

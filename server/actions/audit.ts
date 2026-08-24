@@ -3,7 +3,9 @@
 
 'use server';
 
+import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/client';
+import { verifySupabaseToken } from '@/lib/auth/verify';
 
 interface AuditPayload {
   action: string;
@@ -14,15 +16,35 @@ interface AuditPayload {
 }
 
 /**
+ * Resolve the acting admin's id from the current session cookie when a caller
+ * does not explicitly provide one. This keeps audit logging reliable even when
+ * an action (or API route) forgets to thread the admin id through.
+ */
+async function resolveAdminId(): Promise<string | null> {
+  try {
+    const store = await cookies();
+    const token = store.get('auth-token')?.value;
+    if (!token) return null;
+    const payload = await verifySupabaseToken(token);
+    return payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Log an audit event
  * Used for tracking admin actions and compliance
  */
 export async function logAudit(payload: AuditPayload): Promise<{ success: boolean; error?: string }> {
   try {
-    const adminId = payload.adminId;
+    let adminId: string | null = payload.adminId ?? null;
+    if (!adminId) {
+      adminId = await resolveAdminId();
+    }
 
     if (!adminId) {
-      console.warn('logAudit called without adminId - audit entry skipped');
+      console.warn('logAudit called without adminId and no session - audit entry skipped');
       return { success: false, error: 'adminId is required' };
     }
 
