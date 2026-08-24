@@ -9,16 +9,59 @@ import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
 import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
+import { verifyWebhookSignature } from '@/lib/payments/signature';
 import { AppError, getErrorMessage } from '@/lib/utils/helpers';
+
+const ALLOWED_GATEWAYS = ['jazz_cash', 'easypaisa'];
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // SECURITY: Authenticate the webhook. Only a party holding PAYMENT_WEBHOOK_SECRET
+    // may mark an order as paid. Fail closed if the secret is not configured.
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error('PAYMENT_WEBHOOK_SECRET is not configured; refusing unauthenticated payment verification');
+      await logAuditEvent('payment_verify_unconfigured', 'order', '', {
+        reason: 'missing_secret',
+      }).catch(() => {});
+      return NextResponse.json(
+        { error: 'Payment verification is not configured' },
+        { status: 503 }
+      );
+    }
+
+    const rawBody = await request.text();
+    const signature =
+      request.headers.get('x-webhook-signature') ||
+      request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+      '';
+
+    if (!verifyWebhookSignature(secret, rawBody, signature)) {
+      await logAuditEvent('payment_verify_unauthorized', 'order', '', {
+        reason: 'invalid_signature',
+      }).catch(() => {});
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
     const { orderId, paymentStatus, transactionId, gateway, amount } = body;
 
     if (!orderId || !paymentStatus || !gateway) {
       return NextResponse.json(
         { error: 'Missing required fields: orderId, paymentStatus, gateway' },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_GATEWAYS.includes(gateway)) {
+      return NextResponse.json(
+        { error: `Unsupported gateway: ${gateway}` },
         { status: 400 }
       );
     }

@@ -54,6 +54,11 @@ export default function CheckoutPage() {
       }
 
       // Build checkout request
+      // Reuse a stable idempotency key across retries so a double-submit or
+      // failed network attempt does not create a duplicate order.
+      const idemKey = sessionStorage.getItem('checkout_idempotency') || crypto.randomUUID();
+      sessionStorage.setItem('checkout_idempotency', idemKey);
+
       const checkoutData = {
         items: items.map(item => ({
           product_id: item.productId,
@@ -70,6 +75,7 @@ export default function CheckoutPage() {
         },
         paymentMethod,
         guestEmail: email || undefined,
+        idempotencyKey: idemKey,
       };
 
       // Call checkout API
@@ -90,6 +96,9 @@ export default function CheckoutPage() {
       if (!user && email) {
         localStorage.setItem('checkout_email', email);
       }
+
+      // Order placed (new or replayed) — clear the idempotency key for next time
+      sessionStorage.removeItem('checkout_idempotency');
 
       // Redirect to confirmation/payment
       window.location.href = result.redirectUrl;

@@ -2,47 +2,41 @@
 
 ## Applying Migrations
 
-### Option 1: Supabase Dashboard (Quick)
-1. Go to your Supabase project dashboard
-2. Navigate to SQL Editor
-3. Create a new query
-4. Copy and paste the contents of `001_initial_schema.sql`
-5. Run the query
-6. Repeat for `002_rls_policies.sql`
+The canonical set lives in `supabase/migrations/` and is designed to run from a
+clean database (e.g. `supabase db reset` or a fresh `supabase db push`).
 
-### Option 2: Supabase CLI (Recommended)
 ```bash
-# Install Supabase CLI if you haven't already
-npm install -g supabase
-
-# Link your project
+# Link your project (one time)
 supabase link --project-ref <your-project-ref>
 
-# Push migrations
+# Apply all migrations in order
 supabase db push
 ```
 
-### Option 3: SQL File Upload
-1. Go to Supabase dashboard → SQL Editor
-2. Click "New Query" → "Upload SQL file"
-3. Select `001_initial_schema.sql`, run
-4. Select `002_rls_policies.sql`, run
+Do **not** apply files individually — the files are numbered sequentially and
+each later file builds on `000_unified_mvp_schema.sql`.
+
+## Migration Order
+
+1. `000_unified_mvp_schema.sql` — full base schema (tables, indexes, RLS, grants, realtime). Supersedes all legacy migration sets.
+2. `001_create_order_items.sql` — `order_items` (the only table not in `000`).
+3. `002_seed_sample_products.sql` — sample categories/products/variants/inventory/images.
+4. `003_create_bundles.sql` — bundle offers.
+5. `004_create_bundle_items.sql` — bundle line items.
+6. `005_order_idempotency.sql` — `orders.idempotency_key` (double-submit protection).
+7. `006_seed_service_areas.sql` — delivery service-area seed.
+8. `007_create_contact_messages.sql` — Contact Us form table.
+9. `008_unify_admin_rls_role.sql` — every admin RLS policy delegates to `public.is_admin()` (role-based, not email-suffix).
 
 ## Schema Overview
 
-**Tables:**
-- `products` - Product catalog with pricing
-- `product_variants` - Size/color/SKU variants
-- `cart_items` - Shopping cart (supports authenticated users + guest checkout)
-- `orders` - Order records with status/payment tracking
-- `order_items` - Line items for each order
-- `admin_audit_logs` - Audit trail for admin operations
+**Tables:** users, categories, products, product_variants, product_images,
+product_inventory, cart_items, orders, order_items, payment_attempts,
+inventory_reservations, webhook_processing, shipments, refunds, email_logs,
+admin_audit_logs, webhook_email_tracking, audit_logs, settings, service_areas,
+bundles, bundle_items, contact_messages.
 
-**Security:**
-- RLS enabled on all tables
-- Products: public read, admin write
-- Cart/Orders: user/guest self-service, admin override
-- Audit logs: admin only
+**Security:** RLS enabled on all tables. Admin authorization is unified on
+`public.is_admin()` (reads `public.users.role = 'admin'`).
 
-**Realtime:**
-- Orders and order_items tables have realtime enabled for live updates
+**Realtime:** orders and shipments are added to `supabase_realtime`.

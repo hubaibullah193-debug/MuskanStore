@@ -299,7 +299,7 @@ export async function syncCart(
 // CLEAR CART
 // ===================================================================
 
-export async function clearCart(userId: string, guestEmail?: string) {
+export async function clearCart(userId: string | null, guestEmail?: string | null) {
   try {
     if (!userId && !guestEmail) {
       throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);

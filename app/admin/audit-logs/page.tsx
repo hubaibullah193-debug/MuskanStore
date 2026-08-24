@@ -45,7 +45,7 @@ export default function AdminAuditLogsPage() {
   const filteredLogs = logs.filter((log) =>
     log.entity_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (log.performed_by?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+    (log.admin_id?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   const getActionColor = (action: string) => {
@@ -156,16 +156,16 @@ export default function AdminAuditLogsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-600">{log.performed_by || 'System'}</p>
+                    <p className="text-sm text-gray-600">{log.admin_id || 'System'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    {log.change_details && (
+                    {log.changes && (
                       <details className="cursor-pointer">
                         <summary className="text-sm text-blue-600 hover:text-blue-900">
                           View Details
                         </summary>
                         <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-auto max-w-md">
-                          {JSON.stringify(log.change_details, null, 2)}
+                          {JSON.stringify(log.changes, null, 2)}
                         </pre>
                       </details>
                     )}

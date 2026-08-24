@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { supabaseAdmin } from '@/lib/supabase/client';
+import { getAdminDashboardStats } from '@/server/actions/admin-dashboard';
 import Link from 'next/link';
 
 function Sparkline({ data, color, label }: { data: number[]; color: string; label: string }) {
@@ -55,84 +55,11 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch orders
-        const { data: orders, error: ordersError } = await supabaseAdmin
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        if (ordersError) throw ordersError;
-
-        // Calculate stats
-        const totalOrders = orders?.length || 0;
-        const totalRevenue = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
-        const pendingOrders = orders?.filter((o) => o.order_status === 'pending' || o.order_status === 'pending_payment').length || 0;
-        const refundRequests = orders?.filter((o) => o.order_status === 'refund_requested').length || 0;
-
-        setStats({
-          totalOrders,
-          totalRevenue,
-          pendingOrders,
-          refundRequests,
-        });
-
-        // Set recent orders
-        setRecentOrders(orders?.slice(0, 10) || []);
-
-        // Fetch daily stats for last 14 days
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        const { data: recentOrdersData } = await supabaseAdmin
-          .from('orders')
-          .select('created_at, total_amount, order_status')
-          .gte('created_at', fourteenDaysAgo.toISOString())
-          .order('created_at', { ascending: true });
-
-        if (recentOrdersData) {
-          const dayMap: Record<string, { orders: number; revenue: number }> = {};
-          // Initialize all 14 days
-          for (let i = 13; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const key = d.toISOString().split('T')[0];
-            dayMap[key] = { orders: 0, revenue: 0 };
-          }
-          recentOrdersData.forEach((o) => {
-            const key = o.created_at.split('T')[0];
-            if (dayMap[key]) {
-              dayMap[key].orders++;
-              dayMap[key].revenue += o.total_amount || 0;
-            }
-          });
-          setDailyStats(
-            Object.entries(dayMap).map(([date, v]) => ({ date, ...v }))
-          );
-        }
-
-        // Fetch low stock products
-        const { data: inventory } = await supabaseAdmin
-          .from('product_inventory')
-          .select('quantity, low_stock_threshold, product_id, variant_id')
-          .lte('quantity', 5)
-          .order('quantity', { ascending: true })
-          .limit(10);
-
-        if (inventory && inventory.length > 0) {
-          const productIds = inventory.map((i) => i.product_id).filter(Boolean);
-          const { data: products } = await supabaseAdmin
-            .from('products')
-            .select('id, name, sku')
-            .in('id', productIds);
-
-          const productMap = new Map((products || []).map((p) => [p.id, p]));
-          setLowStockProducts(
-            inventory.map((inv) => ({
-              ...inv,
-              product: productMap.get(inv.product_id),
-            })).filter((i) => i.product)
-          );
-        }
+        const data = await getAdminDashboardStats();
+        setStats(data.stats);
+        setRecentOrders(data.recentOrders);
+        setDailyStats(data.dailyStats);
+        setLowStockProducts(data.lowStockProducts);
       } catch (err: any) {
         setError(err.message || 'Failed to load dashboard data');
       } finally {

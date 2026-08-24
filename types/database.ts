@@ -257,6 +257,7 @@ export type Database = {
           guest_token_expires_at: string | null;
           items: Json;
           delivery_address: Json;
+          idempotency_key: string | null;
           order_status: string;
           payment_method: string;
           payment_status: string;
@@ -281,6 +282,7 @@ export type Database = {
           guest_token_expires_at?: string | null;
           items: Json;
           delivery_address: Json;
+          idempotency_key?: string | null;
           order_status?: string;
           payment_method: string;
           payment_status?: string;
@@ -305,6 +307,7 @@ export type Database = {
           guest_token_expires_at?: string | null;
           items?: Json;
           delivery_address?: Json;
+          idempotency_key?: string | null;
           order_status?: string;
           payment_method?: string;
           payment_status?: string;

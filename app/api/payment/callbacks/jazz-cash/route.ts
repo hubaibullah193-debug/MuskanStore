@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
-import { verifyJazzCashWebhookSignature } from '@/lib/payments/signature';
+import { verifyJazzCashWebhookSignature, verifyReturnUrl } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
 import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
 import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
@@ -27,7 +27,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify webhook signature if password is available
+    // SECURITY: Fail-closed verification of the return URL we generated.
+    // A valid HMAC over (orderId, method, ts) is required even when the gateway
+    // secret is absent, so an attacker cannot forge a "payment succeeded" redirect.
+    const returnUrlSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+    const returnSig = searchParams.get('sig');
+    const returnTs = searchParams.get('ts');
+    if (
+      !returnUrlSecret ||
+      !verifyReturnUrl(orderId, 'jazz_cash', returnSig, returnTs, returnUrlSecret)
+    ) {
+      console.error('JazzCash return URL signature missing or invalid for order:', orderId);
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=invalid_signature`
+      );
+    }
+
+    // SECURITY: If the gateway secret is configured, also require the gateway's
+    // own signature. Fail closed - a misconfigured gateway must never be trusted.
     const password = process.env.JAZZ_CASH_PP_PASSWORD;
     if (password) {
       const webhookData = Object.fromEntries(searchParams);

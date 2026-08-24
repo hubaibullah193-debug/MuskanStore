@@ -269,12 +269,12 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                         </p>
                       </div>
                       <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {log.performed_by || 'System'}
+                        {log.admin_id || 'System'}
                       </span>
                     </div>
-                    {log.change_details && (
+                    {log.changes && (
                       <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-auto">
-                        {JSON.stringify(log.change_details, null, 2)}
+                        {JSON.stringify(log.changes, null, 2)}
                       </pre>
                     )}
                   </div>

@@ -1,5 +1,7 @@
 # AGENTS.md — Muskan Care Center (MStore)
 
+> **Project Status: Phase 0 COMPLETE — verified by user on local machine.**
+
 ## Architecture
 
 **Stack:** Next.js 14 (App Router) + Supabase (PostgreSQL + Auth + Storage) + Tailwind CSS
@@ -124,20 +126,16 @@ hooks/useAuth.tsx                      # Client auth hook (duplicate of lib/hook
 
 types/database.ts                      # Supabase generated types
 
-supabase/migrations/                   # Canonical migrations (14 files)
-├── 000_unified_mvp_schema.sql
-├── 001_initial_schema.sql
-├── 001_fix_rls_use_auth_jwt.sql
-├── 002_rls_policies.sql
-├── 003_add_featured_to_products.sql
-├── 004_seed_sample_products.sql
-├── 005_create_users_table.sql
-├── 006_create_payment_attempts_table.sql
-├── 007_create_email_logs_table.sql
-├── 008_create_refunds_table.sql
-├── 009_create_shipments_table.sql
-├── 010_inventory_reservations.sql
-├── 011_webhook_email_tracking.sql
+supabase/migrations/                   # Canonical migrations (consolidated, runnable from clean DB)
+├── 000_unified_mvp_schema.sql         # Full base schema + RLS (supersedes all legacy sets)
+├── 001_create_order_items.sql         # order_items (only table missing from 000)
+├── 002_seed_sample_products.sql       # Sample categories/products/variants/inventory/images
+├── 003_create_bundles.sql             # Bundle offers
+├── 004_create_bundle_items.sql        # Bundle line items
+├── 005_order_idempotency.sql          # orders.idempotency_key (double-submit protection)
+├── 006_seed_service_areas.sql         # Delivery service-area seed
+├── 007_create_contact_messages.sql    # Contact Us form table
+├── 008_unify_admin_rls_role.sql       # All admin RLS delegate to public.is_admin()
 └── README.md
 
 migrations/                            # Legacy (older copy, ignore)

@@ -13,7 +13,12 @@ import {
   updateCartItemAction,
   removeFromCartAction,
   clearCartAction,
+  mergeGuestCartAction,
 } from '@/app/cart/actions';
+
+// Tracks which user ids have already had their guest cart merged in this
+// client session, so the merge runs at most once per logged-in user.
+const mergedGuestCartUserIds = new Set<string>();
 
 export interface CartItem {
   id: string;
@@ -53,6 +58,33 @@ export function useCart(): UseCartReturn {
 
       try {
         if (user?.id) {
+          // On the transition from guest to logged-in, merge any cart that was
+          // accumulated in localStorage into the user's persistent cart.
+          if (!mergedGuestCartUserIds.has(user.id)) {
+            try {
+              const stored = localStorage.getItem(CART_STORAGE_KEY);
+              if (stored) {
+                const guestItems = JSON.parse(stored);
+                if (Array.isArray(guestItems) && guestItems.length > 0) {
+                  await mergeGuestCartAction(
+                    user.id,
+                    guestItems.map((item: CartItem) => ({
+                      productId: item.productId,
+                      variantId: item.variantId,
+                      quantity: item.quantity,
+                      price: item.price,
+                    }))
+                  );
+                }
+                localStorage.removeItem(CART_STORAGE_KEY);
+              }
+            } catch (mergeErr) {
+              console.error('Failed to merge guest cart:', mergeErr);
+            } finally {
+              mergedGuestCartUserIds.add(user.id);
+            }
+          }
+
           // Load from Supabase
           const cartItems = await getCartAction(user.id);
           setItems(cartItems || []);

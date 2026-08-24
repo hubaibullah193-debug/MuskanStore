@@ -8,8 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabaseAdmin } from '@/lib/supabase/client';
-import { exportOrdersCSV } from '@/server/actions/admin-orders';
+import { getAdminOrders, exportOrdersCSV } from '@/server/actions/admin-orders';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -22,19 +21,12 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        let query = supabaseAdmin
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (filter !== 'all') {
-          query = query.eq('order_status', filter);
-        }
-
-        const { data, error: fetchError } = await query;
-
-        if (fetchError) throw fetchError;
-        setOrders(data || []);
+        const { orders } = await getAdminOrders(
+          1,
+          1000,
+          filter !== 'all' ? { status: filter } : undefined
+        );
+        setOrders(orders || []);
       } catch (err: any) {
         setError(err.message || 'Failed to load orders');
       } finally {

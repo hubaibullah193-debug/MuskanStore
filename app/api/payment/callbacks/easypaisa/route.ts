@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { recordPaymentAttempt, logAuditEvent } from '@/lib/supabase/helpers';
-import { verifyEasypaisaWebhookSignature } from '@/lib/payments/signature';
+import { verifyEasypaisaWebhookSignature, verifyReturnUrl } from '@/lib/payments/signature';
 import { sendPaymentStatusEmail } from '@/server/actions/email';
 import { finalizeInventory, releaseInventoryReservations } from '@/lib/payments/inventory-finalization';
 import { shouldSendWebhookEmail } from '@/lib/email/webhook-dedup';
@@ -27,7 +27,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify webhook signature if secret is available
+    // SECURITY: Fail-closed verification of the return URL we generated.
+    const returnUrlSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+    const returnSig = searchParams.get('sig');
+    const returnTs = searchParams.get('ts');
+    if (
+      !returnUrlSecret ||
+      !verifyReturnUrl(orderId, 'easypaisa', returnSig, returnTs, returnUrlSecret)
+    ) {
+      console.error('Easypaisa return URL signature missing or invalid for order:', orderId);
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/payment-error?reason=invalid_signature`
+      );
+    }
+
+    // SECURITY: If the gateway secret is configured, also require the gateway's
+    // own signature. Fail closed - a misconfigured gateway must never be trusted.
     const secret = process.env.EASYPAISA_SECRET;
     if (secret) {
       const webhookData = Object.fromEntries(searchParams);

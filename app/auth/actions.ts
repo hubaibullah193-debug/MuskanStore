@@ -8,6 +8,7 @@
 
 import { cookies } from 'next/headers';
 import { ZodError } from 'zod';
+import { jwtVerify } from 'jose';
 import { supabase, supabaseAdmin } from '@/lib/supabase/client';
 import { SignUpSchema, LogInSchema } from '@/lib/validation/schemas';
 
@@ -177,9 +178,26 @@ export async function logoutAction() {
 
 export async function getCurrentSessionAction() {
   try {
-    const { data, error } = await supabase.auth.getSession();
+    // Login sets the session in the httpOnly `auth-token` cookie (not in the
+    // Supabase browser client storage), so we recover the session from that
+    // cookie instead of `supabase.auth.getSession()` (which would be empty).
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
 
-    if (error || !data.session) {
+    if (!token) {
+      return null;
+    }
+
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+      console.error('SUPABASE_JWT_SECRET not configured');
+      return null;
+    }
+
+    const verified = await jwtVerify(token, new TextEncoder().encode(secret));
+    const userId = verified.payload.sub as string | undefined;
+
+    if (!userId) {
       return null;
     }
 
@@ -187,22 +205,25 @@ export async function getCurrentSessionAction() {
     const { data: userProfile } = await supabaseAdmin
       .from('users')
       .select('id, email, name, phone, role, email_verified')
-      .eq('id', data.session.user.id)
+      .eq('id', userId)
       .single();
 
     return {
       user: {
-        id: data.session.user.id,
-        email: data.session.user.email,
+        id: userProfile?.id ?? userId,
+        email: userProfile?.email ?? (verified.payload.email as string | undefined),
         name: userProfile?.name,
         phone: userProfile?.phone,
         role: userProfile?.role || 'customer',
         emailVerified: userProfile?.email_verified,
       },
       session: {
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresIn: data.session.expires_in,
+        accessToken: token,
+        refreshToken: cookieStore.get('refresh-token')?.value ?? '',
+        expiresIn:
+          typeof verified.payload.exp === 'number'
+            ? verified.payload.exp - Math.floor(Date.now() / 1000)
+            : 0,
       },
     };
   } catch (error) {

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       deliveryAddress,
       paymentMethod,
       guestEmail,
+      idempotencyKey,
     } = body;
 
     // Validate required fields
@@ -93,7 +94,8 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       TAX_RATE,
       DELIVERY_FEE,
-      PAYMENT_FEE
+      PAYMENT_FEE,
+      typeof idempotencyKey === "string" && idempotencyKey.length > 0 ? idempotencyKey : null
     );
 
     if (!order || !order.id) {

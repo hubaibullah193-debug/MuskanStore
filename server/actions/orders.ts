@@ -12,6 +12,7 @@ import { AppError, getErrorMessage, generateRandomString, calculateTotal } from 
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
 import { sendOrderConfirmation, sendRefundEmail } from "@/server/actions/email";
 import { createShipment } from "@/server/actions/shipments";
+import { clearCart } from "@/server/actions/cart";
 
 // ===================================================================
 // CREATE ORDER
@@ -31,7 +32,8 @@ export async function createOrder(
   paymentMethod: "cod" | "jazz_cash" | "easypaisa",
   taxRate: number = 0,
   deliveryFee: number = 0,
-  paymentFee: number = 0
+  paymentFee: number = 0,
+  idempotencyKey: string | null = null
 ) {
   try {
     // Validate checkout input
@@ -44,6 +46,22 @@ export async function createOrder(
     // Validate that either userId or guestEmail is provided
     if (!userId && !guestEmail) {
       throw new AppError("INVALID_USER", "User ID or guest email required", 400);
+    }
+
+    // Idempotency: if a client-provided key already has an order, return it.
+    // Makes checkout safe against double-submits and network retries
+    // (avoids duplicate order, inventory reservation, and confirmation email).
+    if (idempotencyKey) {
+      const { data: existing } = await supabaseAdmin
+        .from("orders")
+        .select("*")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+
+      if (existing) {
+        await clearCart(userId, guestEmail).catch(() => {});
+        return existing;
+      }
     }
 
     // Validate delivery city in service areas
@@ -131,6 +149,7 @@ export async function createOrder(
         user_id: userId,
         guest_email: guestEmail,
         guest_token: guestToken,
+        idempotency_key: idempotencyKey || null,
         guest_token_expires_at: guestTokenExpiresAt,
         items: orderItems,
         delivery_address: deliveryAddress,
@@ -156,6 +175,13 @@ export async function createOrder(
     if (orderError || !order) {
       throw new AppError("ORDER_CREATE_FAILED", orderError?.message || "Failed to create order", 500);
     }
+
+    // Clear the cart now that the order exists (idempotent delete).
+    // Done before downstream side-effects (email/shipment) so a retried
+    // checkout that finds the same order elsewhere still ends with an empty cart.
+    await clearCart(userId, guestEmail).catch((error) => {
+      console.error("Failed to clear cart after order creation:", error);
+    });
 
     // Create inventory reservations (NOT permanent decrement yet)
     // Inventory only finalizes after verified payment (or immediately for COD)
