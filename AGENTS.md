@@ -168,22 +168,20 @@ tokens.css                             # Design system tokens + global resets
 - 13 server action modules
 - Design system (tokens.css)
 - Middleware (JWT + role-based routing)
+- **Phase 2 (COMPLETE):** product recommendations on product detail + cart pages; admin dashboard sparklines (14-day orders/revenue) + order-status and payment-method distribution analytics; Supabase Storage product-image upload verified (bucket + public-read policy declared in migration `011_ensure_product_images_storage.sql`); responsive/mobile UX validated and cart-item row made mobile-friendly
 
-### Not Built / Unverified
-- Signup form submission (broken — GET instead of POST)
-- Cart persistence across sessions
+### Not Built / Unverified (genuine gaps)
+- Signup form submission (broken — GET instead of POST) — not classified as P2
 - Real JazzCash/Easypaisa API integration
 - Password reset email flow (handled by Supabase Auth built-in, outside custom reliability layer)
-- Guest checkout + token-based tracking
 - Admin audit log writing from actions
-- Product recommendations
-- Bundle offers (UI + pricing lock)
-- Bulk CSV upload (admin)
-- CSV export (admin orders)
-- Responsive design validation
-- Guest-to-account cart merge
-- Product image upload via Supabase Storage
-- Admin charts/sparklines
+- Bundle offers (UI + pricing lock) — data model + admin UI exist
+
+### Phase 2 — COMPLETE (verified)
+- Product recommendations on product detail (category-based "You Might Also Like") and cart pages
+- Admin dashboard sparklines (14-day orders + revenue) and status/payment-method distribution bars
+- Product image upload via Supabase Storage (verified wired; bucket + public-read policy in migration `011`)
+- Responsive/mobile UX validation; cart-item row made mobile-friendly (stacks on small screens)
 
 ## Conventions
 

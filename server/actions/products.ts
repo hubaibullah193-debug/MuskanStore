@@ -152,6 +152,85 @@ export async function getRelatedProducts(productId: string, limit: number = 6) {
 }
 
 // ===================================================================
+// GET CART RECOMMENDATIONS (CATEGORY-BASED)
+// Returns other active products sharing a category with any cart item,
+// excluding the items already in the cart. Rule-based (no ML) per spec.
+// ===================================================================
+
+export async function getCartRecommendations(
+  productIds: string[],
+  limit: number = 4
+) {
+  try {
+    if (!productIds || productIds.length === 0) return [];
+    if (limit < 1 || limit > 20) {
+      throw new AppError("INVALID_LIMIT", "Limit must be between 1 and 20", 400);
+    }
+
+    const ids = [...new Set(productIds.filter(Boolean))].slice(0, 50);
+
+    // Find the categories of the products currently in the cart
+    const { data: inCart, error: cartError } = await supabase
+      .from("products")
+      .select("category_id")
+      .in("id", ids)
+      .eq("is_active", true);
+
+    if (cartError) {
+      throw new AppError("FETCH_CART_FAILED", cartError.message, 500);
+    }
+
+    const categoryIds = [
+      ...new Set((inCart || []).map((p: any) => p.category_id).filter(Boolean)),
+    ];
+    if (categoryIds.length === 0) return [];
+
+    // Fetch candidates from those categories, then exclude cart items in JS
+    // (avoids quoting pitfalls of the `not(... in ...)` filter).
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        `
+        id,
+        name,
+        slug,
+        description,
+        base_price,
+        stock_quantity,
+        is_active,
+        product_images (id, image_url, display_order)
+      `
+      )
+      .in("category_id", categoryIds)
+      .eq("is_active", true)
+      .limit(limit * 3)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new AppError("FETCH_RELATED_FAILED", error.message, 500);
+    }
+
+    const exclude = new Set(ids);
+    const recommended = (data || [])
+      .filter((p: any) => !exclude.has(p.id))
+      .slice(0, limit)
+      .map((p: any) => ({
+        ...p,
+        imageUrl: p.product_images?.length
+          ? p.product_images.sort(
+              (a: any, b: any) => a.display_order - b.display_order
+            )[0].image_url
+          : undefined,
+      }));
+
+    return recommended;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("CART_RECOMMENDATIONS_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
 // CHECK PRODUCT AVAILABILITY
 // ===================================================================
 

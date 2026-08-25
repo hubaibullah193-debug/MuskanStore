@@ -3,14 +3,35 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CartItemRow } from '@/app/components/cart-item';
+import { ProductCard } from '@/app/components/product-card';
 import { useCart } from '@/lib/hooks/useCart';
+import { getCartRecommendations } from '@/server/actions/products';
 import Link from 'next/link';
 
 export default function CartPage() {
   const { items, loading, error, updateItem, removeItem } = useCart();
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    if (loading || items.length === 0) {
+      setRecommendations(null);
+      return;
+    }
+    let cancelled = false;
+    getCartRecommendations(items.map((i) => i.productId))
+      .then((recs) => {
+        if (!cancelled) setRecommendations(recs);
+      })
+      .catch(() => {
+        if (!cancelled) setRecommendations(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, items]);
 
   const handleQuantityChange = async (itemId: string, quantity: number) => {
     try {
@@ -124,6 +145,27 @@ export default function CartPage() {
               >
                 Continue Shopping
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Recommendations */}
+        {recommendations && recommendations.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">You Might Also Like</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {recommendations.map((rp) => (
+                <ProductCard
+                  key={rp.id}
+                  id={rp.id}
+                  name={rp.name}
+                  slug={rp.slug}
+                  description={rp.description}
+                  price={Number(rp.base_price)}
+                  imageUrl={rp.imageUrl}
+                  inStock={rp.stock_quantity > 0}
+                />
+              ))}
             </div>
           </div>
         )}

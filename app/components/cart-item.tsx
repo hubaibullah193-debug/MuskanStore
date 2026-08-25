@@ -18,56 +18,63 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
   };
 
   return (
-    <div className="flex items-center gap-4 border-b border-gray-200 py-4" data-testid="cart-item">
+    <div
+      className="flex flex-col gap-3 border-b border-gray-200 py-4 sm:flex-row sm:items-center sm:gap-4"
+      data-testid="cart-item"
+    >
       {/* Product Info */}
-      {item.image && (
-        <img
-          src={item.image}
-          alt={item.name || item.productId}
-          className="h-14 w-14 flex-shrink-0 rounded object-cover"
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-gray-900 truncate">
-          {item.name || item.productId}
-        </h3>
-        {item.variantId && (
-          <p className="text-sm text-gray-500">Variant: {item.variantId}</p>
+      <div className="flex min-w-0 items-center gap-4 sm:flex-1">
+        {item.image && (
+          <img
+            src={item.image}
+            alt={item.name || item.productId}
+            className="h-14 w-14 flex-shrink-0 rounded object-cover"
+          />
         )}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 truncate">
+            {item.name || item.productId}
+          </h3>
+          {item.variantId && (
+            <p className="text-sm text-gray-500">Variant: {item.variantId}</p>
+          )}
+        </div>
       </div>
 
-      {/* Price */}
-      <div className="text-right">
-        <p className="font-semibold text-gray-900">
+      {/* Price / Quantity / Total / Remove */}
+      <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
+        <span className="hidden font-semibold text-gray-900 sm:block">
           Rs. {item.price.toFixed(2)}
-        </p>
-      </div>
+        </span>
 
-      {/* Quantity */}
-      <div className="w-20">
-        <input
-          type="number"
-          min="1"
-          value={item.quantity}
-          onChange={handleQuantityChange}
-          className="w-full rounded border border-gray-300 px-2 py-1 text-center"
-        />
-      </div>
+        {/* Quantity */}
+        <div className="w-20">
+          <input
+            type="number"
+            min="1"
+            value={item.quantity}
+            onChange={handleQuantityChange}
+            className="w-full rounded border border-gray-300 px-2 py-1 text-center"
+            aria-label={`Quantity for ${item.name || item.productId}`}
+          />
+        </div>
 
-      {/* Line Total */}
-      <div className="w-24 text-right">
-        <p className="font-semibold text-gray-900">
-          Rs. {(item.price * item.quantity).toFixed(2)}
-        </p>
-      </div>
+        {/* Line Total */}
+        <div className="w-24 text-right">
+          <span className="text-xs text-gray-500 sm:hidden">Total</span>
+          <p className="font-semibold text-gray-900">
+            Rs. {(item.price * item.quantity).toFixed(2)}
+          </p>
+        </div>
 
-      {/* Remove Button */}
-      <button
-        onClick={onRemove}
-        className="text-red-600 hover:text-red-800 font-medium text-sm"
-      >
-        Remove
-      </button>
+        {/* Remove Button */}
+        <button
+          onClick={onRemove}
+          className="text-red-600 hover:text-red-800 font-medium text-sm"
+        >
+          Remove
+        </button>
+      </div>
     </div>
   );
 }

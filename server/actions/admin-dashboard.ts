@@ -38,6 +38,16 @@ export async function getAdminDashboardStats() {
     const refundRequests =
       orders?.filter((o: any) => o.order_status === "refund_requested").length || 0;
 
+    // Order status + payment-method distributions (for visual analytics)
+    const ordersByStatus: Record<string, number> = {};
+    const ordersByPaymentMethod: Record<string, number> = {};
+    (orders || []).forEach((o: any) => {
+      const status = o.order_status || "unknown";
+      const method = o.payment_method || "unknown";
+      ordersByStatus[status] = (ordersByStatus[status] || 0) + 1;
+      ordersByPaymentMethod[method] = (ordersByPaymentMethod[method] || 0) + 1;
+    });
+
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     const { data: recentOrdersData, error: recentError } = await supabaseAdmin.from("orders")
@@ -97,6 +107,8 @@ export async function getAdminDashboardStats() {
       recentOrders: orders?.slice(0, 10) || [],
       dailyStats,
       lowStockProducts,
+      ordersByStatus,
+      ordersByPaymentMethod,
     };
   } catch (error) {
     if (error instanceof AppError) throw error;

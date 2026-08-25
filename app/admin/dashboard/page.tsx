@@ -39,6 +39,67 @@ function Sparkline({ data, color, label }: { data: number[]; color: string; labe
   );
 }
 
+const STATUS_COLOR_MAP: Record<string, string> = {
+  pending: 'bg-yellow-400',
+  pending_payment: 'bg-yellow-500',
+  confirmed: 'bg-blue-500',
+  shipped: 'bg-purple-500',
+  delivered: 'bg-green-500',
+  refund_requested: 'bg-orange-500',
+  refunded: 'bg-gray-400',
+  cancelled: 'bg-red-500',
+  unknown: 'bg-gray-300',
+};
+
+const PAYMENT_COLOR_MAP: Record<string, string> = {
+  cod: 'bg-green-600',
+  jazz_cash: 'bg-blue-600',
+  easypaisa: 'bg-purple-600',
+  unknown: 'bg-gray-300',
+};
+
+function DistributionBar({
+  title,
+  data,
+  colorMap,
+}: {
+  title: string;
+  data: Record<string, number>;
+  colorMap: Record<string, string>;
+}) {
+  const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((sum, [, v]) => sum + v, 0);
+
+  if (total === 0) {
+    return <p className="text-gray-500 text-sm">No data yet</p>;
+  }
+
+  return (
+    <div>
+      <p className="text-sm text-gray-600 mb-2">{title}</p>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100" role="img" aria-label={title}>
+        {entries.map(([key, value]) => (
+          <div
+            key={key}
+            className={colorMap[key] || 'bg-gray-400'}
+            style={{ width: `${(value / total) * 100}%` }}
+            title={`${key.replace(/_/g, ' ')}: ${value}`}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+        {entries.map(([key, value]) => (
+          <span key={key} className="inline-flex items-center gap-1 text-xs text-gray-600">
+            <span className={`inline-block h-2.5 w-2.5 rounded-sm ${colorMap[key] || 'bg-gray-400'}`} />
+            <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+            <span className="font-medium text-gray-900">{value}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -49,6 +110,8 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<Array<{ date: string; orders: number; revenue: number }>>([]);
   const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+  const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
+  const [ordersByPaymentMethod, setOrdersByPaymentMethod] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +123,8 @@ export default function AdminDashboardPage() {
         setRecentOrders(data.recentOrders);
         setDailyStats(data.dailyStats);
         setLowStockProducts(data.lowStockProducts);
+        setOrdersByStatus(data.ordersByStatus || {});
+        setOrdersByPaymentMethod(data.ordersByPaymentMethod || {});
       } catch (err: any) {
         setError(err.message || 'Failed to load dashboard data');
       } finally {
@@ -197,6 +262,23 @@ export default function AdminDashboardPage() {
               ))}
             </ul>
           )}
+        </div>
+      </div>
+
+      {/* Order Analytics */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Order Analytics</h2>
+        <div className="space-y-6">
+          <DistributionBar
+            title="Orders by status"
+            data={ordersByStatus}
+            colorMap={STATUS_COLOR_MAP}
+          />
+          <DistributionBar
+            title="Orders by payment method"
+            data={ordersByPaymentMethod}
+            colorMap={PAYMENT_COLOR_MAP}
+          />
         </div>
       </div>
 
