@@ -536,6 +536,9 @@ export type Database = {
           created_at: string;
           updated_at: string;
           sent_at: string | null;
+          next_retry_at: string | null;
+          idempotency_key: string | null;
+          html_body: string | null;
         };
         Insert: {
           id?: string;
@@ -552,6 +555,9 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           sent_at?: string | null;
+          next_retry_at?: string | null;
+          idempotency_key?: string | null;
+          html_body?: string | null;
         };
         Update: {
           id?: string;
@@ -568,6 +574,35 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           sent_at?: string | null;
+          next_retry_at?: string | null;
+          idempotency_key?: string | null;
+          html_body?: string | null;
+        };
+      };
+      recipient_bounce_tracking: {
+        Row: {
+          recipient_email: string;
+          bounce_count: number;
+          last_bounce_at: string | null;
+          marked_invalid: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          recipient_email: string;
+          bounce_count?: number;
+          last_bounce_at?: string | null;
+          marked_invalid?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          recipient_email?: string;
+          bounce_count?: number;
+          last_bounce_at?: string | null;
+          marked_invalid?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       contact_messages: {

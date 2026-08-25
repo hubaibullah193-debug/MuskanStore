@@ -93,7 +93,7 @@ export async function createRefundRequest(
         reason: payload.reason,
         status: 'requested',
       })
-      .select('id')
+      .select('id, refund_amount, reason')
       .single();
 
     if (refundError || !refund) {
@@ -104,10 +104,11 @@ export async function createRefundRequest(
     // Send notification email
     const customerEmail = user.email || order.guest_email;
     await sendRefundEmail({
-      orderNumber: order.order_number,
+      orderId: order?.id,
+      orderNumber: order?.order_number || '',
       customerEmail,
-      refundAmount: payload.refundAmount,
-      reason: payload.reason,
+      refundAmount: refund.refund_amount,
+      reason: refund.reason,
       status: 'requested',
     }).catch(err => console.error('Failed to send refund email:', err));
 
@@ -192,6 +193,7 @@ export async function approveRefund(
     const customerEmail = order.guest_email;
 
     await sendRefundEmail({
+      orderId: order?.id,
       orderNumber: order?.order_number || '',
       customerEmail,
       refundAmount: refund.refund_amount,
@@ -280,6 +282,7 @@ export async function rejectRefund(
     const customerEmail = order.guest_email;
 
     await sendRefundEmail({
+      orderId: order?.id,
       orderNumber: order?.order_number || '',
       customerEmail,
       refundAmount: refund.refund_amount,
@@ -367,6 +370,7 @@ export async function completeRefund(
     const customerEmail = order.guest_email;
 
     await sendRefundEmail({
+      orderId: order?.id,
       orderNumber: order?.order_number || '',
       customerEmail,
       refundAmount: refund.refund_amount,

@@ -56,6 +56,30 @@ interface ShipmentStatusEmailData {
 }
 
 /**
+ * Shared email footer — satisfies spec: Muskan Care Center branding, contact
+ * info, and an unsubscribe link (where a recipient email is known).
+ */
+function emailFooter(recipientEmail: string): string {
+  const site = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const unsubscribe = `${site}/unsubscribe?email=${encodeURIComponent(recipientEmail)}`;
+  return `
+    <div class="footer">
+      <p>&copy; 2026 Muskan Care Center. All rights reserved.</p>
+      <p>Need help? Contact our support team at <a href="mailto:support@muskancare.com" style="color:#2563eb;">support@muskancare.com</a>.</p>
+      <p>You received this email because you placed an order with Muskan Care Center. To stop receiving order emails, you can <a href="${unsubscribe}" style="color:#2563eb;">unsubscribe</a>.</p>
+    </div>`;
+}
+
+/** Footer for internal/admin emails where an unsubscribe link is not applicable. */
+function emailFooterInternal(): string {
+  return `
+    <div class="footer">
+      <p>&copy; 2026 Muskan Care Center. All rights reserved.</p>
+      <p>Need help? Contact our support team at <a href="mailto:support@muskancare.com" style="color:#2563eb;">support@muskancare.com</a>.</p>
+    </div>`;
+}
+
+/**
  * Order confirmation email template
  */
 export function orderConfirmationTemplate(data: OrderEmailData): string {
@@ -150,12 +174,10 @@ export function orderConfirmationTemplate(data: OrderEmailData): string {
     ${shippingSection}
 
     <p style="margin-top: 24px; color: #666; font-size: 14px;">
-      You'll receive another email once your order ships. If you have any questions, please reply to this email.
-    </p>
+        You'll receive another email once your order ships. If you have any questions, please reply to this email.
+      </p>
 
-    <div class="footer">
-      <p>© 2026 mstore. All rights reserved.</p>
-    </div>
+      ${emailFooter(data.customerEmail)}
   </div>
 </body>
 </html>
@@ -235,12 +257,10 @@ export function paymentStatusTemplate(data: PaymentStatusEmailData): string {
     </div>
 
     <p style="margin-top: 24px; color: #666; font-size: 14px;">
-      If you have any questions or concerns about this transaction, please contact our support team.
-    </p>
+        If you have any questions or concerns about this transaction, please contact our support team.
+      </p>
 
-    <div class="footer">
-      <p>© 2026 mstore. All rights reserved.</p>
-    </div>
+      ${emailFooter(data.customerEmail)}
   </div>
 </body>
 </html>
@@ -346,12 +366,10 @@ export function shipmentStatusTemplate(data: ShipmentStatusEmailData): string {
     ${notesSection}
 
     <p style="margin-top: 24px; color: #666; font-size: 14px;">
-      If you have any questions about your shipment, please reply to this email or contact our support team.
-    </p>
+        If you have any questions about your shipment, please reply to this email or contact our support team.
+      </p>
 
-    <div class="footer">
-      <p>© 2026 mstore. All rights reserved.</p>
-    </div>
+      ${emailFooter(data.customerEmail)}
   </div>
 </body>
 </html>
@@ -434,12 +452,10 @@ export function refundEmailTemplate(data: RefundEmailData): string {
     ${reasonSection}
 
     <p style="margin-top: 24px; color: #666; font-size: 14px;">
-      If you have any questions or need further assistance, please don't hesitate to reach out to our support team.
-    </p>
+        If you have any questions or need further assistance, please don't hesitate to reach out to our support team.
+      </p>
 
-    <div class="footer">
-      <p>&copy; 2026 mstore. All rights reserved.</p>
-    </div>
+      ${emailFooter(data.customerEmail)}
   </div>
 </body>
 </html>
@@ -566,9 +582,7 @@ export function lowStockDigestTemplate(data: LowStockDigestData): string {
       Log in to the <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/admin/inventory" style="color: #2563eb;">admin inventory panel</a> to restock.
     </p>
 
-    <div class="footer">
-      <p>&copy; 2026 Muskan Care Center. All rights reserved.</p>
-    </div>
+    ${emailFooterInternal()}
   </div>
 </body>
 </html>

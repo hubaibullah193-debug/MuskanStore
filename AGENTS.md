@@ -160,7 +160,9 @@ tokens.css                             # Design system tokens + global resets
 - Admin: dashboard, orders, products, inventory, shipments, refunds, audit-logs, settings
 - Payment gateway stubs (JazzCash, Easypaisa)
 - Email service (Resend) + templates
-- 15 SQL migrations (schema + RLS + features + secure admin provisioning)
+- Email reliability layer — `lib/email/delivery.ts` is the single production email path: delivery tracking in `email_logs`, send idempotency, exponential-backoff retries (cron `app/api/cron/email-retry`), atomic webhook dedup, Resend bounce/complaint webhook (`app/api/webhooks/email`) with 3-bounce recipient invalidation, and admin email-delivery visibility (`app/api/admin/email-logs` + order page). See `docs/EMAIL_RELIABILITY.md`.
+- Inventory reservation with 30-min TTL + auto-release cron (`app/api/cron/release-reservations`); finalization on payment (`lib/payments/inventory-finalization.ts`)
+- 15 SQL migrations (schema + RLS + features + secure admin provisioning) + P1 migration `010_email_delivery_reliability.sql`
 - Secure admin provisioning — no public admin signup; initial/further admins designated via `npm run provision-admin <email>` (service_role key) or the Supabase dashboard. Customers cannot self-escalate (RLS `users_update_own` forbids role change). See `docs/ADMIN_PROVISIONING.md`.
 - E2E tests (homepage + auth specs)
 - 13 server action modules
@@ -170,14 +172,10 @@ tokens.css                             # Design system tokens + global resets
 ### Not Built / Unverified
 - Signup form submission (broken — GET instead of POST)
 - Cart persistence across sessions
-- Order creation → inventory decrement → confirmation email chain
 - Real JazzCash/Easypaisa API integration
-- Password reset email flow
-- Inventory reservation during checkout
-- Email notifications (order, payment, status, refund)
+- Password reset email flow (handled by Supabase Auth built-in, outside custom reliability layer)
 - Guest checkout + token-based tracking
 - Admin audit log writing from actions
-- Daily low-stock digest email
 - Product recommendations
 - Bundle offers (UI + pricing lock)
 - Bulk CSV upload (admin)

@@ -257,6 +257,7 @@ export async function createOrder(
 
     if (customerEmail) {
       await sendOrderConfirmation({
+        orderId: order.id,
         orderNumber: order.order_number,
         customerEmail,
         items: orderItems.map((item) => ({

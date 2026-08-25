@@ -24,6 +24,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   const [statusNotes, setStatusNotes] = useState('');
   const [paymentAttempts, setPaymentAttempts] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -68,6 +69,19 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
           .order('created_at', { ascending: false });
 
         setAuditLogs(logs || []);
+
+        // Fetch email delivery logs for this order
+        try {
+          const emailRes = await fetch(
+            `/api/admin/email-logs?referenceId=${params.id}`
+          );
+          if (emailRes.ok) {
+            const emailJson = await emailRes.json();
+            setEmailLogs(emailJson.logs || []);
+          }
+        } catch {
+          // Email logs are best-effort; ignore failures.
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load order details');
       } finally {
@@ -282,6 +296,43 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
               </div>
             </div>
           )}
+          {/* Email Delivery (reliability visibility) */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Email Delivery</h2>
+            {emailLogs.length === 0 ? (
+              <p className="text-sm text-gray-600">No emails recorded for this order.</p>
+            ) : (
+              <div className="space-y-3">
+                {emailLogs.map((log: any) => (
+                  <div key={log.id} className="pb-3 border-b last:border-b-0">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium capitalize">{log.email_type.replace(/_/g, ' ')}</p>
+                        <p className="text-sm text-gray-600">{log.recipient_email}</p>
+                        {log.error_message && (
+                          <p className="text-sm text-red-600 mt-1">{log.error_message}</p>
+                        )}
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          log.status === 'sent'
+                            ? 'bg-green-100 text-green-900'
+                            : log.status === 'failed'
+                            ? 'bg-red-100 text-red-900'
+                            : log.status === 'bounced'
+                            ? 'bg-orange-100 text-orange-900'
+                            : 'bg-yellow-100 text-yellow-900'
+                        }`}
+                      >
+                        {log.status}
+                        {log.retry_count > 0 ? ` (retry ${log.retry_count})` : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}

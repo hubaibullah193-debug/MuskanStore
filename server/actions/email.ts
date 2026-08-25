@@ -1,9 +1,13 @@
 // server/actions/email.ts
-// Email integration for orders, payments, and refunds
+// Email integration for orders, payments, and refunds.
+//
+// P1: every send now routes through `logAndSendEmail` (lib/email/delivery.ts),
+// which records delivery in `email_logs`, enforces idempotency, and schedules
+// retries. This is the single production email path.
 
 'use server';
 
-import { sendEmail } from '@/lib/email/service';
+import { logAndSendEmail } from '@/lib/email/delivery';
 import {
   orderConfirmationTemplate,
   paymentStatusTemplate,
@@ -12,6 +16,7 @@ import {
 } from '@/lib/email/templates';
 
 interface OrderConfirmationPayload {
+  orderId?: string;
   orderNumber: string;
   customerEmail: string;
   customerName?: string;
@@ -36,6 +41,7 @@ interface OrderConfirmationPayload {
 }
 
 interface PaymentStatusPayload {
+  orderId?: string;
   orderNumber: string;
   customerEmail: string;
   customerName?: string;
@@ -46,6 +52,7 @@ interface PaymentStatusPayload {
 }
 
 interface RefundPayload {
+  orderId?: string;
   orderNumber: string;
   customerEmail: string;
   customerName?: string;
@@ -55,6 +62,7 @@ interface RefundPayload {
 }
 
 interface ShipmentStatusPayload {
+  orderId?: string;
   orderNumber: string;
   customerEmail: string;
   customerName?: string;
@@ -66,26 +74,25 @@ interface ShipmentStatusPayload {
 }
 
 /**
- * Send order confirmation email
- * Called after successful order creation
+ * Send order confirmation email.
+ * Idempotent per order (duplicate order-creation events won't resend).
  */
 export async function sendOrderConfirmation(
   payload: OrderConfirmationPayload
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const html = orderConfirmationTemplate(payload);
-    const result = await sendEmail({
+    return await logAndSendEmail({
       to: payload.customerEmail,
       subject: `Order Confirmed - #${payload.orderNumber}`,
       html,
+      emailType: 'order_confirmation',
+      referenceId: payload.orderId ?? null,
+      referenceType: payload.orderId ? 'order' : null,
+      idempotencyKey: payload.orderId
+        ? `order:${payload.orderId}:confirmation`
+        : null,
     });
-
-    if (!result.success) {
-      console.error('Failed to send order confirmation:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Error sending order confirmation:', message);
@@ -94,8 +101,9 @@ export async function sendOrderConfirmation(
 }
 
 /**
- * Send payment status update email
- * Called after payment status changes
+ * Send payment status update email.
+ * Deduplicated at the webhook layer (shouldSendWebhookEmail); no extra
+ * idempotency key is needed here.
  */
 export async function sendPaymentStatusEmail(
   payload: PaymentStatusPayload
@@ -109,18 +117,14 @@ export async function sendPaymentStatusEmail(
     };
 
     const html = paymentStatusTemplate(payload);
-    const result = await sendEmail({
+    return await logAndSendEmail({
       to: payload.customerEmail,
       subject: `${statusLabel[payload.status]} - Order #${payload.orderNumber}`,
       html,
+      emailType: 'payment_status',
+      referenceId: payload.orderId ?? null,
+      referenceType: payload.orderId ? 'order' : null,
     });
-
-    if (!result.success) {
-      console.error('Failed to send payment status email:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Error sending payment status email:', message);
@@ -129,8 +133,8 @@ export async function sendPaymentStatusEmail(
 }
 
 /**
- * Send refund status email
- * Called after refund request, approval, rejection, or completion
+ * Send refund status email.
+ * Idempotent per (order, status) transition.
  */
 export async function sendRefundEmail(
   payload: RefundPayload
@@ -144,18 +148,17 @@ export async function sendRefundEmail(
     };
 
     const html = refundEmailTemplate(payload);
-    const result = await sendEmail({
+    return await logAndSendEmail({
       to: payload.customerEmail,
       subject: `${statusLabel[payload.status]} - Order #${payload.orderNumber}`,
       html,
+      emailType: 'refund',
+      referenceId: payload.orderId ?? null,
+      referenceType: payload.orderId ? 'order' : null,
+      idempotencyKey: payload.orderId
+        ? `refund:${payload.orderId}:${payload.status}`
+        : null,
     });
-
-    if (!result.success) {
-      console.error('Failed to send refund email:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Error sending refund email:', message);
@@ -164,8 +167,8 @@ export async function sendRefundEmail(
 }
 
 /**
- * Send shipment status update email
- * Called when shipment status changes (shipped, delivered, etc.)
+ * Send shipment status update email.
+ * Idempotent per (order, status) transition.
  */
 export async function sendShipmentStatusEmail(
   payload: ShipmentStatusPayload
@@ -180,18 +183,17 @@ export async function sendShipmentStatusEmail(
     };
 
     const html = shipmentStatusTemplate(payload);
-    const result = await sendEmail({
+    return await logAndSendEmail({
       to: payload.customerEmail,
       subject: `${statusLabel[payload.status]} - Order #${payload.orderNumber}`,
       html,
+      emailType: 'shipment_status',
+      referenceId: payload.orderId ?? null,
+      referenceType: payload.orderId ? 'order' : null,
+      idempotencyKey: payload.orderId
+        ? `shipment:${payload.orderId}:${payload.status}`
+        : null,
     });
-
-    if (!result.success) {
-      console.error('Failed to send shipment status email:', result.error);
-      return { success: false, error: result.error };
-    }
-
-    return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('Error sending shipment status email:', message);

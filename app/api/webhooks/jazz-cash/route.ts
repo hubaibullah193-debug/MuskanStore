@@ -247,6 +247,7 @@ async function sendPaymentConfirmationEmail({
     if (!shouldSend) return;
 
     await sendPaymentStatusEmail({
+      orderId,
       orderNumber,
       customerEmail,
       status: 'completed',

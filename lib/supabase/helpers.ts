@@ -375,21 +375,7 @@ export async function getPaymentAttempts(orderId: string) {
 // ===================================================================
 // EMAIL LOG HELPERS
 // ===================================================================
+// Delivery tracking now lives in lib/email/delivery.ts (logAndSendEmail),
+// which is the single production email path. The previous logEmailSent helper
+// was removed during P1 to avoid a second, divergent email implementation.
 
-export async function logEmailSent(
-  recipientEmail: string,
-  emailType: string,
-  subject: string,
-  referenceId?: string,
-  referenceType?: string
-) {
-  return supabaseAdmin.from("email_logs").insert({
-    recipient_email: recipientEmail,
-    email_type: emailType,
-    subject,
-    reference_id: referenceId || null,
-    reference_type: referenceType || null,
-    status: "sent",
-    sent_at: new Date().toISOString(),
-  });
-}

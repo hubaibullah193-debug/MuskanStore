@@ -262,6 +262,7 @@ export async function approveRefund(
 
     if (customerEmail) {
       await sendRefundEmail({
+        orderId: updated.id,
         orderNumber: updated.order_number,
         customerEmail,
         refundAmount,

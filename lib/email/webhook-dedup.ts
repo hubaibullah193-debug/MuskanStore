@@ -1,6 +1,13 @@
 /**
  * Email Deduplication for Webhook Callbacks
- * Prevents duplicate emails from webhook retries using SHA256 payload hashing
+ * Prevents duplicate emails from webhook retries using a UNIQUE constraint on
+ * (order_id, transaction_id, payment_gateway, email_type, webhook_hash).
+ *
+ * P1 fix: the check is now ATOMIC (single INSERT ... ON CONFLICT) and FAILS
+ * CLOSED. A genuine duplicate (unique violation) returns false so no duplicate
+ * email is sent. On any other DB error we also suppress the send (fail closed)
+ * rather than risk a duplicate; the gateway will retry the webhook and the
+ * attempt will succeed once the DB is healthy.
  */
 
 import { supabaseAdmin } from "@/lib/supabase/client";
@@ -15,49 +22,47 @@ interface WebhookEmailRecord {
 }
 
 /**
- * Check if email was already sent for this webhook
- * Prevents duplicate emails from duplicate webhook callbacks
+ * Returns true if the caller should send the email (this is the first time we
+ * see this exact webhook), false if it is a duplicate or we cannot safely send.
  */
-export async function shouldSendWebhookEmail(record: WebhookEmailRecord): Promise<boolean> {
+export async function shouldSendWebhookEmail(
+  record: WebhookEmailRecord
+): Promise<boolean> {
+  const webhookHash = crypto
+    .createHash("sha256")
+    .update(JSON.stringify(record.webhookPayload))
+    .digest("hex");
+
   try {
-    // Create deterministic hash of webhook payload
-    const webhookHash = crypto
-      .createHash("sha256")
-      .update(JSON.stringify(record.webhookPayload))
-      .digest("hex");
-
-    // Check if this exact webhook payload already triggered an email
-    const { data: existing } = await supabaseAdmin
+    const { count, error } = await supabaseAdmin
       .from("webhook_email_tracking")
-      .select("id")
-      .eq("order_id", record.orderId)
-      .eq("transaction_id", record.transactionId)
-      .eq("payment_gateway", record.paymentGateway)
-      .eq("email_type", record.emailType)
-      .eq("webhook_hash", webhookHash)
-      .single();
+      .insert(
+        {
+          order_id: record.orderId,
+          transaction_id: record.transactionId,
+          payment_gateway: record.paymentGateway,
+          email_type: record.emailType,
+          webhook_hash: webhookHash,
+          sent_at: new Date().toISOString(),
+        },
+        { count: "exact" }
+      );
 
-    if (existing) {
-      // Email already sent for this exact webhook
+    if (error) {
+      if ((error as any).code === "23505") {
+        // Unique violation => this webhook already triggered an email.
+        return false;
+      }
+      // Any other error: fail closed (suppress) to avoid duplicates.
+      console.error("webhook email dedup error:", error.message);
       return false;
     }
 
-    // Record that we're sending email for this webhook
-    await supabaseAdmin
-      .from("webhook_email_tracking")
-      .insert({
-        order_id: record.orderId,
-        transaction_id: record.transactionId,
-        payment_gateway: record.paymentGateway,
-        email_type: record.emailType,
-        webhook_hash: webhookHash,
-        sent_at: new Date().toISOString(),
-      });
-
-    return true;
+    // count === 1 means a new row was inserted; 0 would mean a conflict was
+    // swallowed (defensive) — treat as duplicate.
+    return (count ?? 0) > 0;
   } catch (error) {
     console.error("Error checking webhook email dedup:", error);
-    // On error, allow sending (fail open) - better to send duplicate than none
-    return true;
+    return false;
   }
 }

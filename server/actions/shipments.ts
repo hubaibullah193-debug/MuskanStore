@@ -164,6 +164,7 @@ export async function updateShipment(input: UpdateShipmentInput) {
 
       if (customerEmail) {
         await sendShipmentStatusEmail({
+          orderId: order.id,
           orderNumber: order.order_number,
           customerEmail,
           status: input.status as any,

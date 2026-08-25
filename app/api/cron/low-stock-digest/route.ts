@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/client';
-import { sendEmail } from '@/lib/email/service';
+import { logAndSendEmail } from '@/lib/email/delivery';
 import { lowStockDigestTemplate } from '@/lib/email/templates';
 
 export async function GET(request: NextRequest) {
@@ -84,19 +84,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'No alerts after filtering' });
     }
 
-    // Send digest email to admin
+    // Send digest email to admin (unified path: tracked + retryable + daily idempotency)
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@mstore.com';
     const html = lowStockDigestTemplate({ lowStockItems, outOfStockItems });
+    const dayKey = new Date().toISOString().slice(0, 10);
 
-    const result = await sendEmail({
+    const result = await logAndSendEmail({
       to: adminEmail,
       subject: `[MStore] Low Stock Alert — ${outOfStockItems.length + lowStockItems.length} products need attention`,
       html,
+      emailType: 'low_stock_digest',
+      idempotencyKey: `low_stock_digest:${dayKey}`,
     });
 
     return NextResponse.json({
-      message: 'Low stock digest sent',
+      message: result.skipped ? 'Low stock digest already sent today' : 'Low stock digest sent',
       sent: result.success,
+      skipped: result.skipped ?? false,
       outOfStock: outOfStockItems.length,
       lowStock: lowStockItems.length,
       emailError: result.error || null,

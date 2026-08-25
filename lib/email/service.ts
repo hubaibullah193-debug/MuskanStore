@@ -115,6 +115,7 @@ async function sendGridEmail(options: EmailOptions): Promise<EmailResult> {
           },
         ],
       }),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
