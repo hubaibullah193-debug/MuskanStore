@@ -32,7 +32,7 @@ Verified present in the codebase:
 
 - **Payments**
   - COD fully supported (order confirmed immediately, admin marks paid)
-  - JazzCash / Easypaisa **URL generators, redirect, callback, verify, and webhook route stubs** under `app/api/payment/*` and `app/api/webhooks/*` (no live gateway credentials integrated)
+  - JazzCash / Easypaisa **URL generators, redirect, callback, and webhook route stubs** under `app/api/payment/*` and `app/api/webhooks/*` (no live gateway credentials integrated)
 
 - **Admin**
   - Dashboard, Orders (with **CSV export**), Products (with **CSV bulk upload** and image upload), Inventory, Shipments, Refunds (approve/reject/complete), Bundles, Audit Logs, Settings
@@ -88,7 +88,7 @@ cp .env.example .env.local
 # 3. Apply database migrations (from a clean DB)
 # Link your Supabase project, then:
 supabase db push
-# or run the canonical files in supabase/migrations/ in order (000 → 009)
+  # or run the canonical files in supabase/migrations/ in order (000 → 012)
 
 # 4. Seed sample data (optional, for local dev)
 # migration 002 seeds categories/products/variants/inventory/images
@@ -98,7 +98,7 @@ supabase db push
 npm run dev
 ```
 
-> **Note:** The migrations README documents files `000`–`008`; a `009_auto_create_user_profile.sql` also exists in `supabase/migrations/`. Apply the whole ordered set. There is also a legacy `migrations/` directory (ignore it) and `supabase/combined_migration.sql` / `supabase/fix_bundles_and_rls.sql` artifacts.
+> **Note:** The canonical set is `000`–`012` (two files share the `009_` prefix: `009_auto_create_user_profile.sql` and `009_secure_admin_provisioning.sql`). Apply the whole ordered set. There is also a legacy `migrations/` directory (ignore it) and `supabase/combined_migration.sql` / `supabase/fix_bundles_and_rls.sql` artifacts.
 
 ## Environment Variables
 
@@ -124,11 +124,11 @@ Defined in `.env.example`. **Required for the app to function:**
 |----------|---------|
 | `JAZZ_CASH_MERCHANT_ID`, `JAZZ_CASH_PP_PASSWORD` | JazzCash credentials (stubbed) |
 | `EASYPAISA_MERCHANT_ID`, `EASYPAISA_SECRET` | Easypaisa credentials (stubbed) |
-| `PAYMENT_WEBHOOK_SECRET` | HMAC secret for `POST /api/payment/verify` |
+| `PAYMENT_WEBHOOK_SECRET` | HMAC secret used to sign and verify the payment-gateway **return URL** (defense-in-depth); applied by the `callbacks/*` handlers. The authoritative payment confirmation is the server-to-server webhook at `/api/webhooks/{jazz-cash,easypaisa}`. |
 
 > **Verified:** these variables are referenced in code/config. Live payment processing is **not** integrated — only stub URL generators and route skeletons exist.
 
-> **Admin access:** signup always creates `role = 'customer'`. To obtain an admin, the `users.role` column must be set to `'admin'` directly in the database (no self-service admin creation UI was found). This is a required setup step before admin pages are usable.
+> **Admin access:** signup always creates `role = 'customer'`. To obtain an admin, run `npm run provision-admin <email>` (service-role script) or use the Supabase dashboard. There is intentionally no self-service admin signup.
 
 ## Development Commands
 
@@ -149,7 +149,6 @@ npm run test:e2e:debug
 app/
 ├── layout.tsx, page.tsx, globals.css
 ├── middleware.ts                 # ACTIVE auth/role middleware (root)
-├── app/middleware.ts            # DUPLICATE/stale — not loaded by Next.js (see Notes)
 ├── components/                  # UI components (header, footer, product-card, …)
 ├── auth/                        # login, signup, forgot/reset password + actions.ts
 ├── products/                    # listing + [slug] detail
@@ -193,7 +192,7 @@ e2e/                             # Playwright specs (homepage, auth)
 docs/                            # Project documentation (spec, design, plans, audits)
 ```
 
-> **Notes on structure accuracy:** AGENTS.md's file map is out of date. Verified additions not in that map include `app/contact`, `app/shipping`, `app/privacy-policy`, `app/orders`, `app/admin/bundles`, `app/api/cron/low-stock-digest`, `server/actions/contact.ts`, `server/actions/bundles.ts`, `server/actions/admin-bundles.ts`, `server/actions/admin-dashboard.ts`, and `lib/auth/verify.ts`. AGENTS.md also references `hooks/useAuth.tsx`, which does not exist (the hook lives at `lib/hooks/useAuth.ts`).
+> **Notes on structure accuracy:** AGENTS.md's file map is kept in sync with the actual tree. Verified additions include `app/contact`, `app/shipping`, `app/privacy-policy`, `app/orders`, `app/admin/bundles`, `app/api/cron/low-stock-digest`, `app/api/cron/email-retry`, `app/api/cron/release-reservations`, `server/actions/contact.ts`, `server/actions/bundles.ts`, `server/actions/admin-bundles.ts`, `server/actions/admin-dashboard.ts`, and `lib/auth/verify.ts`. The client auth hook lives at `lib/hooks/useAuth.ts`.
 
 ## Database / Setup Information
 
@@ -232,14 +231,13 @@ docs/                            # Project documentation (spec, design, plans, a
 
 **Partially complete / stubbed (verify before relying on):**
 - **JazzCash / Easypaisa prepaid payments** — route skeletons and URL generators exist, but no live gateway integration; prepaid order finalization depends on webhook/verify stubs.
-- **Product recommendations** — featured products exist on the homepage; recommendation logic on detail/cart pages not clearly verified.
+  - **Product recommendations** — category-based "You Might Also Like" on product detail and cart pages (verified in Phase 2).
 - **Email delivery** depends on `RESEND_API_KEY` and a verified sender domain; failed sends are tracked in `email_logs` and retried by the email-retry cron (up to 3 attempts over 24h).
 
 **Known issues to resolve before launch (see audit):**
-- A stale duplicate `app/middleware.ts` that reads a `session-token` cookie that is never set (dead code; the real middleware is the root `middleware.ts`).
-- `app/api/checkout/route.ts` and `server/actions/orders.ts` (`getOrderForDisplay`) derive the user id from an **unverified** `decodeJwt` of the `auth-token` cookie rather than verifying the signature — should use `verifySupabaseToken`.
-- No self-service admin creation; an admin role must be set manually in the database.
-- Documentation (`AGENTS.md`, `docs/PROJECT_AUDIT_SUMMARY.md`) lags the actual implementation and under-reports completed work.
+- Admin provisioning is by-design via `npm run provision-admin` (no self-service UI).
+- Prepaid payments (JazzCash/Easypaisa) require live gateway credentials, merchant onboarding, and webhook/IPN registration before they finalize orders.
+- Documentation lag was corrected in the Phase 1 pass; `docs/remaining_work.md` tracks remaining (post-Phase-1) work.
 
 ---
 *README generated from a static review of the codebase. Items marked "Not verified" were not executed against a live environment.*

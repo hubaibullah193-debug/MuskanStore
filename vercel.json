@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/low-stock-digest",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/email-retry",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/release-reservations",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

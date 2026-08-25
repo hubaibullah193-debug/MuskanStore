@@ -1,6 +1,6 @@
 # AGENTS.md — Muskan Care Center (MStore)
 
-> **Project Status: Phase 0 COMPLETE — verified by user on local machine.**
+> **Project Status: Phase 2 COMPLETE (verified). Phase 1 production/launch-readiness work COMPLETE — see `docs/remaining_work.md` and the Phase 1 commit.**
 
 ## Architecture
 
@@ -35,7 +35,7 @@ app/
 ├── auth/
 │   ├── actions.ts                      # Server actions: signUp, login, logout, getSession
 │   ├── login/page.tsx
-│   ├── signup/page.tsx                 # ⚠️ Form submission broken (GET instead of POST)
+│   ├── signup/page.tsx                 # Signup form (onSubmit -> signUpAction)
 │   ├── forgot-password/page.tsx
 │   └── reset-password/page.tsx
 ├── products/
@@ -58,7 +58,7 @@ app/
 │   ├── cart/add/route.ts
 │   ├── track-order/route.ts
 │   ├── payment/
-│   │   ├── verify/route.ts
+
 │   │   ├── callbacks/jazz-cash/route.ts
 │   │   ├── callbacks/easypaisa/route.ts
 │   │   ├── redirect/jazz-cash/route.ts
@@ -122,7 +122,7 @@ lib/
 ├── validation/schemas.ts              # Zod schemas
 └── utils/helpers.ts
 
-hooks/useAuth.tsx                      # Client auth hook (duplicate of lib/hooks/useAuth.ts?)
+lib/hooks/useAuth.ts                   # Client auth hook
 
 types/database.ts                      # Supabase generated types
 
@@ -136,7 +136,16 @@ supabase/migrations/                   # Canonical migrations (consolidated, run
 ├── 006_seed_service_areas.sql         # Delivery service-area seed
 ├── 007_create_contact_messages.sql    # Contact Us form table
 ├── 008_unify_admin_rls_role.sql       # All admin RLS delegate to public.is_admin()
+├── 009_auto_create_user_profile.sql   # Auto-create public.users on new auth user
+├── 009_secure_admin_provisioning.sql  # Secure admin provisioning + no self-escalation
+├── 010_email_delivery_reliability.sql # Retry/idempotency/bounce tracking for email
+├── 011_ensure_product_images_storage.sql # Storage bucket + public-read policy
+├── 012_fix_users_read_own_policy.sql  # RLS: users read only their own row
 └── README.md
+
+# NOTE: two files share the 009_ prefix (numbering collision). Re-numbering to
+# a single 009/010/.../012 sequence is pending hygiene work; both are idempotent
+# (drop policy if exists / create or replace) so apply order is not load-bearing.
 
 migrations/                            # Legacy (older copy, ignore)
 
@@ -151,7 +160,7 @@ tokens.css                             # Design system tokens + global resets
 ## Current State
 
 ### Built & Working
-- Auth pages (login, signup, forgot/reset password) — **signup form submission has a bug**
+- Auth pages (login, signup, forgot/reset password) — working
 - Homepage, product listing, product detail
 - Cart page + server actions
 - Checkout form (stub)
@@ -162,7 +171,7 @@ tokens.css                             # Design system tokens + global resets
 - Email service (Resend) + templates
 - Email reliability layer — `lib/email/delivery.ts` is the single production email path: delivery tracking in `email_logs`, send idempotency, exponential-backoff retries (cron `app/api/cron/email-retry`), atomic webhook dedup, Resend bounce/complaint webhook (`app/api/webhooks/email`) with 3-bounce recipient invalidation, and admin email-delivery visibility (`app/api/admin/email-logs` + order page). See `docs/EMAIL_RELIABILITY.md`.
 - Inventory reservation with 30-min TTL + auto-release cron (`app/api/cron/release-reservations`); finalization on payment (`lib/payments/inventory-finalization.ts`)
-- 15 SQL migrations (schema + RLS + features + secure admin provisioning) + P1 migration `010_email_delivery_reliability.sql`
+- 13 canonical SQL migrations (`000`–`012`; two files share the `009_` prefix — renumber pending) covering schema + RLS + features + secure admin provisioning + email reliability + RLS hardening
 - Secure admin provisioning — no public admin signup; initial/further admins designated via `npm run provision-admin <email>` (service_role key) or the Supabase dashboard. Customers cannot self-escalate (RLS `users_update_own` forbids role change). See `docs/ADMIN_PROVISIONING.md`.
 - E2E tests (homepage + auth specs)
 - 13 server action modules
@@ -171,11 +180,9 @@ tokens.css                             # Design system tokens + global resets
 - **Phase 2 (COMPLETE):** product recommendations on product detail + cart pages; admin dashboard sparklines (14-day orders/revenue) + order-status and payment-method distribution analytics; Supabase Storage product-image upload verified (bucket + public-read policy declared in migration `011_ensure_product_images_storage.sql`); responsive/mobile UX validated and cart-item row made mobile-friendly
 
 ### Not Built / Unverified (genuine gaps)
-- Signup form submission (broken — GET instead of POST) — not classified as P2
-- Real JazzCash/Easypaisa API integration
+- Real JazzCash/Easypaisa API integration (live credentials + merchant onboarding + webhook/IPN registration required)
 - Password reset email flow (handled by Supabase Auth built-in, outside custom reliability layer)
-- Admin audit log writing from actions
-- Bundle offers (UI + pricing lock) — data model + admin UI exist
+- Bundle offers: admin CRUD + storefront display exist, but the checkout **pricing lock is not yet enforced** (Phase 2 work)
 
 ### Phase 2 — COMPLETE (verified)
 - Product recommendations on product detail (category-based "You Might Also Like") and cart pages
