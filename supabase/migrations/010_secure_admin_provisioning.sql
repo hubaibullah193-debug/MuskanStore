@@ -1,5 +1,5 @@
 -- ============================================================================
--- 009_secure_admin_provisioning.sql
+-- 010_secure_admin_provisioning.sql
 -- Secure admin provisioning + prevent customers from self-escalating role.
 --
 -- Design goals (see docs/ADMIN_PROVISIONING.md):

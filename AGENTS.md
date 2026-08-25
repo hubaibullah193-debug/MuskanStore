@@ -180,7 +180,7 @@ tokens.css                             # Design system tokens + global resets
 - 13 server action modules
 - Design system (tokens.css)
 - Middleware (JWT + role-based routing)
-- **Phase 2 (COMPLETE):** product recommendations on product detail + cart pages; admin dashboard sparklines (14-day orders/revenue) + order-status and payment-method distribution analytics; Supabase Storage product-image upload verified (bucket + public-read policy declared in migration `011_ensure_product_images_storage.sql`); responsive/mobile UX validated and cart-item row made mobile-friendly
+- **Phase 2 (COMPLETE):** product recommendations on product detail + cart pages; admin dashboard sparklines (14-day orders/revenue) + order-status and payment-method distribution analytics; Supabase Storage product-image upload verified (bucket + public-read policy declared in migration `012_ensure_product_images_storage.sql`); responsive/mobile UX validated and cart-item row made mobile-friendly
 
 ### Not Built / Unverified (genuine gaps)
 - Real JazzCash/Easypaisa API integration (live credentials + merchant onboarding + webhook/IPN registration required — payment verification is fail-closed and webhook-only; see `docs/PAYMENT_ARCHITECTURE.md`)

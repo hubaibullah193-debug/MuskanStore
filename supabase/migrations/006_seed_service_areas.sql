@@ -1,4 +1,4 @@
--- 012_seed_service_areas.sql
+-- 006_seed_service_areas.sql
 -- Seed initial service areas for order delivery validation
 
 INSERT INTO public.service_areas (city, is_active)

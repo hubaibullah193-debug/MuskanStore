@@ -16,11 +16,8 @@ You need to run the migrations on your Supabase project. There are two ways:
 2. Select your project `ehwawaqugswvtdxoyxyr`
 3. Go to **SQL Editor** → click **New Query**
 4. Copy and paste the contents of each migration file in order:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_rls_policies.sql`
-   - `supabase/migrations/003_add_featured_to_products.sql`
-   - `supabase/migrations/004_seed_sample_products.sql`
-   - `supabase/migrations/005_create_users_table.sql`
+    - Run all migration files in `supabase/migrations/` in numeric order
+      (`000_unified_mvp_schema.sql` → `014_bundle_cart_support.sql`).
 5. Run each query (click the play button or Ctrl+Enter)
 
 **Option B: Using Supabase CLI (Recommended for production)**

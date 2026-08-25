@@ -137,10 +137,10 @@ mstore/
 │   ├── database.ts               # Generated from Supabase schema
 │   ├── api.ts                    # API request/response types
 │   └── business.ts               # Domain types (Order, Product, etc.)
-├── migrations/                   # Supabase SQL migrations
-│   ├── 001_initial_schema.sql
-│   ├── 002_rls_policies.sql
-│   └── ...
+├── migrations/                   # Supabase SQL migrations (clean monotonic 000–014)
+│   ├── 000_unified_mvp_schema.sql   # Base schema + RLS
+│   ├── 008_unify_admin_rls_role.sql # Admin RLS unification
+│   └── ... (000–014)
 ├── public/
 │   ├── images/                   # Static assets
 │   └── styles/                   # Global CSS

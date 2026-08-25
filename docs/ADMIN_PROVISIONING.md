@@ -78,7 +78,7 @@ update public.users set role = 'customer' where email = 'someone@domain.com';
 
 ## Files
 
-- `supabase/migrations/009_secure_admin_provisioning.sql` — `provision_admin()`,
+- `supabase/migrations/010_secure_admin_provisioning.sql` — `provision_admin()`,
   `own_role_unchanged()` helper, tightened RLS.
 - `scripts/provision-admin.mjs` — service-role provisioning script (`npm run provision-admin`).
 - `lib/auth/admin.ts` — `isAdmin()` (role-based check used by app code).

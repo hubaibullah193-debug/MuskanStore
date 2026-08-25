@@ -1,4 +1,4 @@
--- 013_bundle_cart_support.sql
+-- 014_bundle_cart_support.sql
 -- Allow cart_items to represent bundle offers in addition to single products.
 -- For bundle cart rows product_id is left NULL and bundle_id identifies the
 -- purchased offer; the resolved constituent products are stored in

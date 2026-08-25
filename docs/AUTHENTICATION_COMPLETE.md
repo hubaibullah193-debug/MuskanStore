@@ -38,11 +38,8 @@
 1. Go to https://app.supabase.com → Select your project
 2. **SQL Editor** → New Query
 3. Copy each file in order and run:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_rls_policies.sql`
-   - `supabase/migrations/003_add_featured_to_products.sql`
-   - `supabase/migrations/004_seed_sample_products.sql`
-   - `supabase/migrations/005_create_users_table.sql`
+    - Run all migration files in `supabase/migrations/` in numeric order
+      (`000_unified_mvp_schema.sql` → `014_bundle_cart_support.sql`).
 
 Once done, test locally:
 ```bash

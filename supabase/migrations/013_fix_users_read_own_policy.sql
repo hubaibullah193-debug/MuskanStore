@@ -1,5 +1,5 @@
 -- ============================================================================
--- 012_fix_users_read_own_policy.sql
+-- 013_fix_users_read_own_policy.sql
 -- Security hardening: remove the `OR role = 'admin'` clause from users_read_own.
 --
 -- Root cause: migration 000 defined users_read_own as

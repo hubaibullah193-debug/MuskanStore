@@ -1,4 +1,4 @@
--- 010_create_bundles_table.sql
+-- 003_create_bundles.sql
 -- Bundle offers table
 
 create table public.bundles (

@@ -1,4 +1,4 @@
--- 004_seed_sample_products.sql
+-- 002_seed_sample_products.sql
 -- Personal hygiene products for Muskan Care Center (Pakistan market)
 -- Categories, products, variants, inventory, and product images
 

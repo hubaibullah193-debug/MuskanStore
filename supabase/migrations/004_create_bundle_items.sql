@@ -1,4 +1,4 @@
--- 011_create_bundle_items_table.sql
+-- 004_create_bundle_items.sql
 -- Bundle items table
 
 create table public.bundle_items (

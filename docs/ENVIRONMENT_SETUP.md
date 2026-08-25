@@ -89,8 +89,9 @@ supabase db push
 ```
 
 This applies:
-- `supabase/migrations/001_initial_schema.sql` — Creates tables, indexes, realtime config
-- `supabase/migrations/002_rls_policies.sql` — Enables RLS and sets row-level policies
+- `supabase/migrations/000_unified_mvp_schema.sql` — Base schema (tables, indexes, realtime, RLS + base policies)
+- `supabase/migrations/008_unify_admin_rls_role.sql` — Unifies admin authorization in RLS
+- plus the remaining ordered `00x_*.sql` migrations (seeds, bundles, email reliability, storage, etc.)
 
 **For Local:**
 
@@ -184,7 +185,7 @@ Migrations live in `supabase/migrations/` and are applied in numeric order.
 
 ### Adding a column (example)
 
-Create `supabase/migrations/003_add_featured_to_products.sql`:
+Create `supabase/migrations/015_add_featured_to_products.sql`:
 
 ```sql
 -- Add featured column to highlight products on homepage
@@ -203,7 +204,7 @@ supabase db push
 
 ### Modifying policies
 
-Edit the relevant file in `supabase/migrations/002_rls_policies.sql` or create a new migration. RLS policies are idempotent within a single transaction, so updates are safe.
+Edit the relevant file in `supabase/migrations/000_unified_mvp_schema.sql` (or create a new migration). RLS policies are idempotent within a single transaction, so updates are safe.
 
 ## Environment Variables Reference
 

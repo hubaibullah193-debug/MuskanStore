@@ -1,5 +1,5 @@
 -- ============================================================================
--- 014_unify_admin_rls_role.sql
+-- 008_unify_admin_rls_role.sql
 -- Unify admin authorization: RLS policies must agree with the application,
 -- which identifies admins via public.users.role = 'admin'
 -- (see lib/auth/admin.ts isAdmin(), middleware.ts, contact_messages migration).
