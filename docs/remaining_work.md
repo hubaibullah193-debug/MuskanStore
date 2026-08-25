@@ -11,6 +11,17 @@
 > - EXTERNAL (unchanged, still required): apply migrations to a live Supabase project (P1-2), run `npm run provision-admin <email>` (P1-3), configure `RESEND_API_KEY` + verified domain (P1-4), and integrate live JazzCash/Easypaisa credentials + register webhooks (P1-6). These cannot be performed from the repo alone.
 > - Remaining later-phase work is unchanged below.
 
+> **Phase 2 (Features & Hardening) — COMPLETED (this pass):**
+> - P2-1 (bundles purchasable + server-side price lock): `lib/orders/bundle-pricing.ts` (authoritative `lockBundlePrice`, `assertBundlePurchasable`, `buildBundleOrderItem`); `server/actions/orders.ts:createOrder` resolves bundle from DB by `bundle_id` only (client price/contents ignored), reserves each constituent; migration `013_bundle_cart_support.sql` adds `cart_items.bundle_id` + `bundle_items_snapshot`; `app/components/bundle-add-to-cart-button.tsx`, `app/page.tsx`, `app/cart/page.tsx`, `app/checkout/page.tsx`, `app/components/cart-item.tsx`, `lib/hooks/useCart.ts` all bundle-aware; `lib/validation/schemas.ts:CheckoutItemSchema` is a union.
+> - P2-2 (stale `/api/payment/verify` refs): removed from `test_all_pages.py` + `test_all_pages_v2.py`; `docs/PAYMENT_ARCHITECTURE.md` documents the real webhook-only verification flow. (README/.env already corrected in P1.)
+> - P2-3 (security headers/CSP): `lib/security/headers.ts` (`buildSecurityHeaders`: CSP allowing Next inline scripts/styles, Supabase REST+Realtime, payment `form-action`; plus HSTS, nosniff, Referrer-Policy, X-Frame-Options=DENY, Permissions-Policy). `middleware.ts` applies these on every response path (admin API 401, redirects, next()).
+> - P2-4 (gateway params): kept fail-closed; documented as EXTERNAL — exact JazzCash/Easypaisa field values must be confirmed against merchant docs before go-live. No code guessing.
+> - P2-5 (refund payout + admin notify): `requestRefund` in `server/actions/orders.ts` rewritten — ownership + delivered-only check, idempotency on `refunds`, creates real `refunds` row (`status='requested'`), sets `order_status='refund_requested'`, sends customer email + `sendRefundAdminNotification`, audit log. No `refund_method`/`refund_account` (those columns don't exist; payout captured at admin processing). Removed dead `RefundRequestSchema`.
+> - P2-6 (automated tests): added `vitest` + `vitest.config.mjs` + `tests/unit/*` (bundle pricing price-lock / inactive-expired / tamper resistance, security headers, helpers). `npm run test:unit` → 22 passing. E2E still requires a live server + seeded DB (external).
+> - P2-7 (SEO): added `app/robots.ts` (disallows admin/account/orders/api/auth/checkout/order-confirmation) + `app/sitemap.ts` (static routes + live product slugs). Build emits `/robots.txt` + `/sitemap.xml`.
+> - P2-8 (password reset): verified correct — `requestPasswordReset` uses Supabase `resetPasswordForEmail` with `redirectTo`; `confirmPasswordReset` verifies the token server-side. No code change. Live Supabase email/redirect remains EXTERNAL verification.
+> - Gates: `npm run type-check`, `npm run lint`, `npm run build` all pass; `npm run test:unit` 22/22 pass.
+
 ---
 
 ## Launch readiness verdict
@@ -82,20 +93,15 @@ Each task: `ID | Priority | Title | Evidence / Files | Action`.
 - RLS/code itself is launch‑ready — no critical auth hole found.
 
 ### 3. 🟡 INCOMPLETE / PARTIAL
-- Bundles: displayed on homepage, **not purchasable** (no checkout price‑lock). *P2.*
 - Bundle admin audit attribution uses literal `'admin'`. *P3.*
-- Refund request uses placeholder payout fields + missing admin notify. *P3.*
 - Two parallel audit‑write paths. *P3.*
-- Password‑reset email via Supabase Auth (outside reliability layer, acceptable). *P2.*
+- Password‑reset email via Supabase Auth (outside reliability layer, acceptable). *P2 — verified complete, external live check only.*
 
 ### 4. ❌ MISSING
-- Storefront bundle purchase action. *P2.*
-- `app/api/payment/verify/route.ts` — referenced in docs/env, **never existed** (webhooks used instead). *P2 (doc fix).*
 - Real gateway transaction lifecycle. *P1 (external).*
 - Self‑service admin UI (by design). *—.*
-- Automated tests beyond 2 E2E specs. *P2.*
-- CSP/security headers. *P2.*
-- robots.txt / sitemap.xml. *P3.*
+
+> **Resolved in Phase 2:** bundles are now purchasable with server‑side price lock; refund request creates a real `refunds` row + admin notify (no placeholder payout fields); storefront bundle purchase action added; `/api/payment/verify` reference removed (webhooks only); unit tests added (`vitest`, 22 passing); CSP/security headers added; `robots.txt` + `sitemap.xml` added.
 
 ### 5. ⚠️ NEEDS IMPROVEMENT
 - Docs massively out of sync. *P1.*
@@ -135,6 +141,16 @@ Verified by static checks + source review:
 - **Refund admin flow:** approve/reject/complete + API routes, ownership checks, emails, audit.
 - **Secure admin provisioning:** `provision_admin()` SECURITY DEFINER + EXECUTE revoked from public; no self‑escalation (`009`).
 - **Responsive/mobile UX:** header/footer/products/admin/checkout/account/cart‑item (P2).
+- **Phase 2 (this pass):** bundles fully purchasable with server‑side `bundle_price` lock (`lib/orders/bundle-pricing.ts`); security headers/CSP (`lib/security/headers.ts` + `middleware.ts`); `docs/PAYMENT_ARCHITECTURE.md` (webhook‑only verification); `requestRefund` real `refunds` row + admin notify + audit; `vitest` unit tests (22 pass); `app/robots.ts` + `app/sitemap.ts`.
+
+### 7b. ✅ PHASE 2 VERIFICATION LOG (this pass)
+| Check | Command | Result |
+|-------|---------|--------|
+| Type‑check | `npm run type-check` | ✅ clean |
+| Lint | `npm run lint` | ✅ clean |
+| Build | `npm run build` | ✅ compiled (includes `/robots.txt` + `/sitemap.xml`) |
+| Unit tests | `npm run test:unit` | ✅ 22 passed (bundle pricing, security headers, helpers) |
+| Source review | manual (bundle price lock, refund flow, headers, dead‑code removal) | see Phase 2 block above |
 
 ---
 

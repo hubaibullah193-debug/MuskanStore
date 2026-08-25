@@ -123,6 +123,26 @@ export const CartSchema = z.object({
   items: z.array(CartItemSchema),
 });
 
+// A checkout line is either a single product or a bundle offer. For bundles the
+// client sends only the bundle id + quantity; the server re-resolves price and
+// contents. The client-supplied `price` (when present) is ignored by the server.
+export const ProductCheckoutItemSchema = z.object({
+  product_id: IdSchema,
+  variant_id: IdSchema.nullish(),
+  quantity: QuantitySchema,
+  price: z.number().nonnegative().optional(),
+});
+
+export const BundleCheckoutItemSchema = z.object({
+  bundle_id: IdSchema,
+  quantity: QuantitySchema,
+});
+
+export const CheckoutItemSchema = z.union([
+  BundleCheckoutItemSchema,
+  ProductCheckoutItemSchema,
+]);
+
 // ===================================================================
 // ADDRESS SCHEMAS
 // ===================================================================
@@ -154,7 +174,7 @@ export const OrderItemSchema = z.object({
 });
 
 export const CheckoutSchema = z.object({
-  items: z.array(CartItemSchema).min(1, "Cart cannot be empty"),
+  items: z.array(CheckoutItemSchema).min(1, "Cart cannot be empty"),
   delivery_address: DeliveryAddressSchema,
   payment_method: z.enum(["cod", "jazz_cash", "easypaisa"]),
 });
@@ -172,13 +192,6 @@ export const OrderStatusUpdateSchema = z.object({
     "refunded",
   ]),
   notes: z.string().optional(),
-});
-
-export const RefundRequestSchema = z.object({
-  order_id: IdSchema,
-  reason: z.string().min(10, "Reason must be at least 10 characters").max(500),
-  refund_method: z.enum(["bank_transfer", "jazz_cash", "easypaisa"]),
-  refund_account: z.string().min(1, "Refund account/number required"),
 });
 
 // ===================================================================
@@ -289,7 +302,6 @@ export type Address = z.infer<typeof AddressSchema>;
 export type DeliveryAddress = z.infer<typeof DeliveryAddressSchema>;
 export type Checkout = z.infer<typeof CheckoutSchema>;
 export type OrderStatusUpdate = z.infer<typeof OrderStatusUpdateSchema>;
-export type RefundRequest = z.infer<typeof RefundRequestSchema>;
 export type SignUp = z.infer<typeof SignUpSchema>;
 export type LogIn = z.infer<typeof LogInSchema>;
 export type UserProfileUpdate = z.infer<typeof UserProfileUpdateSchema>;

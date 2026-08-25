@@ -463,6 +463,69 @@ export function refundEmailTemplate(data: RefundEmailData): string {
 }
 
 /**
+ * Refund request admin notification template (internal)
+ * Notifies store admins/support that a customer has requested a refund.
+ */
+export function refundAdminNotificationTemplate(data: {
+  orderNumber: string;
+  customerEmail: string;
+  refundAmount: number;
+  reason: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #fff7ed; padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #f97316; }
+    .header h1 { margin: 0; color: #9a3412; font-size: 20px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .label { color: #666; font-size: 14px; }
+    .value { font-weight: 600; }
+    .footer { color: #999; font-size: 12px; margin-top: 24px; padding-top: 12px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>New Refund Request</h1>
+      <p style="margin: 4px 0 0 0; color: #7c2d12; font-size: 14px;">A customer has requested a refund that needs review.</p>
+    </div>
+
+    <div class="detail-row">
+      <span class="label">Order Number</span>
+      <span class="value">${data.orderNumber}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Customer</span>
+      <span class="value">${data.customerEmail}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Refund Amount</span>
+      <span class="value">Rs. ${data.refundAmount.toFixed(2)}</span>
+    </div>
+    <div class="detail-row" style="border-bottom: none;">
+      <span class="label">Reason</span>
+      <span class="value" style="max-width: 60%; text-align: right;">${data.reason}</span>
+    </div>
+
+    <p style="margin-top: 24px; color: #666; font-size: 14px;">
+      Review and process this request from the
+      <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/admin/refunds" style="color: #2563eb;">admin refunds panel</a>.
+    </p>
+
+    ${emailFooterInternal()}
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
  * Low stock digest email template (admin notification)
  */
 interface LowStockDigestData {

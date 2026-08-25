@@ -138,6 +138,110 @@ export async function addToCart(
 }
 
 // ===================================================================
+// ADD BUNDLE TO CART
+// ===================================================================
+
+export async function addBundleToCart(
+  userId: string | null,
+  guestEmail: string | null,
+  bundleId: string,
+  quantity: number = 1
+) {
+  try {
+    if (!bundleId || quantity < 1) {
+      throw new AppError("INVALID_PARAMS", "Invalid bundle ID or quantity", 400);
+    }
+
+    if (!userId && !guestEmail) {
+      throw new AppError("INVALID_PARAMS", "Either userId or guestEmail required", 400);
+    }
+
+    // Resolve the authoritative bundle (active + date window) server-side.
+    const { data: bundle, error: bundleError } = await supabaseAdmin
+      .from("bundles")
+      .select("id, name, bundle_price, is_active, active_from, active_to")
+      .eq("id", bundleId)
+      .single();
+
+    if (bundleError || !bundle || !bundle.is_active) {
+      throw new AppError("BUNDLE_UNAVAILABLE", "Bundle not available", 404);
+    }
+
+    const now = new Date();
+    if (bundle.active_from && new Date(bundle.active_from) > now) {
+      throw new AppError("BUNDLE_UNAVAILABLE", "Bundle not yet active", 400);
+    }
+    if (bundle.active_to && new Date(bundle.active_to) < now) {
+      throw new AppError("BUNDLE_UNAVAILABLE", "Bundle no longer available", 400);
+    }
+
+    // Resolve the constituent products from the database (never the client).
+    const { data: bundleItems, error: itemsError } = await supabaseAdmin
+      .from("bundle_items")
+      .select("product_id, variant_id, quantity, products(name), product_variants(variant_name)")
+      .eq("bundle_id", bundleId);
+
+    if (itemsError || !bundleItems || bundleItems.length === 0) {
+      throw new AppError("BUNDLE_INVALID", "Bundle has no products", 400);
+    }
+
+    const snapshot = {
+      name: bundle.name,
+      items: (bundleItems as any[]).map((bi) => ({
+        product_id: bi.product_id,
+        product_name: bi.products?.name,
+        variant_id: bi.variant_id ?? null,
+        variant_name: bi.product_variants?.variant_name ?? null,
+        quantity: bi.quantity,
+        unit_price: null,
+      })),
+    };
+
+    // Check if this bundle is already in the cart (by bundle_id).
+    const { data: existing } = await supabaseAdmin
+      .from("cart_items")
+      .select("id, quantity")
+      .eq("user_id", userId || null)
+      .eq("guest_email", guestEmail || null)
+      .eq("bundle_id", bundleId)
+      .is("product_id", null)
+      .single();
+
+    if (existing) {
+      const { error: updateError } = await supabaseAdmin
+        .from("cart_items")
+        .update({ quantity: existing.quantity + quantity })
+        .eq("id", existing.id);
+
+      if (updateError) {
+        throw new AppError("CART_UPDATE_FAILED", updateError.message, 500);
+      }
+    } else {
+      const { error: insertError } = await supabaseAdmin
+        .from("cart_items")
+        .insert({
+          user_id: userId || null,
+          guest_email: guestEmail || null,
+          product_id: null,
+          bundle_id: bundleId,
+          quantity,
+          price: bundle.bundle_price,
+          bundle_items_snapshot: snapshot,
+        });
+
+      if (insertError) {
+        throw new AppError("CART_INSERT_FAILED", insertError.message, 500);
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError("ADD_BUNDLE_TO_CART_ERROR", getErrorMessage(error), 500);
+  }
+}
+
+// ===================================================================
 // UPDATE CART ITEM QUANTITY
 // ===================================================================
 
@@ -330,7 +434,12 @@ export async function clearCart(userId: string | null, guestEmail?: string | nul
 // ===================================================================
 
 export async function validateCartInventory(
-  items: Array<{ product_id: string; variant_id?: string; quantity: number }>
+  items: Array<{
+    product_id: string;
+    variant_id?: string | null;
+    quantity: number;
+    bundle_id?: string;
+  }>
 ) {
   try {
     if (!Array.isArray(items) || items.length === 0) {
@@ -340,6 +449,72 @@ export async function validateCartInventory(
     const errors = [];
 
     for (const item of items) {
+      // Bundle line: validate every constituent product's inventory.
+      if (item.bundle_id) {
+        const { data: bundle, error: bundleError } = await supabaseAdmin
+          .from("bundles")
+          .select("id, is_active, active_from, active_to")
+          .eq("id", item.bundle_id)
+          .single();
+
+        if (bundleError || !bundle || !bundle.is_active) {
+          errors.push({ bundleId: item.bundle_id, error: "Bundle not available" });
+          continue;
+        }
+
+        const now = new Date();
+        if (
+          (bundle.active_from && new Date(bundle.active_from) > now) ||
+          (bundle.active_to && new Date(bundle.active_to) < now)
+        ) {
+          errors.push({ bundleId: item.bundle_id, error: "Bundle not available" });
+          continue;
+        }
+
+        const { data: bundleItems, error: itemsError } = await supabaseAdmin
+          .from("bundle_items")
+          .select("product_id, variant_id, quantity")
+          .eq("bundle_id", item.bundle_id);
+
+        if (itemsError || !bundleItems || bundleItems.length === 0) {
+          errors.push({ bundleId: item.bundle_id, error: "Bundle has no products" });
+          continue;
+        }
+
+        for (const bi of bundleItems as any[]) {
+          const requiredQty = bi.quantity * item.quantity;
+          if (bi.variant_id) {
+            const { data: variant } = await supabaseAdmin
+              .from("product_variants")
+              .select("stock_quantity, is_active")
+              .eq("id", bi.variant_id)
+              .eq("product_id", bi.product_id)
+              .single();
+            if (!variant || !variant.is_active || variant.stock_quantity < requiredQty) {
+              errors.push({
+                bundleId: item.bundle_id,
+                error: `Only ${variant?.stock_quantity ?? 0} units available for a bundle item, requested ${requiredQty}`,
+                available: variant?.stock_quantity ?? 0,
+              });
+            }
+          } else {
+            const { data: product } = await supabaseAdmin
+              .from("products")
+              .select("stock_quantity, is_active")
+              .eq("id", bi.product_id)
+              .single();
+            if (!product || !product.is_active || product.stock_quantity < requiredQty) {
+              errors.push({
+                bundleId: item.bundle_id,
+                error: `Only ${product?.stock_quantity ?? 0} units available for a bundle item, requested ${requiredQty}`,
+                available: product?.stock_quantity ?? 0,
+              });
+            }
+          }
+        }
+        continue;
+      }
+
       if (item.variant_id) {
         // Check variant stock
         const { data: variant, error: variantError } = await supabaseAdmin

@@ -234,7 +234,6 @@ with sync_playwright() as p:
         ("21_api_checkout", "http://localhost:3000/api/checkout"),
         ("22_api_cart_add", "http://localhost:3000/api/cart/add"),
         ("23_api_track_order", "http://localhost:3000/api/track-order"),
-        ("24_api_payment_verify", "http://localhost:3000/api/payment/verify"),
         ("25_api_admin_shipments", "http://localhost:3000/api/admin/shipments"),
         ("26_api_admin_refunds", "http://localhost:3000/api/admin/refunds"),
     ]

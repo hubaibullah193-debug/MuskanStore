@@ -68,7 +68,7 @@ Verified present in the codebase:
 | Email          | Resend (default) / SendGrid (optional) |
 | Validation     | Zod (`lib/validation/schemas.ts`) |
 | JWT verify     | `jose` (JWKS) |
-| Testing (E2E)  | Playwright (`e2e/*.spec.ts`) |
+| Testing        | Vitest unit (`tests/unit/*`) + Playwright E2E (`e2e/*.spec.ts`) |
 | Lint           | ESLint (`next lint` passes) |
 
 > Better Auth is listed as a dependency but is **not used** — authentication is implemented with Supabase Auth directly (confirmed by `package.json` and `app/auth/actions.ts`).
@@ -138,6 +138,7 @@ npm run build        # Production build
 npm run start        # Start production server
 npm run lint         # ESLint (verified: no warnings/errors)
 npm run type-check   # tsc --noEmit (verified: passes clean)
+npm run test:unit    # Vitest unit tests (bundle pricing, security headers, helpers)
 npm run test:e2e     # Playwright end-to-end tests
 npm run test:e2e:ui  # Playwright UI mode
 npm run test:e2e:debug
@@ -206,9 +207,9 @@ docs/                            # Project documentation (spec, design, plans, a
 
 ## Testing
 
+- **Unit tests:** `vitest` suites in `tests/unit/` covering server-side bundle price-locking, security headers, and helper logic. Run with `npm run test:unit` (22 passing).
 - **End-to-end:** Playwright specs in `e2e/` (`homepage.spec.ts`, `auth.spec.ts`). Run with `npm run test:e2e`.
 - **Type checking / Lint:** both verified passing during this review (`tsc --noEmit` clean, `next lint` clean).
-- Unit/integration test suites beyond E2E were not found.
 
 > The E2E specs expect a running app with seeded data; they were **not executed** as part of this audit (no live environment was started).
 
@@ -223,15 +224,18 @@ docs/                            # Project documentation (spec, design, plans, a
 
 **Working / verified:**
 - Storefront browsing, product detail, persistent cart (guest + signed-in + merge)
+- **Bundles fully purchasable** with a server-side `bundle_price` lock (`lib/orders/bundle-pricing.ts`); client prices/contents are ignored — `npm run test:unit` covers this.
 - Full checkout and order lifecycle for **COD**
 - Admin console (orders incl. CSV export, products incl. CSV bulk upload + image upload, inventory, shipments, refunds, bundles, audit logs, settings)
-- Auth (signup/login/logout/session), password-reset email, route protection
+- Auth (signup/login/logout/session), password-reset email (Supabase Auth), route protection
+- Refund requests: real `refunds` record + admin notification + audit (no client-controlled payout fields)
 - Email notifications (order confirmation, payment status, refund, shipment, low-stock digest) with delivery tracking + retry
-- Clean type-check and lint
+- **Security headers / CSP** applied via `middleware.ts` (`lib/security/headers.ts`)
+- **SEO:** `app/robots.ts` + `app/sitemap.ts` (build emits `/robots.txt` + `/sitemap.xml`)
+- Clean type-check, lint, and build (verified); `npm run test:unit` (22 passing)
 
 **Partially complete / stubbed (verify before relying on):**
-- **JazzCash / Easypaisa prepaid payments** — route skeletons and URL generators exist, but no live gateway integration; prepaid order finalization depends on webhook/verify stubs.
-  - **Product recommendations** — category-based "You Might Also Like" on product detail and cart pages (verified in Phase 2).
+- **JazzCash / Easypaisa prepaid payments** — route skeletons and URL generators exist, but no live gateway integration. Payment verification is **fail-closed and webhook-only** (no public `/api/payment/verify`); exact gateway field values must be confirmed against merchant docs before go-live. See `docs/PAYMENT_ARCHITECTURE.md`.
 - **Email delivery** depends on `RESEND_API_KEY` and a verified sender domain; failed sends are tracked in `email_logs` and retried by the email-retry cron (up to 3 attempts over 24h).
 
 **Known issues to resolve before launch (see audit):**

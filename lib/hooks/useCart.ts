@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import {
   getCartAction,
   addToCartAction,
+  addBundleToCartAction,
   updateCartItemAction,
   removeFromCartAction,
   clearCartAction,
@@ -22,12 +23,22 @@ const mergedGuestCartUserIds = new Set<string>();
 
 export interface CartItem {
   id: string;
-  productId: string;
+  productId?: string;
+  bundleId?: string;
   variantId?: string;
   quantity: number;
   price: number;
   name?: string; // For display
   image?: string; // For display
+  isBundle?: boolean;
+  bundleItems?: Array<{
+    product_id: string;
+    product_name?: string;
+    variant_id?: string | null;
+    variant_name?: string | null;
+    quantity: number;
+    unit_price?: number | null;
+  }>;
 }
 
 interface UseCartReturn {
@@ -35,6 +46,7 @@ interface UseCartReturn {
   loading: boolean;
   error: string | null;
   addItem: (productId: string, variantId: string | undefined, quantity: number, price: number, name?: string, image?: string) => Promise<void>;
+  addBundleItem: (bundleId: string, quantity: number, price: number, name?: string, bundleItems?: CartItem['bundleItems']) => Promise<void>;
   updateItem: (cartItemId: string, quantity: number) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -66,15 +78,16 @@ export function useCart(): UseCartReturn {
               if (stored) {
                 const guestItems = JSON.parse(stored);
                 if (Array.isArray(guestItems) && guestItems.length > 0) {
-                  await mergeGuestCartAction(
-                    user.id,
-                    guestItems.map((item: CartItem) => ({
-                      productId: item.productId,
-                      variantId: item.variantId,
-                      quantity: item.quantity,
-                      price: item.price,
-                    }))
-                  );
+                await mergeGuestCartAction(
+                  user.id,
+                  guestItems.map((item: CartItem) => ({
+                    productId: item.productId,
+                    bundleId: item.bundleId,
+                    variantId: item.variantId,
+                    quantity: item.quantity,
+                    price: item.price,
+                  }))
+                );
                 }
                 localStorage.removeItem(CART_STORAGE_KEY);
               }
@@ -159,6 +172,54 @@ export function useCart(): UseCartReturn {
       } catch (err) {
         console.error('Failed to add item to cart:', err);
         setError('Failed to add item to cart');
+        throw err;
+      }
+    },
+    [user?.id, items, saveGuestCart]
+  );
+
+  // Add a bundle to the cart
+  const addBundleItem = useCallback(
+    async (
+      bundleId: string,
+      quantity: number,
+      price: number,
+      name?: string,
+      bundleItems?: CartItem['bundleItems']
+    ) => {
+      try {
+        setError(null);
+
+        if (user?.id) {
+          // Authenticated: persist server-side (price recomputed from DB).
+          await addBundleToCartAction(user.id, bundleId, quantity);
+          const updated = await getCartAction(user.id);
+          setItems(updated || []);
+        } else {
+          // Guest: persist to localStorage.
+          const newItems = [...items];
+          const existing = newItems.find((item) => item.bundleId === bundleId);
+
+          if (existing) {
+            existing.quantity += quantity;
+          } else {
+            newItems.push({
+              id: `guest-bundle-${Date.now()}`,
+              bundleId,
+              quantity,
+              price,
+              name,
+              isBundle: true,
+              bundleItems,
+            });
+          }
+
+          setItems(newItems);
+          saveGuestCart(newItems);
+        }
+      } catch (err) {
+        console.error('Failed to add bundle to cart:', err);
+        setError('Failed to add bundle to cart');
         throw err;
       }
     },
@@ -255,6 +316,7 @@ export function useCart(): UseCartReturn {
     loading: loading || authLoading,
     error,
     addItem,
+    addBundleItem,
     updateItem,
     removeItem,
     clearCart,

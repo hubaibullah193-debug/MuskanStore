@@ -213,7 +213,6 @@ with sync_playwright() as p:
     test_page(page, "http://localhost:3000/api/checkout", "21_api_checkout")
     test_page(page, "http://localhost:3000/api/cart/add", "22_api_cart_add")
     test_page(page, "http://localhost:3000/api/track-order", "23_api_track_order")
-    test_page(page, "http://localhost:3000/api/payment/verify", "24_api_payment_verify")
     test_page(page, "http://localhost:3000/api/admin/shipments", "25_api_admin_shipments")
     test_page(page, "http://localhost:3000/api/admin/refunds", "26_api_admin_refunds")
     

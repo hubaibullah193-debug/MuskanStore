@@ -8,10 +8,12 @@
 'use server';
 
 import { logAndSendEmail } from '@/lib/email/delivery';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import {
   orderConfirmationTemplate,
   paymentStatusTemplate,
   refundEmailTemplate,
+  refundAdminNotificationTemplate,
   shipmentStatusTemplate,
 } from '@/lib/email/templates';
 
@@ -164,6 +166,64 @@ export async function sendRefundEmail(
     console.error('Error sending refund email:', message);
     return { success: false, error: message };
   }
+}
+
+/**
+ * Send an internal admin notification when a customer requests a refund.
+ * Uses the unified email delivery path (idempotent per order request).
+ * The recipient is resolved from the configured support email (settings),
+ * falling back to ADMIN_NOTIFY_EMAIL / EMAIL_FROM.
+ */
+export async function sendRefundAdminNotification(
+  payload: {
+    orderId?: string;
+    orderNumber: string;
+    customerEmail: string;
+    refundAmount: number;
+    reason: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const recipient = await resolveAdminNotifyEmail();
+    if (!recipient) {
+      console.warn('Refund admin notification skipped: no recipient configured');
+      return { success: false, error: 'No admin recipient configured' };
+    }
+
+    const html = refundAdminNotificationTemplate(payload);
+    return await logAndSendEmail({
+      to: recipient,
+      subject: `Refund requested - Order #${payload.orderNumber}`,
+      html,
+      emailType: 'refund_admin_notify',
+      referenceId: payload.orderId ?? null,
+      referenceType: payload.orderId ? 'order' : null,
+      idempotencyKey: payload.orderId ? `refund_admin:${payload.orderId}:requested` : null,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error sending refund admin notification:', message);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Resolve the recipient for internal admin notifications.
+ * Order: settings.support_email -> env.ADMIN_NOTIFY_EMAIL -> env.EMAIL_FROM.
+ */
+async function resolveAdminNotifyEmail(): Promise<string | null> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('settings')
+      .select('value')
+      .eq('key', 'support_email')
+      .single();
+    const fromSettings = (data?.value as string) || null;
+    if (fromSettings) return fromSettings;
+  } catch {
+    // settings table may be empty; fall through to env
+  }
+  return process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_FROM || null;
 }
 
 /**

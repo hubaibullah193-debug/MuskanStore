@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import BundleAddToCartButton from '@/app/components/bundle-add-to-cart-button';
 
 async function getFeaturedProducts() {
   try {
@@ -316,6 +317,20 @@ export default async function HomePage() {
                       </div>
                       <div className="text-xs text-gray-500">
                         {bundleItems.length} products included
+                      </div>
+                      <div className="mt-4">
+                        <BundleAddToCartButton
+                          bundleId={bundle.id}
+                          bundleName={bundle.name}
+                          bundlePrice={Number(bundle.bundle_price)}
+                          bundleItems={bundleItems.map((bi: any) => ({
+                            product_id: bi.product_id,
+                            product_name: bi.products?.name,
+                            variant_id: bi.variant_id ?? null,
+                            variant_name: null,
+                            quantity: bi.quantity,
+                          }))}
+                        />
                       </div>
                     </div>
                   </div>

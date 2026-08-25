@@ -171,7 +171,7 @@ tokens.css                             # Design system tokens + global resets
 - Email service (Resend) + templates
 - Email reliability layer — `lib/email/delivery.ts` is the single production email path: delivery tracking in `email_logs`, send idempotency, exponential-backoff retries (cron `app/api/cron/email-retry`), atomic webhook dedup, Resend bounce/complaint webhook (`app/api/webhooks/email`) with 3-bounce recipient invalidation, and admin email-delivery visibility (`app/api/admin/email-logs` + order page). See `docs/EMAIL_RELIABILITY.md`.
 - Inventory reservation with 30-min TTL + auto-release cron (`app/api/cron/release-reservations`); finalization on payment (`lib/payments/inventory-finalization.ts`)
-- 13 canonical SQL migrations (`000`–`012`; two files share the `009_` prefix — renumber pending) covering schema + RLS + features + secure admin provisioning + email reliability + RLS hardening
+- 14 canonical SQL migrations (`000`–`013`; two files share the `009_` prefix — renumber pending) covering schema + RLS + features + secure admin provisioning + email reliability + RLS hardening + bundle cart support
 - Secure admin provisioning — no public admin signup; initial/further admins designated via `npm run provision-admin <email>` (service_role key) or the Supabase dashboard. Customers cannot self-escalate (RLS `users_update_own` forbids role change). See `docs/ADMIN_PROVISIONING.md`.
 - E2E tests (homepage + auth specs)
 - 13 server action modules
@@ -180,15 +180,19 @@ tokens.css                             # Design system tokens + global resets
 - **Phase 2 (COMPLETE):** product recommendations on product detail + cart pages; admin dashboard sparklines (14-day orders/revenue) + order-status and payment-method distribution analytics; Supabase Storage product-image upload verified (bucket + public-read policy declared in migration `011_ensure_product_images_storage.sql`); responsive/mobile UX validated and cart-item row made mobile-friendly
 
 ### Not Built / Unverified (genuine gaps)
-- Real JazzCash/Easypaisa API integration (live credentials + merchant onboarding + webhook/IPN registration required)
-- Password reset email flow (handled by Supabase Auth built-in, outside custom reliability layer)
-- Bundle offers: admin CRUD + storefront display exist, but the checkout **pricing lock is not yet enforced** (Phase 2 work)
+- Real JazzCash/Easypaisa API integration (live credentials + merchant onboarding + webhook/IPN registration required — payment verification is fail-closed and webhook-only; see `docs/PAYMENT_ARCHITECTURE.md`)
 
 ### Phase 2 — COMPLETE (verified)
 - Product recommendations on product detail (category-based "You Might Also Like") and cart pages
 - Admin dashboard sparklines (14-day orders + revenue) and status/payment-method distribution bars
 - Product image upload via Supabase Storage (verified wired; bucket + public-read policy in migration `011`)
 - Responsive/mobile UX validation; cart-item row made mobile-friendly (stacks on small screens)
+- **Bundles fully purchasable with server-side price lock** — `lib/orders/bundle-pricing.ts` (`lockBundlePrice` ignores any client price), `server/actions/orders.ts:createOrder` resolves bundles from DB by `bundle_id` only, `cart_items` supports `bundle_id` + `bundle_items_snapshot` (migration `013_bundle_cart_support.sql`), storefront `BundleAddToCartButton`, bundle-aware cart/checkout rendering. No client-controlled bundle price possible.
+- **Refund flow hardened** — `requestRefund` creates a real `refunds` row, enforces ownership + delivered-only eligibility, is idempotent, sets `order_status='refund_requested'`, emails the customer and notifies admin (`sendRefundAdminNotification`), and writes an audit event. No `refund_method`/`refund_account` (those columns don't exist).
+- **Security headers / CSP** — `lib/security/headers.ts` applied in `middleware.ts` on every response (CSP, HSTS, nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy) without breaking Next.js, Supabase auth, admin routes, checkout, images/fonts, or payment redirects.
+- **Unit tests** — `vitest` + `tests/unit/*` covering bundle price-locking, security headers, and helper logic (`npm run test:unit`, 22 passing).
+- **SEO / agentic discovery** — `app/robots.ts` (disallows admin/account/orders/api/auth/checkout) + `app/sitemap.ts` (static routes + live product slugs).
+- **Password reset verified** — uses Supabase `resetPasswordForEmail` + server-side `confirmPasswordReset`; no code change needed.
 
 ## Conventions
 
@@ -198,6 +202,7 @@ npm run dev          # Start dev server
 npm run build        # Production build
 npm run lint         # ESLint
 npm run type-check   # tsc --noEmit (passes clean)
+npm run test:unit    # Vitest unit tests (bundle pricing, security headers, helpers)
 npm run test:e2e     # Playwright tests
 ```
 

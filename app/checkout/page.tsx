@@ -60,12 +60,23 @@ export default function CheckoutPage() {
       sessionStorage.setItem('checkout_idempotency', idemKey);
 
       const checkoutData = {
-        items: items.map(item => ({
-          product_id: item.productId,
-          variant_id: item.variantId || null,
-          quantity: item.quantity,
-          price: item.price,
-        })),
+        items: items.map(item => {
+          if (item.isBundle && item.bundleId) {
+            // Bundle line: only the bundle id + quantity are sent. The server
+            // re-resolves the bundle price and contents from the database and
+            // never trusts a client-supplied price.
+            return {
+              bundle_id: item.bundleId,
+              quantity: item.quantity,
+            };
+          }
+          return {
+            product_id: item.productId,
+            variant_id: item.variantId || null,
+            quantity: item.quantity,
+            price: item.price,
+          };
+        }),
         deliveryAddress: {
           street,
           city,

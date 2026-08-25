@@ -7,6 +7,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { AppError } from '@/lib/utils/helpers';
+import { addBundleToCart as addBundleToCartServer } from '@/server/actions/cart';
 
 export interface CartItem {
   id: string;
@@ -30,21 +31,24 @@ export async function getCartAction(userId?: string) {
 
     const { data, error } = await supabaseAdmin
       .from('cart_items')
-      .select('id, product_id, variant_id, quantity, price, products(name, product_images(image_url))')
+      .select('id, product_id, variant_id, quantity, price, bundle_id, bundle_items_snapshot, products(name, product_images(image_url))')
       .eq('user_id', userId);
 
     if (error) {
       throw new AppError('CART_FETCH_FAILED', error.message, 500);
     }
 
-    return (data || []).map(item => ({
+    return (data || []).map((item: any) => ({
       id: item.id,
-      productId: item.product_id,
-      variantId: item.variant_id,
+      productId: item.product_id ?? undefined,
+      variantId: item.variant_id ?? undefined,
+      bundleId: item.bundle_id ?? undefined,
       quantity: item.quantity,
       price: item.price,
-      name: (item as any).products?.name,
-      image: (item as any).products?.product_images?.[0]?.image_url ?? undefined,
+      name: item.product_id ? item.products?.name : (item.bundle_items_snapshot as any)?.name,
+      image: item.products?.product_images?.[0]?.image_url ?? undefined,
+      isBundle: !!item.bundle_id,
+      bundleItems: item.bundle_id ? (item.bundle_items_snapshot as any)?.items : undefined,
     }));
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -112,6 +116,35 @@ export async function addToCartAction(
 }
 
 // ===================================================================
+// ADD BUNDLE TO CART
+// ===================================================================
+
+export async function addBundleToCartAction(
+  userId: string,
+  bundleId: string,
+  quantity: number
+) {
+  try {
+    if (!userId && !bundleId) {
+      throw new AppError('INVALID_PARAMS', 'User and bundle required', 400);
+    }
+
+    // Guests are handled client-side via localStorage; this server action is
+    // only used for authenticated users (the hook falls back to localStorage
+    // for guests). If a guest reaches here, treat as an error.
+    if (!userId) {
+      throw new AppError('INVALID_PARAMS', 'Sign in to add bundles to your cart', 400);
+    }
+
+    const result = await addBundleToCartServer(userId, null, bundleId, quantity);
+    return result;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError('ADD_BUNDLE_TO_CART_ERROR', 'Failed to add bundle to cart', 500);
+  }
+}
+
+// ===================================================================
 // UPDATE CART ITEM
 // ===================================================================
 
@@ -172,7 +205,8 @@ export async function removeFromCartAction(userId: string, cartItemId: string) {
 export async function mergeGuestCartAction(
   userId: string,
   guestItems: Array<{
-    productId: string;
+    productId?: string;
+    bundleId?: string;
     variantId?: string;
     quantity: number;
     price: number;
@@ -186,7 +220,18 @@ export async function mergeGuestCartAction(
     let mergedCount = 0;
 
     for (const item of guestItems) {
-      // Check if item already exists in user's cart
+      // Bundle rows merge through the server bundle path (price recomputed).
+      if (item.bundleId) {
+        try {
+          await addBundleToCartServer(userId, null, item.bundleId, item.quantity);
+          mergedCount++;
+        } catch (err) {
+          console.error('Failed to merge bundle cart item:', err);
+        }
+        continue;
+      }
+
+      // Product rows
       const { data: existing } = await supabaseAdmin
         .from('cart_items')
         .select('id, quantity')

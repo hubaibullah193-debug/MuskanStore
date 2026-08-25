@@ -33,9 +33,24 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
         )}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 truncate">
+            {item.isBundle && (
+              <span className="mr-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs font-semibold text-purple-800 align-middle">
+                Bundle
+              </span>
+            )}
             {item.name || item.productId}
           </h3>
-          {item.variantId && (
+          {item.isBundle && Array.isArray(item.bundleItems) && (
+            <ul className="mt-1 space-y-0.5 text-sm text-gray-500">
+              {item.bundleItems.map((bi, i) => (
+                <li key={i} className="truncate">
+                  {bi.product_name || bi.product_id}
+                  {bi.variant_name ? ` (${bi.variant_name})` : ''} × {bi.quantity}
+                </li>
+              ))}
+            </ul>
+          )}
+          {!item.isBundle && item.variantId && (
             <p className="text-sm text-gray-500">Variant: {item.variantId}</p>
           )}
         </div>

@@ -8,12 +8,13 @@
 
 import { supabaseAdmin } from "@/lib/supabase/client";
 import { verifySupabaseToken } from "@/lib/auth/verify";
-import { CheckoutSchema, RefundRequestSchema } from "@/lib/validation/schemas";
+import { CheckoutSchema } from "@/lib/validation/schemas";
 import { AppError, getErrorMessage, generateRandomString, calculateTotal } from "@/lib/utils/helpers";
 import { generateOrderNumber, logAuditEvent } from "@/lib/supabase/helpers";
-import { sendOrderConfirmation, sendRefundEmail } from "@/server/actions/email";
+import { sendOrderConfirmation, sendRefundEmail, sendRefundAdminNotification } from "@/server/actions/email";
 import { createShipment } from "@/server/actions/shipments";
 import { clearCart } from "@/server/actions/cart";
+import { buildBundleOrderItem, ResolvedBundleItem } from "@/lib/orders/bundle-pricing";
 
 // ===================================================================
 // CREATE ORDER
@@ -22,7 +23,10 @@ import { clearCart } from "@/server/actions/cart";
 export async function createOrder(
   userId: string | null,
   guestEmail: string | null,
-  items: Array<{ product_id: string; variant_id?: string; quantity: number; price: number }>,
+  items: Array<
+    | { product_id: string; variant_id?: string | null; quantity: number; price?: number }
+    | { bundle_id: string; quantity: number }
+  >,
   deliveryAddress: {
     street: string;
     city: string;
@@ -84,29 +88,100 @@ export async function createOrder(
     // Calculate totals server-side (never trust client prices)
     let subtotal = 0;
     const orderItems = [];
+    const reservationSpecs: Array<{ product_id: string; variant_id: string | null; quantity: number }> = [];
 
     for (const item of items) {
+      // --- Bundle line ---
+      // SECURITY: only bundle_id + quantity arrive from the client. The price
+      // and the constituent products are re-resolved from the database so a
+      // manipulated price or tampered contents cannot affect the order.
+      if ((item as any).bundle_id) {
+        const bundleLine = item as { bundle_id: string; quantity: number };
+
+        const { data: bundle, error: bundleError } = await supabaseAdmin
+          .from("bundles")
+          .select("id, name, bundle_price, is_active, active_from, active_to")
+          .eq("id", bundleLine.bundle_id)
+          .single();
+
+        if (bundleError || !bundle || !bundle.is_active) {
+          throw new AppError("BUNDLE_UNAVAILABLE", `Bundle ${bundleLine.bundle_id} not available`, 404);
+        }
+
+        const { data: bundleItems, error: itemsError } = await supabaseAdmin
+          .from("bundle_items")
+          .select("product_id, variant_id, quantity, products(name, base_price), product_variants(variant_name, price_adjustment)")
+          .eq("bundle_id", bundleLine.bundle_id);
+
+        if (itemsError || !bundleItems || bundleItems.length === 0) {
+          throw new AppError("BUNDLE_INVALID", `Bundle ${bundleLine.bundle_id} has no products`, 400);
+        }
+
+        const resolvedItems: ResolvedBundleItem[] = (bundleItems as any[]).map((bi) => {
+          let unitPrice = Number(bi.products?.base_price ?? 0);
+          if (bi.variant_id && bi.product_variants?.price_adjustment) {
+            unitPrice += Number(bi.product_variants.price_adjustment);
+          }
+          return {
+            product_id: bi.product_id,
+            product_name: bi.products?.name,
+            variant_id: bi.variant_id ?? null,
+            variant_name: bi.product_variants?.variant_name ?? null,
+            quantity: bi.quantity,
+            unit_price: unitPrice,
+          };
+        });
+
+        const resolvedBundle = {
+          id: bundle.id,
+          name: bundle.name,
+          bundle_price: bundle.bundle_price,
+          is_active: bundle.is_active,
+          active_from: bundle.active_from,
+          active_to: bundle.active_to,
+          items: resolvedItems,
+        };
+
+        // buildBundleOrderItem locks the server price and re-asserts availability.
+        const orderItem = buildBundleOrderItem(resolvedBundle, bundleLine.quantity);
+        subtotal += orderItem.subtotal;
+        orderItems.push(orderItem);
+
+        // Reserve each constituent product/variant for this bundle quantity.
+        for (const bi of resolvedItems) {
+          reservationSpecs.push({
+            product_id: bi.product_id,
+            variant_id: bi.variant_id,
+            quantity: bi.quantity * bundleLine.quantity,
+          });
+        }
+        continue;
+      }
+
+      // --- Product line ---
+      const productLine = item as { product_id: string; variant_id?: string | null; quantity: number };
+
       // Get fresh product price from database
       const { data: product, error: productError } = await supabaseAdmin
         .from("products")
         .select("id, name, base_price, is_active")
-        .eq("id", item.product_id)
+        .eq("id", productLine.product_id)
         .single();
 
       if (productError || !product || !product.is_active) {
-        throw new AppError("PRODUCT_NOT_FOUND", `Product ${item.product_id} not available`, 404);
+        throw new AppError("PRODUCT_NOT_FOUND", `Product ${productLine.product_id} not available`, 404);
       }
 
       // Get variant price if applicable
       let price = product.base_price;
       let variantName;
 
-      if (item.variant_id) {
+      if (productLine.variant_id) {
         const { data: variant } = await supabaseAdmin
           .from("product_variants")
           .select("id, variant_name, price_adjustment")
-          .eq("id", item.variant_id)
-          .eq("product_id", item.product_id)
+          .eq("id", productLine.variant_id)
+          .eq("product_id", productLine.product_id)
           .single();
 
         if (variant?.price_adjustment) {
@@ -115,17 +190,23 @@ export async function createOrder(
         variantName = variant?.variant_name;
       }
 
-      const itemSubtotal = price * item.quantity;
+      const itemSubtotal = price * productLine.quantity;
       subtotal += itemSubtotal;
 
       orderItems.push({
-        product_id: item.product_id,
+        product_id: productLine.product_id,
         product_name: product.name,
-        variant_id: item.variant_id,
+        variant_id: productLine.variant_id ?? null,
         variant_name: variantName,
-        quantity: item.quantity,
+        quantity: productLine.quantity,
         price,
         subtotal: itemSubtotal,
+      });
+
+      reservationSpecs.push({
+        product_id: productLine.product_id,
+        variant_id: productLine.variant_id ?? null,
+        quantity: productLine.quantity,
       });
     }
 
@@ -185,21 +266,21 @@ export async function createOrder(
     });
 
     // Create inventory reservations (NOT permanent decrement yet)
-    // Inventory only finalizes after verified payment (or immediately for COD)
-    for (const item of items) {
-      const { data: reservation, error: reservationError } = await supabaseAdmin
+    // Inventory only finalizes after verified payment (or immediately for COD).
+    // For bundles, each constituent product/variant is reserved above.
+    const reservationExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    for (const spec of reservationSpecs) {
+      const { error: reservationError } = await supabaseAdmin
         .from("inventory_reservations")
         .insert({
           order_id: order.id,
-          product_id: item.product_id,
-          variant_id: item.variant_id || null,
-          quantity: item.quantity,
+          product_id: spec.product_id,
+          variant_id: spec.variant_id || null,
+          quantity: spec.quantity,
           status: "reserved",
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          expires_at: reservationExpiry,
           finalized_at: null,
-        })
-        .select()
-        .single();
+        });
 
       if (reservationError) {
         console.error(`Failed to create inventory reservation for order ${order.id}:`, reservationError);
@@ -449,17 +530,19 @@ export async function requestRefund(
   reason: string
 ) {
   try {
-    const validated = RefundRequestSchema.parse({
-      order_id: orderId,
-      reason,
-      refund_method: "bank_transfer", // Placeholder
-      refund_account: "pending", // Placeholder
-    });
+    const trimmedReason = (reason || "").trim();
+    if (trimmedReason.length < 10) {
+      throw new AppError(
+        "INVALID_REASON",
+        "Refund reason must be at least 10 characters",
+        400
+      );
+    }
 
     // Get order
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("user_id, guest_email, order_status, total_amount, status_history")
+      .select("user_id, guest_email, order_status, total_amount, status_history, order_number")
       .eq("id", orderId)
       .single();
 
@@ -481,20 +564,63 @@ export async function requestRefund(
       );
     }
 
+    // Idempotency: don't create a duplicate refund request record.
+    const { data: existingRefund } = await supabaseAdmin
+      .from("refunds")
+      .select("id, status")
+      .eq("order_id", orderId)
+      .in("status", ["requested", "approved"])
+      .maybeSingle();
+
+    if (existingRefund) {
+      if (order.order_status !== "refund_requested") {
+        await supabaseAdmin
+          .from("orders")
+          .update({ order_status: "refund_requested" })
+          .eq("id", orderId);
+      }
+      return {
+        orderId,
+        status: "refund_requested",
+        message: "Refund request already submitted. An admin will review it shortly.",
+      };
+    }
+
+    // Create the authoritative refund record (refunds table) so admins can
+    // approve/reject/complete it via the admin refund workflow. Payout
+    // method/account are intentionally NOT set here; they are captured at
+    // admin processing time, and any client-supplied payout data is ignored
+    // to prevent manipulation. No fake JazzCash/Easypaisa refund API is invented.
+    const { data: refund, error: refundError } = await supabaseAdmin
+      .from("refunds")
+      .insert({
+        order_id: orderId,
+        requested_by: userId,
+        refund_amount: order.total_amount,
+        reason: trimmedReason,
+        status: "requested",
+      })
+      .select("id")
+      .single();
+
+    if (refundError) {
+      throw new AppError("REFUND_REQUEST_FAILED", refundError.message, 500);
+    }
+
     // Update order status to refund_requested
     const statusHistory = Array.isArray(order.status_history) ? order.status_history : [];
     statusHistory.push({
       status: "refund_requested",
       changedAt: new Date().toISOString(),
       changedBy: userId,
-      reason,
+      reason: trimmedReason,
     });
 
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         order_status: "refund_requested",
-        refund_reason: reason,
+        refund_reason: trimmedReason,
         status_history: statusHistory,
       })
       .eq("id", orderId)
@@ -505,28 +631,47 @@ export async function requestRefund(
       throw new AppError("REFUND_REQUEST_FAILED", updateError.message, 500);
     }
 
-    // TODO: Send email to admin notifying of refund request
-
-    // Send refund request email to customer
+    // Resolve customer email
     let customerEmail = order.guest_email;
     if (order.user_id && !customerEmail) {
-      // Fetch user email from auth.users if not already retrieved
       const { data } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
       customerEmail = data?.user?.email;
     }
 
+    // Send refund request email to customer (idempotent per order request).
     if (customerEmail) {
       await sendRefundEmail({
+        orderId: updated.id,
         orderNumber: updated.order_number,
         customerEmail,
         refundAmount: order.total_amount,
-        reason,
+        reason: trimmedReason,
         status: 'requested',
       }).catch((error) => {
         console.error("Failed to send refund request email:", error);
         // Don't throw - refund request succeeded even if email fails
       });
     }
+
+    // Notify admin/support of the new refund request (added in Phase 2).
+    await sendRefundAdminNotification({
+      orderId: updated.id,
+      orderNumber: updated.order_number,
+      customerEmail: customerEmail || order.guest_email || "",
+      refundAmount: order.total_amount,
+      reason: trimmedReason,
+    }).catch((error) => {
+      console.error("Failed to send refund admin notification:", error);
+    });
+
+    // Audit log
+    await logAuditEvent(
+      "refund_requested",
+      "order",
+      orderId,
+      { reason: trimmedReason, refundAmount: order.total_amount },
+      userId
+    );
 
     return {
       orderId,

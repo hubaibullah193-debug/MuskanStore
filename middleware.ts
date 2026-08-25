@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/client";
 import { verifySupabaseToken } from "@/lib/auth/verify";
+import { buildSecurityHeaders } from "@/lib/security/headers";
 
 /**
  * Authentication & Authorization Middleware
@@ -19,6 +20,18 @@ import { verifySupabaseToken } from "@/lib/auth/verify";
 const ADMIN_ROUTES = ["/admin"];
 const CUSTOMER_PROTECTED_ROUTES = ["/account", "/orders"];
 const PUBLIC_ROUTES = ["/", "/products", "/product", "/auth", "/api", "/track-order", "/order-confirmation"];
+
+/**
+ * Attach the standard security headers to a response. Centralised so every
+ * middleware exit point applies the same policy.
+ */
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  const headers = buildSecurityHeaders();
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
 
 /**
  * Extract and verify JWT from Authorization header or cookies
@@ -101,14 +114,16 @@ export async function middleware(request: NextRequest) {
     const apiUserId = await verifyUserId(request);
     const apiRole = apiUserId ? await getUserRole(apiUserId) : null;
     if (!apiUserId || apiRole !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return applySecurityHeaders(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      );
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   // Allow public routes
   if (isPublicRoute(pathname)) {
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   // Verify authentication for protected routes
@@ -120,9 +135,9 @@ export async function middleware(request: NextRequest) {
     if (!userId || role !== "admin") {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirectUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return applySecurityHeaders(NextResponse.redirect(loginUrl));
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   // Customer protected routes require authentication only
@@ -130,12 +145,12 @@ export async function middleware(request: NextRequest) {
     if (!userId) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirectUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return applySecurityHeaders(NextResponse.redirect(loginUrl));
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {

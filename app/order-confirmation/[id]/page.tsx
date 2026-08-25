@@ -239,11 +239,26 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
             {Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
               <div key={idx} className="flex justify-between items-start">
                 <div>
+                  {item.is_bundle && (
+                    <span className="mr-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs font-semibold text-purple-800 align-middle">
+                      Bundle
+                    </span>
+                  )}
                   <p className="font-medium">{item.product_name}</p>
                   {item.variant_name && (
                     <p className="text-sm text-gray-600">{item.variant_name}</p>
                   )}
                   <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                  {item.is_bundle && Array.isArray(item.bundle_items) && (
+                    <ul className="mt-1 space-y-0.5 text-sm text-gray-500">
+                      {item.bundle_items.map((bi: any, i: number) => (
+                        <li key={i} className="truncate">
+                          {bi.product_name || bi.product_id}
+                          {bi.variant_name ? ` (${bi.variant_name})` : ''} × {bi.quantity}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <p className="font-medium">Rs {(item.subtotal).toFixed(0)}</p>
               </div>

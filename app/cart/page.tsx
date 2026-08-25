@@ -21,7 +21,9 @@ export default function CartPage() {
       return;
     }
     let cancelled = false;
-    getCartRecommendations(items.map((i) => i.productId))
+    getCartRecommendations(
+      items.map((i) => i.productId).filter((id): id is string => Boolean(id))
+    )
       .then((recs) => {
         if (!cancelled) setRecommendations(recs);
       })
