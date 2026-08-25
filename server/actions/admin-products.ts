@@ -376,7 +376,6 @@ export async function updateProductAction(
 // ===================================================================
 
 export async function bulkUploadProducts(
-  adminId: string,
   rows: Array<{
     name: string;
     sku: string;
@@ -385,6 +384,14 @@ export async function bulkUploadProducts(
     stock: number;
   }>
 ) {
+  // Resolve the acting admin from the session — never trust a client-supplied id
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  const adminId = adminAccess.userId;
+
   try {
     if (!Array.isArray(rows) || rows.length === 0) {
       throw new AppError("EMPTY_UPLOAD", "No products to upload", 400);

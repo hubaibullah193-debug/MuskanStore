@@ -128,7 +128,7 @@ export default function AdminProductsPage() {
         };
       });
 
-      const result = await bulkUploadProducts('admin', rows);
+      const result = await bulkUploadProducts(rows);
       setBulkResults({
         success: result.successCount,
         errors: result.errors,

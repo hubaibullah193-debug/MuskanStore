@@ -2,29 +2,12 @@
 
 /**
  * Server Actions for Authentication
- * Logout, session verification, role checking
+ * Session verification, role checking, account management
  */
 
 import { cookies } from 'next/headers';
-import { supabase, supabaseAdmin } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import { verifySupabaseToken } from '@/lib/auth/verify';
-
-export async function logoutAction() {
-  try {
-    const cookieStore = await cookies();
-
-    // Clear auth token cookie
-    cookieStore.delete('auth-token');
-
-    // Sign out from Supabase
-    await supabase.auth.signOut();
-
-    return { success: true };
-  } catch (error) {
-    console.error('Logout error:', error);
-    return { success: false, error: 'Failed to logout' };
-  }
-}
 
 /**
  * Verify current user is authenticated and has admin role

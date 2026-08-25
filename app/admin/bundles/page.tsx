@@ -109,7 +109,7 @@ export default function AdminBundlesPage() {
         return;
       }
 
-      await createBundle('admin', {
+      await createBundle({
         name: bundleName,
         description: bundleDesc || undefined,
         bundle_price: price,
@@ -127,7 +127,7 @@ export default function AdminBundlesPage() {
   const handleToggleActive = async (bundleId: string, isActive: boolean) => {
     try {
       setError(null);
-      await updateBundle('admin', bundleId, { is_active: !isActive });
+      await updateBundle(bundleId, { is_active: !isActive });
       setSuccess(`Bundle ${isActive ? 'deactivated' : 'activated'}`);
       loadData();
     } catch (err: any) {
@@ -139,7 +139,7 @@ export default function AdminBundlesPage() {
     if (!confirm('Deactivate this bundle?')) return;
     try {
       setError(null);
-      await deleteBundle('admin', bundleId);
+      await deleteBundle(bundleId);
       setSuccess('Bundle deactivated');
       loadData();
     } catch (err: any) {

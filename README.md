@@ -88,7 +88,7 @@ cp .env.example .env.local
 # 3. Apply database migrations (from a clean DB)
 # Link your Supabase project, then:
 supabase db push
-  # or run the canonical files in supabase/migrations/ in order (000 → 012)
+  # or run the canonical files in supabase/migrations/ in order (000 → 014)
 
 # 4. Seed sample data (optional, for local dev)
 # migration 002 seeds categories/products/variants/inventory/images
@@ -98,7 +98,7 @@ supabase db push
 npm run dev
 ```
 
-> **Note:** The canonical set is `000`–`012` (two files share the `009_` prefix: `009_auto_create_user_profile.sql` and `009_secure_admin_provisioning.sql`). Apply the whole ordered set. There is also a legacy `migrations/` directory (ignore it) and `supabase/combined_migration.sql` / `supabase/fix_bundles_and_rls.sql` artifacts.
+> **Note:** The canonical set is `000`–`014`, a clean monotonic sequence (no numbering collisions). Apply the whole ordered set. The legacy `migrations/` directory and the `supabase/combined_migration.sql` / `supabase/fix_bundles_and_rls.sql` artifacts were removed during the Phase 3 hygiene pass.
 
 ## Environment Variables
 
@@ -185,7 +185,7 @@ lib/
 ├── validation/schemas.ts        # Zod schemas
 └── utils/helpers.ts
 
-supabase/migrations/             # Canonical migrations 000–009 (run in order)
+supabase/migrations/             # Canonical migrations 000–014 (run in order)
 types/database.ts                # Generated Supabase types
 tokens.css                       # Design system tokens
 middleware.ts                    # Root middleware (active)

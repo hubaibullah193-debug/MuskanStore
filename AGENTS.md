@@ -1,6 +1,6 @@
 # AGENTS.md — Muskan Care Center (MStore)
 
-> **Project Status: Phase 2 COMPLETE (verified). Phase 1 production/launch-readiness work COMPLETE — see `docs/remaining_work.md` and the Phase 1 commit.**
+> **Project Status: Phase 3 (Hygiene & Consolidation) COMPLETE (verified). Phases 1 & 2 also COMPLETE — see `docs/remaining_work.md` for the full picture. Remaining work is external (live Supabase, Resend, gateway credentials, e2e).**
 
 ## Architecture
 
@@ -137,17 +137,20 @@ supabase/migrations/                   # Canonical migrations (consolidated, run
 ├── 007_create_contact_messages.sql    # Contact Us form table
 ├── 008_unify_admin_rls_role.sql       # All admin RLS delegate to public.is_admin()
 ├── 009_auto_create_user_profile.sql   # Auto-create public.users on new auth user
-├── 009_secure_admin_provisioning.sql  # Secure admin provisioning + no self-escalation
-├── 010_email_delivery_reliability.sql # Retry/idempotency/bounce tracking for email
-├── 011_ensure_product_images_storage.sql # Storage bucket + public-read policy
-├── 012_fix_users_read_own_policy.sql  # RLS: users read only their own row
+├── 010_secure_admin_provisioning.sql  # Secure admin provisioning + no self-escalation
+├── 011_email_delivery_reliability.sql # Retry/idempotency/bounce tracking for email
+├── 012_ensure_product_images_storage.sql # Storage bucket + public-read policy
+├── 013_fix_users_read_own_policy.sql  # RLS: users read only their own row
+├── 014_bundle_cart_support.sql        # cart_items bundle support (Phase 2)
 └── README.md
 
-# NOTE: two files share the 009_ prefix (numbering collision). Re-numbering to
-# a single 009/010/.../012 sequence is pending hygiene work; both are idempotent
-# (drop policy if exists / create or replace) so apply order is not load-bearing.
+# NOTE: migrations are a clean monotonic 000→014 sequence (renumbered during the
+# Phase 3 hygiene pass to remove the former 009_ prefix collision). Each file is
+# idempotent (drop policy if exists / create or replace) so apply order is not
+# load-bearing, but the numeric sequence is now unambiguous.
 
-migrations/                            # Legacy (older copy, ignore)
+# (The legacy root `migrations/` directory and `supabase/combined_migration.sql`
+#  / `supabase/fix_bundles_and_rls.sql` artifacts were removed in Phase 3.)
 
 e2e/
 ├── homepage.spec.ts
@@ -171,7 +174,7 @@ tokens.css                             # Design system tokens + global resets
 - Email service (Resend) + templates
 - Email reliability layer — `lib/email/delivery.ts` is the single production email path: delivery tracking in `email_logs`, send idempotency, exponential-backoff retries (cron `app/api/cron/email-retry`), atomic webhook dedup, Resend bounce/complaint webhook (`app/api/webhooks/email`) with 3-bounce recipient invalidation, and admin email-delivery visibility (`app/api/admin/email-logs` + order page). See `docs/EMAIL_RELIABILITY.md`.
 - Inventory reservation with 30-min TTL + auto-release cron (`app/api/cron/release-reservations`); finalization on payment (`lib/payments/inventory-finalization.ts`)
-- 14 canonical SQL migrations (`000`–`013`; two files share the `009_` prefix — renumber pending) covering schema + RLS + features + secure admin provisioning + email reliability + RLS hardening + bundle cart support
+- 15 canonical SQL migrations (`000`–`014`, clean monotonic sequence) covering schema + RLS + features + secure admin provisioning + email reliability + RLS hardening + bundle cart support
 - Secure admin provisioning — no public admin signup; initial/further admins designated via `npm run provision-admin <email>` (service_role key) or the Supabase dashboard. Customers cannot self-escalate (RLS `users_update_own` forbids role change). See `docs/ADMIN_PROVISIONING.md`.
 - E2E tests (homepage + auth specs)
 - 13 server action modules
@@ -185,14 +188,23 @@ tokens.css                             # Design system tokens + global resets
 ### Phase 2 — COMPLETE (verified)
 - Product recommendations on product detail (category-based "You Might Also Like") and cart pages
 - Admin dashboard sparklines (14-day orders + revenue) and status/payment-method distribution bars
-- Product image upload via Supabase Storage (verified wired; bucket + public-read policy in migration `011`)
+- Product image upload via Supabase Storage (verified wired; bucket + public-read policy in migration `012_ensure_product_images_storage.sql`)
 - Responsive/mobile UX validation; cart-item row made mobile-friendly (stacks on small screens)
-- **Bundles fully purchasable with server-side price lock** — `lib/orders/bundle-pricing.ts` (`lockBundlePrice` ignores any client price), `server/actions/orders.ts:createOrder` resolves bundles from DB by `bundle_id` only, `cart_items` supports `bundle_id` + `bundle_items_snapshot` (migration `013_bundle_cart_support.sql`), storefront `BundleAddToCartButton`, bundle-aware cart/checkout rendering. No client-controlled bundle price possible.
+- **Bundles fully purchasable with server-side price lock** — `lib/orders/bundle-pricing.ts` (`lockBundlePrice` ignores any client price), `server/actions/orders.ts:createOrder` resolves bundles from DB by `bundle_id` only, `cart_items` supports `bundle_id` + `bundle_items_snapshot` (migration `014_bundle_cart_support.sql`), storefront `BundleAddToCartButton`, bundle-aware cart/checkout rendering. No client-controlled bundle price possible.
 - **Refund flow hardened** — `requestRefund` creates a real `refunds` row, enforces ownership + delivered-only eligibility, is idempotent, sets `order_status='refund_requested'`, emails the customer and notifies admin (`sendRefundAdminNotification`), and writes an audit event. No `refund_method`/`refund_account` (those columns don't exist).
 - **Security headers / CSP** — `lib/security/headers.ts` applied in `middleware.ts` on every response (CSP, HSTS, nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy) without breaking Next.js, Supabase auth, admin routes, checkout, images/fonts, or payment redirects.
 - **Unit tests** — `vitest` + `tests/unit/*` covering bundle price-locking, security headers, and helper logic (`npm run test:unit`, 22 passing).
 - **SEO / agentic discovery** — `app/robots.ts` (disallows admin/account/orders/api/auth/checkout) + `app/sitemap.ts` (static routes + live product slugs).
 - **Password reset verified** — uses Supabase `resetPasswordForEmail` + server-side `confirmPasswordReset`; no code change needed.
+
+### Phase 3 — COMPLETE (verified, hygiene & consolidation)
+- **Dead migration artifacts removed** — legacy root `migrations/` + `supabase/combined_migration.sql` + `supabase/fix_bundles_and_rls.sql` deleted; only `supabase/migrations/` (clean `000`→`014`) remains.
+- **Migration renumbering** — removed the former `009_` prefix collision (`010_secure_admin_provisioning.sql`, etc.); docs updated. Do not rename again once applied to a live DB.
+- **Duplicate `logoutAction` removed** — single canonical in `app/auth/actions.ts`, re-exported from `server/actions/auth.ts`.
+- **Admin-auth helpers unified** — `lib/auth/admin.ts:isAdmin()` delegates to the canonical `verifyAdminAccess()`.
+- **Audit writers consolidated** — `server/actions/audit.ts:logAudit` delegates to `logAuditEvent` (single DB writer).
+- **Bundle/product admin audit attribution fixed** — `createBundle`/`updateBundle`/`deleteBundle`/`bulkUploadProducts` resolve the real admin id from the session (no literal `'admin'`) and now enforce an admin-authorization guard.
+- **Unused `better-auth` dependency removed**; `AGENTS.md` path error (`hooks/useAuth.tsx` → `lib/hooks/useAuth.ts`) corrected.
 
 ## Conventions
 
@@ -232,7 +244,7 @@ npm run test:e2e     # Playwright tests
 - Components: `app/components/` (not root `components/`)
 - Server actions: `server/actions/` (domain-separated) + `app/*/actions.ts` (page-specific)
 - Libraries: `lib/` (supabase, auth, payments, email, validation, utils)
-- Hooks: `lib/hooks/` + `hooks/useAuth.tsx`
+- Hooks: `lib/hooks/` + `lib/hooks/useAuth.ts`
 - Types: `types/database.ts`
 
 ## Documentation

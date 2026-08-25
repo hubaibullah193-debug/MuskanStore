@@ -4,8 +4,8 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { supabaseAdmin } from '@/lib/supabase/client';
 import { verifySupabaseToken } from '@/lib/auth/verify';
+import { logAuditEvent } from '@/lib/supabase/helpers';
 
 interface AuditPayload {
   action: string;
@@ -48,15 +48,13 @@ export async function logAudit(payload: AuditPayload): Promise<{ success: boolea
       return { success: false, error: 'adminId is required' };
     }
 
-    const { error } = await supabaseAdmin
-      .from('admin_audit_logs')
-      .insert({
-        admin_id: adminId,
-        action: payload.action,
-        entity_type: payload.entityType,
-        entity_id: payload.entityId,
-        changes: payload.changes || null,
-      });
+    const { error } = await logAuditEvent(
+      payload.action,
+      payload.entityType,
+      payload.entityId,
+      payload.changes,
+      adminId
+    );
 
     if (error) {
       console.error('Failed to log audit:', error);

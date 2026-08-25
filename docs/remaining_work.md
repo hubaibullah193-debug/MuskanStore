@@ -22,6 +22,18 @@
 > - P2-8 (password reset): verified correct — `requestPasswordReset` uses Supabase `resetPasswordForEmail` with `redirectTo`; `confirmPasswordReset` verifies the token server-side. No code change. Live Supabase email/redirect remains EXTERNAL verification.
 > - Gates: `npm run type-check`, `npm run lint`, `npm run build` all pass; `npm run test:unit` 22/22 pass.
 
+> **Phase 3 (Hygiene & Consolidation) — COMPLETED (this pass):**
+> - P3-1 (dead migration artifacts): removed the legacy root `migrations/` folder and `supabase/combined_migration.sql` + `supabase/fix_bundles_and_rls.sql`. Only `supabase/migrations/` remains (canonical).
+> - P3-2 (migration numbering): renumbered into a clean monotonic `000`→`014` sequence (the former colliding `009_secure_admin_provisioning.sql` is now `010`; subsequent files shifted +1). `AGENTS.md`/`README.md` updated. NOTE: migrations have never been applied to a live DB, so renaming is safe; do not rename again once a DB has been migrated.
+> - P3-3 (duplicate `logoutAction`): removed the copy in `server/actions/auth.ts` and re-exported the canonical `logoutAction` from `app/auth/actions.ts`; both callers (`lib/hooks/useAuth.ts`, `app/admin/layout-client.tsx`) unchanged.
+> - P3-4 (admin-auth helpers): `lib/auth/admin.ts:isAdmin()` now delegates to the canonical `verifyAdminAccess()` in `server/actions/auth.ts` (single token-verify + role logic).
+> - P3-6 (unused `better-auth`): removed the dependency from `package.json` + lockfile (zero imports).
+> - P3-7 (doc path error): `AGENTS.md` corrected `hooks/useAuth.tsx` → `lib/hooks/useAuth.ts`.
+> - P3-8 (bundle admin audit attribution): `createBundle`/`updateBundle`/`deleteBundle` (and `bulkUploadProducts`) now resolve the acting admin id from the session via `verifyAdminAccess()` instead of trusting the literal `'admin'` passed by the client; client pages updated to drop the arg. Also added an admin-authorization guard to those actions.
+> - P3-9 (dual audit writers): `server/actions/audit.ts:logAudit` now delegates to the canonical `logAuditEvent` (`lib/supabase/helpers.ts`); the DB insert lives in one place.
+> - P3-5 (users_read_own RLS) and P3-10 (robots/sitemap) were already completed in Phases 1/2.
+> - Gates: `npm run type-check`, `npm run lint`, `npm run build` all pass; `npm run test:unit` 22/22 pass.
+
 ---
 
 ## Launch readiness verdict
@@ -41,7 +53,7 @@ Each task: `ID | Priority | Title | Evidence / Files | Action`.
 | ID | P | Title | Evidence / Files | Action |
 |----|---|-------|------------------|--------|
 | P1-1 | P1 | Rewrite stale documentation | `AGENTS.md` ("Not Built" list), `README.md` ("Known issues") — claims signup GET bug, `decodeJwt` unverified auth, duplicate `app/middleware.ts` are all **false** | Rewrite both files to reflect verified status; remove false "broken" claims |
-| P1-2 | P1 | Apply Supabase migrations | `supabase/migrations/000–011` (never run in this audit) | `supabase db push` (or run ordered files) on target project; seed `002`/`006` |
+| P1-2 | P1 | Apply Supabase migrations | `supabase/migrations/000–014` (never run in this audit; renumbered in Phase 3) | `supabase db push` (or run ordered files) on target project; seed `002`/`006` |
 | P1-3 | P1 | Provision first admin | `scripts/provision-admin.mjs`, `supabase/migrations/009_secure_admin_provisioning.sql` (`provision_admin()`) | `npm run provision-admin <email>` after migrations |
 | P1-4 | P1 | Configure transactional email | `lib/email/delivery.ts` (single path), `.env.example` (`RESEND_API_KEY`, `EMAIL_FROM`) | Set key + verify sender domain; set `RESEND_WEBHOOK_SECRET` |
 | P1-5 | P1 | Schedule missing crons | `vercel.json` (only `low-stock-digest`); `app/api/cron/release-reservations`, `app/api/cron/email-retry` exist but unscheduled | Add `release-reservations` + `email-retry` to `vercel.json` crons (or GitHub Actions) so inventory auto‑releases & failed emails retry |
@@ -64,16 +76,16 @@ Each task: `ID | Priority | Title | Evidence / Files | Action`.
 
 | ID | P | Title | Evidence / Files | Action |
 |----|---|-------|------------------|--------|
-| P3-1 | P3 | Delete dead/duplicate migration artifacts | `migrations/` (legacy), `supabase/combined_migration.sql`, `supabase/fix_bundles_and_rls.sql` | Remove or quarantine; keep only `supabase/migrations/` |
-| P3-2 | P3 | Fix migration numbering | two `009_*` files; `008` internally commented `014_unify_admin_rls_role.sql`; README says "apply 000→009" but `010`,`011` exist | Renumber sequentially; update README |
-| P3-3 | P3 | Remove duplicate `logoutAction` | `app/auth/actions.ts:191` AND `server/actions/auth.ts:12` | Keep one; delete the other |
-| P3-4 | P3 | Unify admin‑auth helpers | `verifyAdminAccess()` (`server/actions/auth.ts:32`) vs `isAdmin()` (`lib/auth/admin.ts:11`) | Consolidate on a single helper |
-| P3-5 | P3 | Tighten `users_read_own` RLS | `supabase/migrations/000:508-512` `auth.uid()=id OR role='admin'` leaks admin profiles to all authenticated users | Drop `role='admin'` OR clause |
-| P3-6 | P3 | Remove unused `better-auth` dependency | `package.json:18`; zero imports confirmed | Remove from deps |
-| P3-7 | P3 | Fix doc path errors | `AGENTS.md` references `hooks/useAuth.tsx` (actual `lib/hooks/useAuth.ts`) | Correct path |
-| P3-8 | P3 | Fix bundle admin audit attribution | `app/admin/bundles/page.tsx:130,142` pass literal `'admin'` as `adminId` | Pass real admin id from session |
-| P3-9 | P3 | Consolidate dual audit writers | `server/actions/audit.ts:logAudit` (refunds/shipments) vs `lib/supabase/helpers.ts:logAuditEvent` (products/inventory/orders/bundles/settings) | Single helper, consistent shape |
-| P3-10 | P3 | Add robots/sitemap | see P2-7 | see P2-7 |
+| P3-1 | P3 | Delete dead/duplicate migration artifacts | `migrations/` (legacy), `supabase/combined_migration.sql`, `supabase/fix_bundles_and_rls.sql` | **DONE** — removed; only `supabase/migrations/` remains |
+| P3-2 | P3 | Fix migration numbering | two `009_*` files; README said "apply 000→009" but `010`,`011` exist | **DONE** — renumbered to clean `000`→`014`; docs updated |
+| P3-3 | P3 | Remove duplicate `logoutAction` | `app/auth/actions.ts` AND `server/actions/auth.ts` | **DONE** — kept canonical in `app/auth/actions.ts`, re-exported from `server/actions/auth.ts` |
+| P3-4 | P3 | Unify admin‑auth helpers | `verifyAdminAccess()` vs `isAdmin()` | **DONE** — `isAdmin()` delegates to `verifyAdminAccess()` |
+| P3-5 | P3 | Tighten `users_read_own` RLS | `role='admin'` OR clause | **DONE in Phase 1** (migration `013_fix_users_read_own_policy.sql`) |
+| P3-6 | P3 | Remove unused `better-auth` dependency | `package.json` | **DONE** — removed dep + lockfile entry |
+| P3-7 | P3 | Fix doc path errors | `AGENTS.md` `hooks/useAuth.tsx` | **DONE** — corrected to `lib/hooks/useAuth.ts` |
+| P3-8 | P3 | Fix bundle admin audit attribution | `app/admin/bundles/page.tsx` + `app/admin/products/page.tsx` pass literal `'admin'` | **DONE** — server actions resolve real admin id from session; added auth guard |
+| P3-9 | P3 | Consolidate dual audit writers | `logAudit` vs `logAuditEvent` | **DONE** — `logAudit` delegates to `logAuditEvent` |
+| P3-10 | P3 | Add robots/sitemap | see P2-7 | **DONE in Phase 2** |
 
 ---
 
@@ -104,13 +116,13 @@ Each task: `ID | Priority | Title | Evidence / Files | Action`.
 > **Resolved in Phase 2:** bundles are now purchasable with server‑side price lock; refund request creates a real `refunds` row + admin notify (no placeholder payout fields); storefront bundle purchase action added; `/api/payment/verify` reference removed (webhooks only); unit tests added (`vitest`, 22 passing); CSP/security headers added; `robots.txt` + `sitemap.xml` added.
 
 ### 5. ⚠️ NEEDS IMPROVEMENT
-- Docs massively out of sync. *P1.*
-- Dead/duplicate migration artifacts (`migrations/`, `combined_migration.sql`, `fix_bundles_and_rls.sql`). *P2.*
-- Migration numbering chaos (two `009`s; README "000→009" but up to `011`). *P3.*
-- Duplicate `logoutAction`; dual admin‑auth helpers. *P3.*
-- RLS leaks admin user rows (`users_read_own` `role='admin'` OR). *P3.*
-- Unused `better-auth` dependency. *P3.*
-- AGENTS.md path errors (`hooks/useAuth.tsx`). *P3.*
+- Docs massively out of sync. *P1.* (Substantially corrected across Phases 1–3; minor legacy doc references in `docs/*.md` may still cite old migration filenames — external cleanup.)
+- Dead/duplicate migration artifacts. *RESOLVED in Phase 3 (P3-1).*
+- Migration numbering. *RESOLVED in Phase 3 (P3-2) — now clean `000`→`014`.*
+- Duplicate `logoutAction`; dual admin‑auth helpers. *RESOLVED in Phase 3 (P3-3, P3-4).*
+- RLS leaks admin user rows. *RESOLVED (Phase 1, migration `013`).*
+- Unused `better-auth` dependency. *RESOLVED in Phase 3 (P3-6).*
+- AGENTS.md path errors (`hooks/useAuth.tsx`). *RESOLVED in Phase 3 (P3-7).*
 - Gateway field/param confirmation flagged in code. *P2 (external).*
 
 ### 6. ⏳ EXTERNAL VERIFICATION REQUIRED
@@ -151,6 +163,15 @@ Verified by static checks + source review:
 | Build | `npm run build` | ✅ compiled (includes `/robots.txt` + `/sitemap.xml`) |
 | Unit tests | `npm run test:unit` | ✅ 22 passed (bundle pricing, security headers, helpers) |
 | Source review | manual (bundle price lock, refund flow, headers, dead‑code removal) | see Phase 2 block above |
+
+### 7c. ✅ PHASE 3 VERIFICATION LOG (this pass)
+| Check | Command | Result |
+|-------|---------|--------|
+| Type‑check | `npm run type-check` | ✅ clean |
+| Lint | `npm run lint` | ✅ clean |
+| Build | `npm run build` | ✅ compiled (46 routes) |
+| Unit tests | `npm run test:unit` | ✅ 22 passed |
+| Source review | manual (logoutAction re‑export, isAdmin delegate, logAudit delegate, session‑resolved admin id in bundle/product actions, removed dead artifacts + better‑auth, renumbered migrations) | see Phase 3 block above |
 
 ---
 

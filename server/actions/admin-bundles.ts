@@ -99,7 +99,6 @@ export async function getBundleAdmin(bundleId: string) {
 // ===================================================================
 
 export async function createBundle(
-  adminId: string,
   data: {
     name: string;
     description?: string;
@@ -113,6 +112,14 @@ export async function createBundle(
     active_to?: string;
   }
 ) {
+  // Resolve the acting admin from the session — never trust a client-supplied id
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  const adminId = adminAccess.userId;
+
   try {
     if (!data.items || data.items.length < 2) {
       throw new AppError("INVALID_ITEMS", "Bundle must have at least 2 items", 400);
@@ -231,7 +238,6 @@ export async function createBundle(
 // ===================================================================
 
 export async function updateBundle(
-  adminId: string,
   bundleId: string,
   updates: {
     name?: string;
@@ -242,6 +248,14 @@ export async function updateBundle(
     active_to?: string | null;
   }
 ) {
+  // Resolve the acting admin from the session — never trust a client-supplied id
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  const adminId = adminAccess.userId;
+
   try {
     if (!bundleId) {
       throw new AppError("INVALID_ID", "Bundle ID required", 400);
@@ -297,7 +311,15 @@ export async function updateBundle(
 // DELETE BUNDLE (SOFT)
 // ===================================================================
 
-export async function deleteBundle(adminId: string, bundleId: string) {
+export async function deleteBundle(bundleId: string) {
+  // Resolve the acting admin from the session — never trust a client-supplied id
+  const { verifyAdminAccess } = await import("./auth");
+  const adminAccess = await verifyAdminAccess();
+  if (!adminAccess) {
+    throw new AppError("UNAUTHORIZED", "Admin access required", 403);
+  }
+  const adminId = adminAccess.userId;
+
   try {
     if (!bundleId) {
       throw new AppError("INVALID_ID", "Bundle ID required", 400);

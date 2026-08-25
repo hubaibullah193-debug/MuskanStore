@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { logoutAction } from '@/server/actions/auth';
+import { logoutAction } from '@/app/auth/actions';
 
 interface AdminLayoutClientProps {
   user: { id: string; email: string; name?: string; role: string } | null;
