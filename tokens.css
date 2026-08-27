@@ -37,10 +37,10 @@
 
   /* ===== TYPOGRAPHY ===== */
 
-  /* Font families */
-  --font-display: "Lora", serif;            /* Display/headings — professional, trustworthy */
-  --font-body: "Inter", sans-serif;         /* Body/UI — modern, mobile-readable */
-  --font-mono: "Courier Prime", monospace;  /* Mono — prices, order IDs, technical info */
+  /* Font families — wired to next/font self-hosted variables with safe fallbacks */
+  --font-display: var(--font-lora), "Lora", serif;            /* Display/headings — professional, trustworthy */
+  --font-body: var(--font-inter), "Inter", sans-serif;       /* Body/UI — modern, mobile-readable */
+  --font-mono: var(--font-courier-prime), "Courier Prime", monospace;  /* Mono — prices, order IDs, technical info */
 
   /* Type scale — proportional 1.33× multiplier */
   --text-hero: 2.5rem;                      /* 40px — hero headlines, major statements */

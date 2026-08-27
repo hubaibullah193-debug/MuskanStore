@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/client";
 import { verifySupabaseToken } from "@/lib/auth/verify";
 import { buildSecurityHeaders } from "@/lib/security/headers";
 
@@ -67,6 +66,11 @@ async function verifyUserId(request: NextRequest): Promise<string | null> {
  */
 async function getUserRole(userId: string): Promise<string | null> {
   try {
+    // Lazily load the service-role client. It is only needed for admin route
+    // authorization, so keeping it out of the static Edge bundle avoids pulling
+    // the full Supabase Node client (and its incompatible deps) into every
+    // request. The JWT is still verified locally via jose in verifySupabaseToken.
+    const { supabaseAdmin } = await import("@/lib/supabase/client");
     const { data } = await supabaseAdmin
       .from("users")
       .select("role")

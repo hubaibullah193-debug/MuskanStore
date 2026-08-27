@@ -1,7 +1,29 @@
 import type { Metadata } from "next";
+import { Lora, Inter, Courier_Prime } from "next/font/google";
 import "./globals.css";
 import { AuthAwareLayout } from "./components/auth-aware-layout";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/site";
+
+const lora = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-lora",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const courierPrime = Courier_Prime({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-courier-prime",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -42,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${lora.variable} ${inter.variable} ${courierPrime.variable}`}>
       <body className="flex flex-col min-h-screen">
         <AuthAwareLayout>{children}</AuthAwareLayout>
       </body>

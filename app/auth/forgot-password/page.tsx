@@ -7,7 +7,7 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { requestPasswordReset } from '@/lib/auth/server';
+import { requestPasswordResetAction } from '@/app/auth/actions';
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      await requestPasswordReset(email);
+      await requestPasswordResetAction(email);
       setSuccess(true);
       setEmail('');
     } catch (err: any) {

@@ -11,6 +11,7 @@ import { ZodError } from 'zod';
 import { supabase, supabaseAdmin } from '@/lib/supabase/client';
 import { verifySupabaseToken } from '@/lib/auth/verify';
 import { SignUpSchema, LogInSchema } from '@/lib/validation/schemas';
+import { requestPasswordReset, confirmPasswordReset } from '@/lib/auth/server';
 
 // ===================================================================
 // SIGNUP
@@ -271,4 +272,17 @@ export async function getCurrentSessionAction() {
     console.error('session fetch error:', error);
     return null;
   }
+}
+
+// ===================================================================
+// PASSWORD RESET (server actions — keep Supabase client server-side so the
+// forgot/reset client pages don't bundle it)
+// ===================================================================
+
+export async function requestPasswordResetAction(email: string) {
+  return requestPasswordReset(email);
+}
+
+export async function confirmPasswordResetAction(tokenHash: string, password: string) {
+  return confirmPasswordReset(tokenHash, password);
 }

@@ -3,7 +3,7 @@
 import { Suspense, useState, FormEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { confirmPasswordReset } from '@/lib/auth/server';
+import { confirmPasswordResetAction } from '@/app/auth/actions';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -54,7 +54,7 @@ function ResetPasswordContent() {
         return;
       }
 
-      await confirmPasswordReset(tokenHash, formData.password);
+      await confirmPasswordResetAction(tokenHash, formData.password);
       setSuccess(true);
     } catch (err: any) {
       setError(err.message || 'Failed to reset password. Please try again.');
