@@ -3,10 +3,14 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
+import type { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
 import AddToCartButton from '@/app/components/add-to-cart-button';
 import { StatusBadge } from '@/app/components/ui/status-badge';
 import { Alert } from '@/app/components/ui/alert';
 import Link from 'next/link';
+import { SITE_NAME, SITE_URL } from '@/lib/site';
 
 interface ProductDetailPageProps {
   params: {
@@ -14,10 +18,60 @@ interface ProductDetailPageProps {
   };
 }
 
-export default async function ProductDetailPage({
+export const revalidate = 120;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return [];
+}
+
+export async function generateMetadata({
   params,
-}: ProductDetailPageProps) {
+}: ProductDetailPageProps): Promise<Metadata> {
   try {
+    const product = await fetchProduct(params.slug);
+    if (!product) {
+      return { title: 'Product Not Found' };
+    }
+    const title = product.name;
+    const description =
+      product.description ||
+      `Buy ${product.name} from ${SITE_NAME}. Quality personal hygiene and care essentials with fast delivery across Pakistan.`;
+    const image = (product.product_images || [])
+      .slice()
+      .sort(
+        (a: any, b: any) => a.display_order - b.display_order
+      )[0]?.image_url;
+    const canonical = `/products/${product.slug}`;
+    const ogImage = image
+      ? [{ url: image, width: 1200, height: 1200, alt: product.name }]
+      : undefined;
+
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: {
+        title,
+        description,
+        url: `${SITE_URL}${canonical}`,
+        type: 'website',
+        images: ogImage,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: image ? [image] : undefined,
+      },
+    };
+  } catch {
+    return { title: 'Product' };
+  }
+}
+
+const fetchProduct = unstable_cache(
+  async (slug: string) => {
     const supabase = await createClient();
     const { data: product, error } = await supabase
       .from('products')
@@ -46,11 +100,60 @@ export default async function ProductDetailPage({
         )
       `
       )
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('is_active', true)
       .single();
 
-    if (error || !product) {
+    if (error || !product) return null;
+    return product as any;
+  },
+  ['product-detail'],
+  { revalidate: 120, tags: ['products'] }
+);
+
+const fetchRelated = unstable_cache(
+  async (categoryId: string, productId: string) => {
+    const supabase = await createClient();
+    const { data: related } = await supabase
+      .from('products')
+      .select(
+        `
+        id,
+        name,
+        slug,
+        description,
+        base_price,
+        stock_quantity,
+        is_active,
+        product_images (
+          id,
+          image_url,
+          display_order
+        )
+      `
+      )
+      .eq('category_id', categoryId)
+      .eq('is_active', true)
+      .neq('id', productId)
+      .limit(4);
+
+    return (related || []).map((p: any) => ({
+      ...p,
+      imageUrl: p.product_images?.length
+        ? p.product_images.slice().sort((a: any, b: any) => a.display_order - b.display_order)[0]
+            .image_url
+        : undefined,
+    }));
+  },
+  ['product-related'],
+  { revalidate: 120, tags: ['products'] }
+);
+
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+  try {
+    const product = await fetchProduct(params.slug);
+
+    if (!product) {
       notFound();
     }
 
@@ -65,35 +168,7 @@ export default async function ProductDetailPage({
     // Fetch related products from same category (exclude current, max 4)
     let relatedProducts: any[] = [];
     if (product.category_id) {
-      const { data: related } = await supabase
-        .from('products')
-        .select(
-          `
-          id,
-          name,
-          slug,
-          description,
-          base_price,
-          stock_quantity,
-          is_active,
-          product_images (
-            id,
-            image_url,
-            display_order
-          )
-        `
-        )
-        .eq('category_id', product.category_id)
-        .eq('is_active', true)
-        .neq('id', product.id)
-        .limit(4);
-
-      relatedProducts = (related || []).map((p: any) => ({
-        ...p,
-        imageUrl: p.product_images?.length
-          ? p.product_images.sort((a: any, b: any) => a.display_order - b.display_order)[0].image_url
-          : undefined,
-      }));
+      relatedProducts = await fetchRelated(product.category_id, product.id);
     }
 
     return (
@@ -101,12 +176,15 @@ export default async function ProductDetailPage({
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-card border border-border p-6 rounded-lg">
             {/* Product Image */}
-            <div className="bg-paper-2 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
+            <div className="relative bg-paper-2 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
               {images.length > 0 ? (
-                <img
+                <Image
                   src={images[0].image_url}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  className="object-cover"
                 />
               ) : (
                 <span className="text-text-tertiary">No image</span>
@@ -137,9 +215,9 @@ export default async function ProductDetailPage({
               {/* Variants */}
               {variants.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-foreground mb-3">
+                  <h2 className="font-semibold text-foreground mb-3">
                     Available Variants
-                  </h3>
+                  </h2>
                   <div className="space-y-2">
                     {variants.map((variant: any) => (
                       <div
@@ -193,12 +271,14 @@ export default async function ProductDetailPage({
                 {relatedProducts.map((rp) => (
                   <Link key={rp.id} href={`/products/${rp.slug}`}>
                     <div className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="aspect-square bg-paper-2">
+                      <div className="relative aspect-square bg-paper-2">
                         {rp.imageUrl ? (
-                          <img
+                          <Image
                             src={rp.imageUrl}
                             alt={rp.name}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="(min-width: 768px) 25vw, 50vw"
+                            className="object-cover"
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full text-text-tertiary text-sm">

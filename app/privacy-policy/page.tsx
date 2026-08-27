@@ -1,4 +1,16 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { SITE_NAME, SITE_DESCRIPTION } from '@/lib/site';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: `How ${SITE_NAME} collects, uses, and protects your personal information. Read our privacy policy for details on data, cookies, and security.`,
+  alternates: { canonical: '/privacy-policy' },
+  openGraph: {
+    title: `Privacy Policy | ${SITE_NAME}`,
+    description: SITE_DESCRIPTION,
+  },
+};
 
 /* eslint-disable react/no-unescaped-entities */
 export default function PrivacyPolicyPage() {
@@ -6,6 +18,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-paper py-8 px-4">
       <div className="mx-auto max-w-3xl">
         <article className="bg-card border border-border rounded-lg shadow-sm p-8 sm:p-10">
+          <h1 className="font-display text-3xl font-bold text-foreground mb-6">Privacy Policy</h1>
           <p className="text-text-tertiary text-sm mb-6">Last updated: August 2026</p>
 
           <section className="space-y-2">

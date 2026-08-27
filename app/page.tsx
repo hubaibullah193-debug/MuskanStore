@@ -1,32 +1,58 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import type { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/app/components/ui/button';
 import BundleAddToCartButton from '@/app/components/bundle-add-to-cart-button';
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '@/lib/site';
 
-async function getFeaturedProducts() {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, product_images(image_url, display_order)')
-      .eq('featured', true)
-      .limit(6);
+export const metadata: Metadata = {
+  title: 'Shop Premium Personal Hygiene Products',
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: `${SITE_NAME} — Premium Personal Hygiene Store`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    title: `${SITE_NAME} — Premium Personal Hygiene Store`,
+    description: SITE_DESCRIPTION,
+  },
+};
 
-    if (error) {
-      console.error('Error fetching featured products:', error);
+export const revalidate = 300;
+
+const getFeaturedProducts = unstable_cache(
+  async () => {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_images(image_url, display_order)')
+        .eq('featured', true)
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching featured products:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('Error fetching featured products:', e);
       return [];
     }
+  },
+  ['home-featured-products'],
+  { revalidate: 300, tags: ['products'] }
+);
 
-    return data || [];
-  } catch (e) {
-    console.error('Error fetching featured products:', e);
-    return [];
-  }
-}
-
-async function getActiveBundles() {
-  try {
-    const supabase = await createClient();
+const getActiveBundles = unstable_cache(
+  async () => {
+    try {
+      const supabase = await createClient();
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('bundles')
@@ -60,7 +86,10 @@ async function getActiveBundles() {
     console.error('Error fetching bundles:', e);
     return [];
   }
-}
+  },
+  ['home-active-bundles'],
+  { revalidate: 300, tags: ['bundles'] }
+);
 
 export default async function HomePage() {
   const [featuredProducts, bundles] = await Promise.all([
@@ -204,12 +233,14 @@ export default async function HomePage() {
                   href={`/products/${product.slug}`}
                   className="group overflow-hidden rounded-lg border border-border bg-card hover:shadow-md transition"
                 >
-                  <div className="aspect-square overflow-hidden bg-paper-2">
+                  <div className="relative aspect-square overflow-hidden bg-paper-2">
                     {imageUrl ? (
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={product.name}
-                        className="h-full w-full object-cover group-hover:scale-105 transition"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover group-hover:scale-105 transition"
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
@@ -272,10 +303,12 @@ export default async function HomePage() {
                     {/* Bundle image: first item's image or gradient */}
                     <div className="aspect-[4/3] bg-paper-2 relative">
                       {firstItemImage ? (
-                        <img
+                        <Image
                           src={firstItemImage}
                           alt={bundle.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(min-width: 768px) 33vw, 100vw"
+                          className="object-cover"
                         />
                       ) : (
                         <div

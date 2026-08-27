@@ -3,6 +3,7 @@
 
 import { CartItem } from '@/lib/hooks/useCart';
 import { Input } from '@/app/components/ui/input';
+import Image from 'next/image';
 
 interface CartItemProps {
   item: CartItem;
@@ -26,9 +27,11 @@ export function CartItemRow({ item, onQuantityChange, onRemove }: CartItemProps)
       {/* Product Info */}
       <div className="flex min-w-0 items-center gap-4 sm:flex-1">
         {item.image && (
-          <img
-            src={item.image}
-            alt={item.name || item.productId}
+          <Image
+            src={item.image as string}
+            alt={item.name || item.productId || 'Product'}
+            width={56}
+            height={56}
             className="h-14 w-14 flex-shrink-0 rounded object-cover"
           />
         )}

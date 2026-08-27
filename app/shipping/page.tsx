@@ -1,10 +1,17 @@
 import Link from 'next/link';
 import { Button } from '@/app/components/ui/button';
 import type { Metadata } from 'next';
+import { SITE_NAME, SITE_DESCRIPTION } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'Shipping Info & Returns | Muskan Care',
+  title: 'Shipping Info & Returns',
   description: 'Shipping policies, delivery timeframes, and return/refund information for Muskan Care Center.',
+  alternates: { canonical: '/shipping' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: `Shipping Info & Returns | ${SITE_NAME}`,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function ShippingPage() {

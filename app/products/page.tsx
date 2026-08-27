@@ -1,10 +1,23 @@
 // app/products/page.tsx
 // Products listing page with filtering and pagination
 
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import { unstable_cache } from 'next/cache';
 import { ProductCard } from '@/app/components/product-card';
 import { Input } from '@/app/components/ui/input';
 import { Alert } from '@/app/components/ui/alert';
+import { SITE_NAME } from '@/lib/site';
+
+export const metadata: Metadata = {
+  title: 'All Products',
+  description:
+    'Browse the full range of personal hygiene and care products from Muskan Care Center. Quality essentials with fast delivery across Pakistan.',
+  alternates: { canonical: '/products' },
+  robots: { index: true, follow: true },
+};
+
+export const revalidate = 60;
 
 interface ProductsPageProps {
   searchParams: {
@@ -13,12 +26,10 @@ interface ProductsPageProps {
   };
 }
 
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const page = Math.max(1, parseInt(searchParams.page || '1'));
-  const limit = 12;
-  const offset = (page - 1) * limit;
-
-  try {
+const getProducts = unstable_cache(
+  async (page: number, search?: string) => {
+    const limit = 12;
+    const offset = (page - 1) * limit;
     const supabase = await createClient();
     let query = supabase
       .from('products')
@@ -29,8 +40,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (searchParams.search) {
-      query = query.ilike('name', `%${searchParams.search}%`);
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
     }
 
     const { data: products, count, error } = await query;
@@ -39,7 +50,21 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       throw error;
     }
 
-    const totalPages = Math.ceil((count || 0) / limit);
+    return {
+      products: products || [],
+      count: count || 0,
+      totalPages: Math.ceil((count || 0) / limit),
+    };
+  },
+  ['products-listing'],
+  { revalidate: 60, tags: ['products'] }
+);
+
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  const page = Math.max(1, parseInt(searchParams.page || '1'));
+
+  try {
+    const { products, count, totalPages } = await getProducts(page, searchParams.search);
 
     return (
       <div className="min-h-screen bg-paper py-8 px-4">
