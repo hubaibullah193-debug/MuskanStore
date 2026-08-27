@@ -11,6 +11,7 @@ import { StatusBadge } from '@/app/components/ui/status-badge';
 import { Alert } from '@/app/components/ui/alert';
 import Link from 'next/link';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
+import { breadcrumbJsonLd, productJsonLd } from '@/app/components/structured-data';
 
 interface ProductDetailPageProps {
   params: {
@@ -173,6 +174,33 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
     return (
       <div className="min-h-screen bg-paper py-8 px-4">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              breadcrumbJsonLd([
+                { name: 'Home', url: `${SITE_URL}/` },
+                { name: 'Products', url: `${SITE_URL}/products` },
+                { name: product.name, url: `${SITE_URL}/products/${product.slug}` },
+              ])
+            ),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              productJsonLd({
+                name: product.name,
+                description: product.description,
+                slug: product.slug,
+                base_price: Number(product.base_price),
+                stock_quantity: product.stock_quantity,
+                images: images.map((i: { image_url: string }) => i.image_url),
+              })
+            ),
+          }}
+        />
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-card border border-border p-6 rounded-lg">
             {/* Product Image */}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Lora, Inter, Courier_Prime } from "next/font/google";
 import "./globals.css";
 import { AuthAwareLayout } from "./components/auth-aware-layout";
+import { organizationJsonLd, websiteJsonLd } from "@/app/components/structured-data";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/site";
 
 const lora = Lora({
@@ -66,6 +67,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${lora.variable} ${inter.variable} ${courierPrime.variable}`}>
       <body className="flex flex-col min-h-screen">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+        />
         <AuthAwareLayout>{children}</AuthAwareLayout>
       </body>
     </html>
