@@ -237,11 +237,19 @@ export function useCart(): UseCartReturn {
         }
 
         if (user?.id) {
-          // Update in Supabase
-          await updateCartItemAction(user.id, cartItemId, quantity);
-          // Reload cart
-          const updated = await getCartAction(user.id);
-          setItems(updated || []);
+          // Optimistic local update; reconcile on failure.
+          const prev = items;
+          setItems((cur) =>
+            cur.map((item) =>
+              item.id === cartItemId ? { ...item, quantity } : item
+            )
+          );
+          try {
+            await updateCartItemAction(user.id, cartItemId, quantity);
+          } catch (err) {
+            setItems(prev);
+            throw err;
+          }
         } else {
           // Update in localStorage
           const newItems = items.map((item) =>
@@ -266,11 +274,15 @@ export function useCart(): UseCartReturn {
         setError(null);
 
         if (user?.id) {
-          // Remove from Supabase
-          await removeFromCartAction(user.id, cartItemId);
-          // Reload cart
-          const updated = await getCartAction(user.id);
-          setItems(updated || []);
+          // Optimistic local update; reconcile on failure.
+          const prev = items;
+          setItems((cur) => cur.filter((item) => item.id !== cartItemId));
+          try {
+            await removeFromCartAction(user.id, cartItemId);
+          } catch (err) {
+            setItems(prev);
+            throw err;
+          }
         } else {
           // Remove from localStorage
           const newItems = items.filter((item) => item.id !== cartItemId);
