@@ -13,6 +13,7 @@ import {
   deleteBundle,
 } from '@/server/actions/admin-bundles';
 import { getAllProducts } from '@/server/actions/admin-products';
+import { statusTint } from '@/lib/ui/status-colors';
 
 interface BundleItem {
   product_id: string;
@@ -185,15 +186,15 @@ export default function AdminBundlesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Bundle Offers</h1>
-          <p className="text-gray-600 mt-1">Create and manage product bundles</p>
+          <h1 className="text-3xl font-bold text-foreground">Bundle Offers</h1>
+          <p className="text-text-secondary mt-1">Create and manage product bundles</p>
         </div>
         <button
           onClick={() => {
             setShowForm(!showForm);
             if (showForm) resetForm();
           }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark"
         >
           {showForm ? 'Cancel' : '+ Create Bundle'}
         </button>
@@ -201,48 +202,49 @@ export default function AdminBundlesPage() {
 
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] text-error rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-success)_12%,white)] border border-[color-mix(in_oklch,var(--color-success)_35%,transparent)] text-success rounded-lg">
           {success}
         </div>
       )}
 
       {/* Create Form */}
       {showForm && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-bold mb-4">Create New Bundle</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-xl font-bold mb-4 text-foreground">Create New Bundle</h2>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Bundle Name *
                 </label>
                 <input
                   type="text"
                   value={bundleName}
                   onChange={(e) => setBundleName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
                   placeholder="e.g., Hair Care Starter Kit"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Bundle Price (PKR) *
                 </label>
                 <input
                   type="number"
                   value={bundlePrice}
                   onChange={(e) => setBundlePrice(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
                   placeholder="0.00"
                   step="0.01"
                 />
                 {previewRegularPrice > 0 && bundlePrice && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-text-tertiary mt-1">
                     Regular: Rs. {previewRegularPrice.toFixed(0)} &middot; Save{' '}
                     {previewRegularPrice > 0
                       ? Math.round(((previewRegularPrice - parseFloat(bundlePrice || '0')) / previewRegularPrice) * 100)
@@ -254,13 +256,13 @@ export default function AdminBundlesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Description
               </label>
               <textarea
                 value={bundleDesc}
                 onChange={(e) => setBundleDesc(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
                 placeholder="Bundle description..."
                 rows={2}
               />
@@ -269,13 +271,13 @@ export default function AdminBundlesPage() {
             {/* Bundle Items */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-text-secondary">
                   Products in Bundle *
                 </label>
                 <button
                   type="button"
                   onClick={addItem}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-sm text-accent hover:text-accent-dark font-medium"
                 >
                   + Add Product
                 </button>
@@ -286,7 +288,7 @@ export default function AdminBundlesPage() {
                     <select
                       value={item.product_id}
                       onChange={(e) => updateItem(index, 'product_id', e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-accent"
                     >
                       <option value="">Select product...</option>
                       {products.map((p) => (
@@ -300,13 +302,13 @@ export default function AdminBundlesPage() {
                       value={item.quantity}
                       onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
                       min={1}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500"
+                      className="w-20 px-3 py-2 border border-border rounded-lg text-sm text-center focus:ring-2 focus:ring-accent"
                     />
                     <button
                       type="button"
                       onClick={() => removeItem(index)}
                       disabled={items.length <= 2}
-                      className="text-red-500 hover:text-red-700 text-sm disabled:opacity-30"
+                      className="text-error hover:opacity-80 text-sm disabled:opacity-30"
                     >
                       Remove
                     </button>
@@ -319,13 +321,13 @@ export default function AdminBundlesPage() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-foreground border border-border rounded-lg hover:bg-paper-2"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark"
               >
                 Create Bundle
               </button>
@@ -333,14 +335,13 @@ export default function AdminBundlesPage() {
           </form>
         </div>
       )}
-
       {/* Bundles List */}
       {loading ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+        <div className="bg-card rounded-lg border border-border p-8 text-center text-text-tertiary">
           Loading bundles...
         </div>
       ) : bundles.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+        <div className="bg-card rounded-lg border border-border p-8 text-center text-text-tertiary">
           No bundles yet. Create your first bundle offer to get started.
         </div>
       ) : (
@@ -348,61 +349,61 @@ export default function AdminBundlesPage() {
           {bundles.map((bundle) => (
             <div
               key={bundle.id}
-              className={`bg-white rounded-lg border p-6 ${
-                bundle.is_active ? 'border-gray-200' : 'border-gray-200 opacity-60'
+              className={`bg-card rounded-lg border p-6 ${
+                bundle.is_active ? 'border-border' : 'border-border opacity-60'
               }`}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-gray-900">{bundle.name}</h3>
+                    <h3 className="text-lg font-bold text-foreground">{bundle.name}</h3>
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                         bundle.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-600'
+                          ? statusTint.success
+                          : statusTint.neutral
                       }`}
                     >
                       {bundle.is_active ? 'Active' : 'Inactive'}
                     </span>
                     {bundle.discount_percent > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusTint.error}`}>
                         -{bundle.discount_percent}%
                       </span>
                     )}
                   </div>
                   {bundle.description && (
-                    <p className="text-sm text-gray-600 mt-1">{bundle.description}</p>
+                    <p className="text-sm text-text-secondary mt-1">{bundle.description}</p>
                   )}
                   <div className="flex gap-6 mt-3 text-sm">
                     <div>
-                      <span className="text-gray-500">Bundle Price: </span>
-                      <span className="font-bold text-gray-900">
+                      <span className="text-text-tertiary">Bundle Price: </span>
+                      <span className="font-bold text-foreground">
                         Rs. {Number(bundle.bundle_price).toFixed(0)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Regular: </span>
-                      <span className="text-gray-600 line-through">
+                      <span className="text-text-tertiary">Regular: </span>
+                      <span className="text-text-secondary line-through">
                         Rs. {Number(bundle.regular_price).toFixed(0)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Items: </span>
-                      <span className="text-gray-600">{bundle.bundle_items.length}</span>
+                      <span className="text-text-tertiary">Items: </span>
+                      <span className="text-text-secondary">{bundle.bundle_items.length}</span>
                     </div>
                     {bundle.active_from && (
                       <div>
-                        <span className="text-gray-500">From: </span>
-                        <span className="text-gray-600">
+                        <span className="text-text-tertiary">From: </span>
+                        <span className="text-text-secondary">
                           {new Date(bundle.active_from).toLocaleDateString()}
                         </span>
                       </div>
                     )}
                     {bundle.active_to && (
                       <div>
-                        <span className="text-gray-500">To: </span>
-                        <span className="text-gray-600">
+                        <span className="text-text-tertiary">To: </span>
+                        <span className="text-text-secondary">
                           {new Date(bundle.active_to).toLocaleDateString()}
                         </span>
                       </div>
@@ -413,7 +414,7 @@ export default function AdminBundlesPage() {
                     {bundle.bundle_items.map((bi) => (
                       <span
                         key={bi.id}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                        className="text-xs bg-paper-2 text-text-secondary px-2 py-1 rounded"
                       >
                         {bi.products?.[0]?.name || 'Unknown'} x{bi.quantity}
                       </span>
@@ -423,17 +424,13 @@ export default function AdminBundlesPage() {
                 <div className="flex gap-2 ml-4">
                   <button
                     onClick={() => handleToggleActive(bundle.id, bundle.is_active)}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
-                      bundle.is_active
-                        ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                        : 'bg-green-100 text-green-800 hover:bg-green-200'
-                    }`}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg ${statusTint.warning} hover:opacity-80`}
                   >
                     {bundle.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                   <button
                     onClick={() => handleDelete(bundle.id)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-100 text-red-800 hover:bg-red-200"
+                    className={`px-3 py-1.5 text-sm font-medium rounded-lg ${statusTint.error} hover:opacity-80`}
                   >
                     Delete
                   </button>

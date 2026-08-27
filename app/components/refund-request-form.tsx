@@ -3,6 +3,8 @@
 
 import { useState } from 'react';
 import { createRefundRequest } from '@/server/actions/refunds';
+import { Button } from '@/app/components/ui/button';
+import { Alert } from '@/app/components/ui/alert';
 
 interface RefundRequestFormProps {
   orderId: string;
@@ -49,22 +51,20 @@ export function RefundRequestForm({ orderId, orderNumber, orderTotal }: RefundRe
 
   if (success) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-        <p className="text-green-900 font-medium">
-          Refund request submitted successfully! Our team will review your request and respond within 2-3 business days.
-        </p>
-      </div>
+      <Alert variant="success">
+        Refund request submitted successfully! Our team will review your request and respond within 2-3 business days.
+      </Alert>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-gray-50 rounded-lg p-6">
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-paper-2 p-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="mb-2 block text-sm font-medium text-secondary">
           Refund Amount (PKR)
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-3 text-gray-500">PKR</span>
+          <span className="absolute left-3 top-3 text-secondary">PKR</span>
           <input
             type="number"
             value={refundAmount}
@@ -72,23 +72,23 @@ export function RefundRequestForm({ orderId, orderNumber, orderTotal }: RefundRe
             min="0"
             max={orderTotal}
             step="0.01"
-            className="w-full pl-12 pr-4 py-2 border rounded-lg"
+            className="w-full rounded-md border border-border bg-paper-3 py-2 pl-12 pr-4 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="mt-1 text-xs text-secondary">
           Maximum: PKR {orderTotal.toFixed(2)}
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="mb-2 block text-sm font-medium text-secondary">
           Reason for Refund *
         </label>
         <select
           value={reason}
           onChange={e => setReason(e.target.value)}
           required
-          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full rounded-md border border-border bg-paper-3 px-4 py-2 text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
         >
           <option value="">Select a reason...</option>
           <option value="defective">Defective Product</option>
@@ -101,20 +101,18 @@ export function RefundRequestForm({ orderId, orderNumber, orderTotal }: RefundRe
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-900 text-sm">{error}</p>
-        </div>
+        <Alert variant="error">{error}</Alert>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={loading || !reason}
-        className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition"
+        className="w-full"
       >
         {loading ? 'Submitting...' : 'Submit Refund Request'}
-      </button>
+      </Button>
 
-      <p className="text-xs text-gray-600 text-center">
+      <p className="text-center text-xs text-secondary">
         Our team will review your request and contact you within 2-3 business days.
       </p>
     </form>

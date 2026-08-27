@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutForm } from '@/app/components/checkout-form';
+import { Spinner } from '@/app/components/ui/spinner';
+import { Alert } from '@/app/components/ui/alert';
 import { useCart } from '@/lib/hooks/useCart';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -125,10 +127,10 @@ export default function CheckoutPage() {
 
   if (cartLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading checkout...</p>
+          <Spinner className="h-12 w-12 mx-auto mb-4" />
+          <p className="text-text-secondary">Loading checkout...</p>
         </div>
       </div>
     );
@@ -136,50 +138,52 @@ export default function CheckoutPage() {
 
   if (!items || items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h1>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-800 mb-4">Your cart is empty</p>
-            <button
-              onClick={() => router.push('/products')}
-              className="text-blue-600 hover:text-blue-700 underline"
-            >
-              Continue shopping
-            </button>
-          </div>
+      <div className="min-h-screen bg-paper py-8 px-4">
+        <div className="max-w-2xl mx-auto bg-card border border-border rounded-lg p-6">
+          <h1 className="font-display text-2xl font-bold text-foreground mb-4">Checkout</h1>
+          <Alert variant="info">
+            <div className="flex items-center justify-between gap-4">
+              <span>Your cart is empty</span>
+              <button
+                onClick={() => router.push('/products')}
+                className="text-accent hover:underline font-medium shrink-0"
+              >
+                Continue shopping
+              </button>
+            </div>
+          </Alert>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-paper py-8 px-4">
       <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Checkout Form */}
-        <div className="lg:col-span-2 bg-white rounded-lg p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Checkout</h1>
+        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-6">
+          <h1 className="font-display text-3xl font-bold text-foreground mb-6">Checkout</h1>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800">{error}</p>
-            </div>
+            <Alert variant="error" className="mb-6">
+              {error}
+            </Alert>
           )}
 
           <CheckoutForm onSubmit={handleCheckout} isLoading={isLoading} />
         </div>
 
         {/* Order Summary */}
-        <div className="bg-white rounded-lg p-6 h-fit">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+        <div className="bg-card border border-border rounded-lg p-6 h-fit">
+          <h2 className="font-display text-lg font-bold text-foreground mb-4">Order Summary</h2>
 
-          <div className="space-y-3 mb-6 pb-6 border-b">
+          <div className="space-y-3 mb-6 pb-6 border-b border-border">
             {items.map(item => (
               <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-700">
+                <span className="text-text-secondary">
                   {item.name || item.productId} × {item.quantity}
                 </span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-foreground">
                   Rs {(item.price * item.quantity).toFixed(0)}
                 </span>
               </div>
@@ -187,19 +191,19 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-text-secondary">
               <span>Subtotal</span>
               <span>Rs {items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(0)}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-text-secondary">
               <span>Tax (17%)</span>
               <span>Rs {(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 0.17).toFixed(0)}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-text-secondary">
               <span>Delivery</span>
               <span>Rs 300</span>
             </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t text-gray-900">
+            <div className="flex justify-between font-bold text-lg pt-2 border-t border-border text-foreground">
               <span>Total</span>
               <span>Rs {(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 1.17 + 300).toFixed(0)}</span>
             </div>

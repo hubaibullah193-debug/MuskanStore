@@ -2,33 +2,33 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-200 bg-gray-50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="border-t border-border bg-paper-2">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* About */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">About</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="mb-4 text-sm font-semibold text-foreground">About</h3>
+            <p className="text-sm text-secondary">
               Muskan Care Center is your trusted source for personal hygiene products.
             </p>
           </div>
 
           {/* Shop */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Shop</h3>
+            <h3 className="mb-4 text-sm font-semibold text-foreground">Shop</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/products" className="text-sm text-secondary hover:text-foreground">
                   All Products
                 </Link>
               </li>
               <li>
-                <Link href="/products?category=skincare" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/products?category=skincare" className="text-sm text-secondary hover:text-foreground">
                   Skincare
                 </Link>
               </li>
               <li>
-                <Link href="/products?category=personal" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/products?category=personal" className="text-sm text-secondary hover:text-foreground">
                   Personal Care
                 </Link>
               </li>
@@ -37,20 +37,20 @@ export function Footer() {
 
           {/* Account */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Account</h3>
+            <h3 className="mb-4 text-sm font-semibold text-foreground">Account</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/account" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/account" className="text-sm text-secondary hover:text-foreground">
                   My Account
                 </Link>
               </li>
               <li>
-                <Link href="/orders" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/orders" className="text-sm text-secondary hover:text-foreground">
                   Order History
                 </Link>
               </li>
               <li>
-                <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/auth/login" className="text-sm text-secondary hover:text-foreground">
                   Sign In
                 </Link>
               </li>
@@ -59,20 +59,20 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
+            <h3 className="mb-4 text-sm font-semibold text-foreground">Support</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/contact" className="text-sm text-secondary hover:text-foreground">
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/shipping" className="text-sm text-secondary hover:text-foreground">
                   Shipping Info
                 </Link>
               </li>
               <li>
-                <Link href="/shipping#returns" className="text-sm text-gray-600 hover:text-gray-900">
+                <Link href="/shipping#returns" className="text-sm text-secondary hover:text-foreground">
                   Returns
                 </Link>
               </li>
@@ -81,18 +81,18 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-gray-200 pt-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <p className="text-sm text-gray-600">
+        <div className="border-t border-border pt-8">
+          <div className="flex flex-col items-center justify-between md:flex-row">
+            <p className="text-sm text-secondary">
               &copy; {new Date().getFullYear()} Muskan Care Center. All rights reserved.
             </p>
-            <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="/shipping" className="text-sm text-gray-600 hover:text-gray-900">
+            <div className="mt-4 flex space-x-6 md:mt-0">
+              <Link href="/privacy-policy" className="text-sm text-secondary hover:text-foreground">
                 Privacy Policy
-              </a>
-              <a href="/shipping#returns" className="text-sm text-gray-600 hover:text-gray-900">
+              </Link>
+              <Link href="/shipping#returns" className="text-sm text-secondary hover:text-foreground">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>

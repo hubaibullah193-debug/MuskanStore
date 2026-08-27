@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { StatusBadge } from '@/app/components/ui/status-badge';
 import { getAdminOrders, exportOrdersCSV } from '@/server/actions/admin-orders';
 
 export default function AdminOrdersPage() {
@@ -42,30 +43,6 @@ export default function AdminOrdersPage() {
     order.guest_email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-900',
-      pending_payment: 'bg-yellow-100 text-yellow-900',
-      confirmed: 'bg-blue-100 text-blue-900',
-      shipped: 'bg-purple-100 text-purple-900',
-      delivered: 'bg-green-100 text-green-900',
-      refund_requested: 'bg-orange-100 text-orange-900',
-      refunded: 'bg-gray-100 text-gray-900',
-      cancelled: 'bg-red-100 text-red-900',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-900';
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-900',
-      paid: 'bg-green-100 text-green-900',
-      failed: 'bg-red-100 text-red-900',
-      awaiting_cod: 'bg-blue-100 text-blue-900',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-900';
-  };
-
   const handleExport = async () => {
     try {
       setExporting(true);
@@ -93,7 +70,7 @@ export default function AdminOrdersPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
           <p>Loading orders...</p>
         </div>
       </div>
@@ -105,8 +82,8 @@ export default function AdminOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-600 mt-1">Manage all customer orders</p>
+          <h1 className="text-3xl font-bold text-foreground">Orders</h1>
+          <p className="text-text-secondary mt-1">Manage all customer orders</p>
         </div>
         <button
           onClick={handleExport}
@@ -118,10 +95,10 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Search by Order # or Email
             </label>
             <input
@@ -129,18 +106,18 @@ export default function AdminOrdersPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Order Status
             </label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             >
               <option value="all">All Orders</option>
               <option value="pending">Pending</option>
@@ -158,59 +135,59 @@ export default function AdminOrdersPage() {
 
       {/* Orders Table */}
       {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] rounded-lg p-6">
+          <p className="text-error">{error}</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No orders found</p>
+        <div className="bg-paper-2 border border-border rounded-lg p-6 text-center">
+          <p className="text-text-secondary">No orders found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-paper-2 border-b border-border">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Order #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Order Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Payment Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Action
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
+                <tr key={order.id} className="hover:bg-paper-2">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="font-mono text-blue-600 hover:text-blue-900"
+                      className="font-mono text-accent hover:text-accent-dark"
                     >
                       {order.order_number}
                     </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {order.guest_email || 'N/A'}
                       </p>
                       {order.delivery_address?.recipient_name && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-text-secondary">
                           {order.delivery_address.recipient_name}
                         </p>
                       )}
@@ -222,30 +199,18 @@ export default function AdminOrdersPage() {
                     </p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        order.order_status
-                      )}`}
-                    >
-                      {order.order_status}
-                    </span>
+                    <StatusBadge status={order.order_status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(
-                        order.payment_status
-                      )}`}
-                    >
-                      {order.payment_status}
-                    </span>
+                    <StatusBadge status={order.payment_status} />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                     {new Date(order.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="text-blue-600 hover:text-blue-900 font-medium text-sm"
+                      className="text-accent hover:text-accent-dark font-medium text-sm"
                     >
                       View
                     </Link>
@@ -259,25 +224,25 @@ export default function AdminOrdersPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Total Orders</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{orders.length}</p>
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Total Orders</p>
+          <p className="text-3xl font-bold text-foreground mt-2">{orders.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Pending Payment</p>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Pending Payment</p>
+          <p className="text-3xl font-bold text-warning mt-2">
             {orders.filter((o) => o.payment_status === 'pending').length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Confirmed</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Confirmed</p>
+          <p className="text-3xl font-bold text-success mt-2">
             {orders.filter((o) => o.order_status === 'confirmed').length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Refund Requests</p>
-          <p className="text-3xl font-bold text-orange-600 mt-2">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Refund Requests</p>
+          <p className="text-3xl font-bold text-warning mt-2">
             {orders.filter((o) => o.order_status === 'refund_requested').length}
           </p>
         </div>

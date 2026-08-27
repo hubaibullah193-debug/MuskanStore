@@ -90,11 +90,11 @@ export default function AdminLayoutClient({ user, children }: AdminLayoutClientP
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-              isActive(item.href)
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-gray-800'
-            }`}
+             className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+               isActive(item.href)
+                 ? 'bg-accent text-accent-foreground'
+                 : 'text-gray-300 hover:bg-gray-800'
+             }`}
           >
             <span className="text-xl">{item.icon}</span>
             {expanded && <span>{item.label}</span>}
@@ -113,7 +113,7 @@ export default function AdminLayoutClient({ user, children }: AdminLayoutClientP
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="w-full px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-red-600 bg-red-700/20 rounded-lg transition-colors disabled:opacity-50"
+          className="w-full px-4 py-2 text-sm text-error hover:text-white hover:bg-error bg-[color-mix(in_oklch,var(--color-error)_14%,transparent)] rounded-lg transition-colors disabled:opacity-50"
         >
           {expanded ? (loggingOut ? 'Logging out...' : 'Logout') : '🚪'}
         </button>
@@ -122,7 +122,7 @@ export default function AdminLayoutClient({ user, children }: AdminLayoutClientP
   );
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-paper">
       {/* Desktop Sidebar */}
       <div
         className={`hidden md:flex ${

@@ -3,6 +3,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { ProductCard } from '@/app/components/product-card';
+import { Input } from '@/app/components/ui/input';
+import { Alert } from '@/app/components/ui/alert';
 
 interface ProductsPageProps {
   searchParams: {
@@ -40,27 +42,23 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     const totalPages = Math.ceil((count || 0) / limit);
 
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="min-h-screen bg-paper py-8 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Products</h1>
-            <p className="text-gray-600">
+            <h1 className="font-display text-4xl font-bold text-foreground mb-2">Products</h1>
+            <p className="text-text-secondary">
               Browse our collection of {count} products
             </p>
           </div>
 
           {/* Search Bar */}
           <form className="mb-8">
-            <input
+            <Input
               type="text"
               name="search"
               placeholder="Search products..."
               defaultValue={searchParams.search || ''}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2"
-              style={{
-                '--tw-ring-color': 'var(--color-accent)',
-              } as React.CSSProperties}
             />
           </form>
 
@@ -95,13 +93,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       href={`/products?page=${page - 1}${
                         searchParams.search ? `&search=${searchParams.search}` : ''
                       }`}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                      className="px-4 py-2 border border-border rounded-lg hover:bg-paper-2 text-text-secondary transition"
                     >
                       Previous
                     </a>
                   )}
 
-                  <span className="px-4 py-2">
+                  <span className="px-4 py-2 text-text-secondary">
                     Page {page} of {totalPages}
                   </span>
 
@@ -110,7 +108,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       href={`/products?page=${page + 1}${
                         searchParams.search ? `&search=${searchParams.search}` : ''
                       }`}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                      className="px-4 py-2 border border-border rounded-lg hover:bg-paper-2 text-text-secondary transition"
                     >
                       Next
                     </a>
@@ -120,7 +118,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No products found</p>
+              <p className="text-text-tertiary text-lg">No products found</p>
             </div>
           )}
         </div>
@@ -128,11 +126,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     );
   } catch (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="min-h-screen bg-paper py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Failed to load products. Please try again later.</p>
-          </div>
+          <Alert variant="error">
+            Failed to load products. Please try again later.
+          </Alert>
         </div>
       </div>
     );

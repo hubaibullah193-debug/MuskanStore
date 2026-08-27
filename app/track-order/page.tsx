@@ -9,6 +9,9 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Alert } from '@/app/components/ui/alert';
 
 export default function TrackOrderPage() {
   const router = useRouter();
@@ -50,80 +53,66 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Track Your Order</h1>
-        <p className="text-gray-600 mb-6">
+    <div className="min-h-screen bg-paper py-12 px-4">
+      <div className="max-w-md mx-auto bg-card border border-border rounded-lg shadow-sm p-8">
+        <h1 className="font-display text-2xl font-bold text-foreground mb-2">Track Your Order</h1>
+        <p className="text-text-secondary mb-6">
           Enter your email and tracking code to view your order status
         </p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800 text-sm">{error}</p>
-          </div>
+          <Alert variant="error" className="mb-6">
+            {error}
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1">
               Email Address
             </label>
-            <input
+            <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                '--tw-ring-color': 'var(--color-accent)',
-              } as React.CSSProperties}
               disabled={isLoading}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-text-tertiary mt-1">
               The email you used for checkout
             </p>
           </div>
 
           <div>
-            <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="token" className="block text-sm font-medium text-text-secondary mb-1">
               Tracking Code
             </label>
-            <input
+            <Input
               type="text"
               id="token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               placeholder="Paste your tracking code"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              className="font-mono text-sm"
               disabled={isLoading}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-text-tertiary mt-1">
               Sent in your order confirmation email
             </p>
           </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full text-white font-medium py-2 px-4 rounded-lg transition disabled:opacity-50"
-              style={{
-                backgroundColor: isLoading ? 'var(--color-accent-light)' : 'var(--color-accent)',
-                transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
-              }}
-              onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-              onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
-            >
-              {isLoading ? 'Searching...' : 'Track Order'}
-            </button>
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? 'Searching...' : 'Track Order'}
+          </Button>
         </form>
 
-        <div className="mt-6 pt-6 border-t">
-          <p className="text-sm text-gray-600">
+        <div className="mt-6 pt-6 border-t border-border">
+          <p className="text-sm text-text-secondary">
             Don&apos;t have your tracking code?{' '}
-            <Link href="/contact" className="text-sm underline" style={{color: 'var(--color-accent)'}}>
+            <Link href="/contact" className="text-sm underline" style={{ color: 'var(--color-accent)' }}>
               Contact support
             </Link>
           </p>
@@ -133,7 +122,7 @@ export default function TrackOrderPage() {
           <Link
             href="/"
             className="text-sm underline"
-            style={{color: 'var(--color-accent)'}}
+            style={{ color: 'var(--color-accent)' }}
           >
             Back to home
           </Link>

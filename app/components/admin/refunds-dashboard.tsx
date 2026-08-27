@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { StatusBadge } from '@/app/components/ui/status-badge';
 
 interface Refund {
   id: string;
@@ -126,25 +127,10 @@ export function RefundsDashboard() {
     filter === 'all' ? true : r.status === filter
   );
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'requested':
-        return 'bg-yellow-50 text-yellow-900';
-      case 'approved':
-        return 'bg-blue-50 text-blue-900';
-      case 'completed':
-        return 'bg-green-50 text-green-900';
-      case 'rejected':
-        return 'bg-red-50 text-red-900';
-      default:
-        return 'bg-gray-50 text-gray-900';
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Refund Management</h2>
+        <h2 className="text-2xl font-bold text-foreground">Refund Management</h2>
         <div className="flex gap-2">
           {(['all', 'requested', 'approved', 'completed'] as const).map(status => (
             <button
@@ -152,8 +138,8 @@ export function RefundsDashboard() {
               onClick={() => setFilter(status)}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 filter === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-paper-2 text-text-secondary hover:bg-border'
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -165,39 +151,37 @@ export function RefundsDashboard() {
       {loading ? (
         <div className="text-center py-8">Loading refunds...</div>
       ) : filteredRefunds.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No refunds found</div>
+        <div className="text-center py-8 text-text-tertiary">No refunds found</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="px-4 py-2 text-left font-semibold">Order</th>
-                <th className="px-4 py-2 text-left font-semibold">Amount</th>
-                <th className="px-4 py-2 text-left font-semibold">Reason</th>
-                <th className="px-4 py-2 text-left font-semibold">Status</th>
-                <th className="px-4 py-2 text-left font-semibold">Requested</th>
-                <th className="px-4 py-2 text-left font-semibold">Actions</th>
+              <tr className="bg-paper-2 border-b border-border">
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Order</th>
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Amount</th>
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Reason</th>
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Status</th>
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Requested</th>
+                <th className="px-4 py-2 text-left font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRefunds.map(refund => (
-                <tr key={refund.id} className="border-b hover:bg-gray-50">
+                <tr key={refund.id} className="border-b border-border hover:bg-paper-2">
                   <td className="px-4 py-3">{refund.order?.order_number || 'N/A'}</td>
                   <td className="px-4 py-3 font-semibold">PKR {refund.refund_amount.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{refund.reason}</td>
+                  <td className="px-4 py-3 text-sm text-text-secondary">{refund.reason}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColor(refund.status)}`}>
-                      {refund.status}
-                    </span>
+                    <StatusBadge status={refund.status} />
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-text-tertiary">
                     {new Date(refund.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
                     {refund.status === 'requested' && (
                       <button
                         onClick={() => setSelectedRefund(refund.id)}
-                        className="text-blue-600 hover:underline text-sm font-medium"
+                        className="text-accent hover:text-accent-dark text-sm font-medium"
                       >
                         Review
                       </button>
@@ -206,7 +190,7 @@ export function RefundsDashboard() {
                       <button
                         onClick={() => handleComplete(refund.id)}
                         disabled={actionLoading}
-                        className="text-green-600 hover:underline text-sm font-medium disabled:opacity-50"
+                        className="text-success hover:underline text-sm font-medium disabled:opacity-50"
                       >
                         {actionLoading ? 'Processing...' : 'Mark Complete'}
                       </button>
@@ -222,40 +206,40 @@ export function RefundsDashboard() {
       {/* Review Modal */}
       {selectedRefund && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold mb-4">Review Refund Request</h3>
+          <div className="bg-card rounded-lg shadow-lg max-w-md w-full p-6 border border-border">
+            <h3 className="text-xl font-bold mb-4 text-foreground">Review Refund Request</h3>
 
             {refunds.find(r => r.id === selectedRefund) && (
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600 mb-2">Amount</p>
-                  <p className="text-lg font-semibold">
+                <div className="bg-paper-2 p-4 rounded">
+                  <p className="text-sm text-text-secondary mb-2">Amount</p>
+                  <p className="text-lg font-semibold text-foreground">
                     PKR {refunds.find(r => r.id === selectedRefund)!.refund_amount.toFixed(2)}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600 mb-2">Reason</p>
-                  <p className="text-sm">{refunds.find(r => r.id === selectedRefund)!.reason}</p>
+                <div className="bg-paper-2 p-4 rounded">
+                  <p className="text-sm text-text-secondary mb-2">Reason</p>
+                  <p className="text-sm text-foreground">{refunds.find(r => r.id === selectedRefund)!.reason}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Admin Notes</label>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">Admin Notes</label>
                   <textarea
                     value={adminNotes}
                     onChange={e => setAdminNotes(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent focus:outline-none"
                     rows={3}
                     placeholder="Optional notes for approval..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Rejection Reason</label>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">Rejection Reason</label>
                   <textarea
                     value={rejectionReason}
                     onChange={e => setRejectionReason(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent focus:outline-none"
                     rows={3}
                     placeholder="Why are you rejecting this request?"
                   />
@@ -265,14 +249,14 @@ export function RefundsDashboard() {
                   <button
                     onClick={() => handleReject(selectedRefund)}
                     disabled={actionLoading || !rejectionReason.trim()}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                    className="flex-1 px-4 py-2 bg-error text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleApprove(selectedRefund)}
                     disabled={actionLoading}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                    className="flex-1 px-4 py-2 bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-50 font-medium"
                   >
                     Approve
                   </button>
@@ -283,7 +267,7 @@ export function RefundsDashboard() {
                       setRejectionReason('');
                     }}
                     disabled={actionLoading}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 disabled:opacity-50 font-medium"
+                    className="px-4 py-2 bg-paper-2 text-foreground rounded-lg hover:bg-border disabled:opacity-50 font-medium"
                   >
                     Close
                   </button>

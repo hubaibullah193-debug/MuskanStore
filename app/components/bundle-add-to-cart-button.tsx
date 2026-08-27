@@ -5,6 +5,8 @@
 
 import { useState } from 'react';
 import { useCart } from '@/lib/hooks/useCart';
+import { Button } from '@/app/components/ui/button';
+import { Alert } from '@/app/components/ui/alert';
 
 interface BundleProductRef {
   product_id: string;
@@ -54,33 +56,20 @@ export default function BundleAddToCartButton({
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         onClick={handleAddToCart}
         disabled={disabled || isLoading}
-        className="w-full disabled:bg-gray-400 text-white font-semibold py-2.5 rounded-lg transition"
-        style={{
-          backgroundColor: disabled || isLoading ? undefined : 'var(--color-accent)',
-        }}
-        onMouseEnter={(e) =>
-          !(disabled || isLoading) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')
-        }
-        onMouseLeave={(e) =>
-          !(disabled || isLoading) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')
-        }
+        className="w-full"
       >
         {isLoading ? 'Adding...' : 'Add Bundle to Cart'}
-      </button>
+      </Button>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-2">
-          <p className="text-red-800 text-xs">{error}</p>
-        </div>
+        <Alert variant="error" className="text-xs">{error}</Alert>
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-          <p className="text-green-800 text-xs">Bundle added to cart!</p>
-        </div>
+        <Alert variant="success" className="text-xs">Bundle added to cart!</Alert>
       )}
     </div>
   );

@@ -5,6 +5,8 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 
 interface CheckoutFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
@@ -15,18 +17,9 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
-      style={{
-        backgroundColor: pending ? undefined : 'var(--color-accent)',
-      }}
-      onMouseEnter={(e) => !pending && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-      onMouseLeave={(e) => !pending && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
-    >
+    <Button type="submit" disabled={pending} className="w-full">
       {pending ? 'Processing...' : 'Complete Order'}
-    </button>
+    </Button>
   );
 }
 
@@ -36,119 +29,95 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
   return (
     <form action={onSubmit} className="space-y-6">
       {/* Email Section (Guest Checkout) */}
-      <div className="border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">Email Address</h2>
+      <div className="border-b border-border pb-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Email Address</h2>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="mb-1 block text-sm font-medium text-secondary">
             Email
           </label>
-          <input
+          <Input
             type="email"
             id="email"
             name="email"
             required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
             placeholder="you@example.com"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="mt-1 text-xs text-secondary">
             We&apos;ll send order updates and receipt to this email
           </p>
         </div>
       </div>
 
       {/* Delivery Address Section */}
-      <div className="border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
+      <div className="border-b border-border pb-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Delivery Address</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Recipient Name */}
           <div>
-            <label htmlFor="recipient_name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="recipient_name" className="mb-1 block text-sm font-medium text-secondary">
               Recipient Name
             </label>
-            <input
+            <Input
               type="text"
               id="recipient_name"
               name="recipient_name"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
               placeholder="John Doe"
             />
           </div>
 
           {/* Phone */}
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="phone" className="mb-1 block text-sm font-medium text-secondary">
               Phone Number
             </label>
-            <input
+            <Input
               type="tel"
               id="phone"
               name="phone"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
               placeholder="+923001234567"
             />
           </div>
 
           {/* Street Address */}
           <div className="md:col-span-2">
-            <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="street" className="mb-1 block text-sm font-medium text-secondary">
               Street Address
             </label>
-            <input
+            <Input
               type="text"
               id="street"
               name="street"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
               placeholder="123 Main Street"
             />
           </div>
 
           {/* City */}
           <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="city" className="mb-1 block text-sm font-medium text-secondary">
               City
             </label>
-            <input
+            <Input
               type="text"
               id="city"
               name="city"
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
               placeholder="Karachi"
             />
           </div>
 
           {/* Postal Code */}
           <div>
-            <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="postal_code" className="mb-1 block text-sm font-medium text-secondary">
               Postal Code
             </label>
-            <input
+            <Input
               type="text"
               id="postal_code"
               name="postal_code"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2"
-            style={{
-              '--tw-ring-color': 'var(--color-accent)',
-            } as React.CSSProperties}
               placeholder="75500"
             />
           </div>
@@ -156,55 +125,55 @@ export function CheckoutForm({ onSubmit, isLoading }: CheckoutFormProps) {
       </div>
 
       {/* Payment Method Section */}
-      <div className="border-b pb-6">
-        <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+      <div className="border-b border-border pb-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Payment Method</h2>
 
         <div className="space-y-3">
           {/* COD */}
-          <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+          <label className="flex cursor-pointer items-center rounded-lg border border-border p-3 hover:bg-paper-2">
             <input
               type="radio"
               name="payment_method"
               value="cod"
               checked={paymentMethod === 'cod'}
               onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="mr-3"
+              className="mr-3 accent-accent"
             />
             <div>
-              <p className="font-medium text-gray-900">Cash on Delivery</p>
-              <p className="text-sm text-gray-500">Pay when you receive your order</p>
+              <p className="font-medium text-foreground">Cash on Delivery</p>
+              <p className="text-sm text-secondary">Pay when you receive your order</p>
             </div>
           </label>
 
           {/* JazzCash */}
-          <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+          <label className="flex cursor-pointer items-center rounded-lg border border-border p-3 hover:bg-paper-2">
             <input
               type="radio"
               name="payment_method"
               value="jazz_cash"
               checked={paymentMethod === 'jazz_cash'}
               onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="mr-3"
+              className="mr-3 accent-accent"
             />
             <div>
-              <p className="font-medium text-gray-900">JazzCash</p>
-              <p className="text-sm text-gray-500">Pay via JazzCash mobile wallet</p>
+              <p className="font-medium text-foreground">JazzCash</p>
+              <p className="text-sm text-secondary">Pay via JazzCash mobile wallet</p>
             </div>
           </label>
 
           {/* Easypaisa */}
-          <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+          <label className="flex cursor-pointer items-center rounded-lg border border-border p-3 hover:bg-paper-2">
             <input
               type="radio"
               name="payment_method"
               value="easypaisa"
               checked={paymentMethod === 'easypaisa'}
               onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="mr-3"
+              className="mr-3 accent-accent"
             />
             <div>
-              <p className="font-medium text-gray-900">Easypaisa</p>
-              <p className="text-sm text-gray-500">Pay via Easypaisa mobile wallet</p>
+              <p className="font-medium text-foreground">Easypaisa</p>
+              <p className="text-sm text-secondary">Pay via Easypaisa mobile wallet</p>
             </div>
           </label>
         </div>

@@ -7,6 +7,9 @@ import Link from 'next/link';
 
 import { useState } from 'react';
 import { useCart } from '@/lib/hooks/useCart';
+import { Button } from '@/app/components/ui/button';
+import { Alert } from '@/app/components/ui/alert';
+import { StatusBadge } from '@/app/components/ui/status-badge';
 
 interface ProductCardProps {
   id: string;
@@ -49,70 +52,56 @@ export function ProductCard({
 
   return (
     <Link href={`/products/${slug}`}>
-      <div className="group cursor-pointer rounded-lg border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-md" data-testid="product-card">
+      <div
+        className="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+        data-testid="product-card"
+      >
         {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
+        <div className="relative aspect-square overflow-hidden bg-paper-2">
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+              className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex h-full items-center justify-center text-text-tertiary">
               <span className="text-sm">No image</span>
             </div>
           )}
         </div>
 
         {/* Product Info */}
-        <div className="p-4 space-y-2">
-          <h3 className="font-semibold text-gray-900 line-clamp-2">{name}</h3>
+        <div className="space-y-2 p-4">
+          <h3 className="line-clamp-2 font-semibold text-foreground">{name}</h3>
 
           {description && (
-            <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
+            <p className="line-clamp-2 text-sm text-secondary">{description}</p>
           )}
 
           {/* Price and Stock */}
-          <div className="flex items-center justify-between pt-2 pb-3">
-            <span className="text-lg font-bold text-gray-900">
+          <div className="flex items-center justify-between pb-3 pt-2">
+            <span className="text-lg font-bold text-foreground">
               Rs. {price.toFixed(2)}
             </span>
-            <span
-              className={`text-xs font-medium px-2 py-1 rounded ${
-                inStock
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
-              }`}
-            >
-              {inStock ? 'In Stock' : 'Out of Stock'}
-            </span>
+            <StatusBadge status={inStock ? 'in_stock' : 'out_of_stock'} />
           </div>
 
           {/* Add to Cart Button */}
-          <button
+          <Button
             onClick={handleAddToCart}
             disabled={!inStock || isAdding}
-            className="w-full disabled:bg-gray-400 text-white font-semibold py-2 rounded transition text-sm"
-            style={{
-              backgroundColor: !inStock || isAdding ? undefined : 'var(--color-accent)',
-            }}
-            onMouseEnter={(e) => !(!inStock || isAdding) && (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-            onMouseLeave={(e) => !(!inStock || isAdding) && (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
+            className="w-full"
           >
             {isAdding ? 'Adding...' : 'Add to Cart'}
-          </button>
+          </Button>
 
           {/* Message */}
           {showMessage === 'success' && (
-            <div className="text-xs text-green-600 text-center font-medium">
-              Added to cart!
-            </div>
+            <Alert variant="success" className="text-center">Added to cart!</Alert>
           )}
           {showMessage === 'error' && (
-            <div className="text-xs text-red-600 text-center font-medium">
-              Failed to add
-            </div>
+            <Alert variant="error" className="text-center">Failed to add</Alert>
           )}
         </div>
       </div>

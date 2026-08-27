@@ -4,6 +4,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import AddToCartButton from '@/app/components/add-to-cart-button';
+import { StatusBadge } from '@/app/components/ui/status-badge';
+import { Alert } from '@/app/components/ui/alert';
 import Link from 'next/link';
 
 interface ProductDetailPageProps {
@@ -95,11 +97,11 @@ export default async function ProductDetailPage({
     }
 
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="min-h-screen bg-paper py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-6 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-card border border-border p-6 rounded-lg">
             {/* Product Image */}
-            <div className="bg-gray-100 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
+            <div className="bg-paper-2 rounded-lg aspect-square flex items-center justify-center overflow-hidden">
               {images.length > 0 ? (
                 <img
                   src={images[0].image_url}
@@ -107,65 +109,51 @@ export default async function ProductDetailPage({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-gray-400">No image</span>
+                <span className="text-text-tertiary">No image</span>
               )}
             </div>
 
             {/* Product Details */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                <h1 className="font-display text-4xl font-bold text-foreground mb-2">
                   {product.name}
                 </h1>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-text-secondary">{product.description}</p>
               </div>
 
               {/* Price */}
               <div>
-                <span className="text-3xl font-bold text-gray-900">
+                <span className="font-display text-3xl font-bold text-foreground">
                   Rs. {Number(product.base_price).toFixed(2)}
                 </span>
               </div>
 
               {/* Stock Status */}
               <div>
-                <span
-                  className={`inline-block px-4 py-2 rounded-lg font-medium ${
-                    product.stock_quantity > 0
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {product.stock_quantity > 0
-                    ? `${product.stock_quantity} in stock`
-                    : 'Out of stock'}
-                </span>
+                <StatusBadge status={product.stock_quantity > 0 ? 'in_stock' : 'out_of_stock'} />
               </div>
 
               {/* Variants */}
               {variants.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">
+                  <h3 className="font-semibold text-foreground mb-3">
                     Available Variants
                   </h3>
                   <div className="space-y-2">
                     {variants.map((variant: any) => (
                       <div
                         key={variant.id}
-                        className="border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-accent"
-                        style={{
-                          borderColor: 'var(--color-border)',
-                          transition: 'border-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
-                        }}
+                        className="border border-border rounded-lg p-3 cursor-pointer hover:border-accent transition-colors"
                       >
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-foreground">
                           {variant.variant_name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-text-tertiary">
                           SKU: {variant.sku}
                         </p>
                         {variant.price_adjustment !== 0 && (
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-text-secondary">
                             {variant.price_adjustment > 0 ? '+' : ''}Rs.{' '}
                             {Number(variant.price_adjustment).toFixed(2)}
                           </p>
@@ -173,8 +161,8 @@ export default async function ProductDetailPage({
                         <p
                           className={`text-xs mt-1 ${
                             variant.stock_quantity > 0
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                              ? 'text-success'
+                              : 'text-error'
                           }`}
                         >
                           {variant.stock_quantity > 0
@@ -200,12 +188,12 @@ export default async function ProductDetailPage({
           {/* Related Products */}
           {relatedProducts.length > 0 && (
             <div className="mt-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">You Might Also Like</h2>
+              <h2 className="font-display text-2xl font-bold text-foreground mb-6">You Might Also Like</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {relatedProducts.map((rp) => (
                   <Link key={rp.id} href={`/products/${rp.slug}`}>
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="aspect-square bg-gray-100">
+                    <div className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="aspect-square bg-paper-2">
                         {rp.imageUrl ? (
                           <img
                             src={rp.imageUrl}
@@ -213,14 +201,14 @@ export default async function ProductDetailPage({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                          <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
                             No image
                           </div>
                         )}
                       </div>
                       <div className="p-3">
-                        <h3 className="font-medium text-gray-900 text-sm line-clamp-2">{rp.name}</h3>
-                        <p className="text-sm font-bold text-gray-900 mt-1">
+                        <h3 className="font-medium text-foreground text-sm line-clamp-2">{rp.name}</h3>
+                        <p className="text-sm font-bold text-foreground mt-1">
                           Rs. {Number(rp.base_price).toFixed(0)}
                         </p>
                       </div>
@@ -235,13 +223,11 @@ export default async function ProductDetailPage({
     );
   } catch (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="min-h-screen bg-paper py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">
-              Failed to load product. Please try again later.
-            </p>
-          </div>
+          <Alert variant="error">
+            Failed to load product. Please try again later.
+          </Alert>
         </div>
       </div>
     );

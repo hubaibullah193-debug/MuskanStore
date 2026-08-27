@@ -91,25 +91,25 @@ export default function AdminSettingsPage() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-500 py-8">Loading settings...</div>;
+        return <div className="text-center text-text-tertiary py-8">Loading settings...</div>;
   }
 
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Store Settings</h1>
-        <p className="text-gray-600 mt-1">Configure global store settings and integrations</p>
+        <h1 className="text-3xl font-bold text-foreground">Store Settings</h1>
+        <p className="text-text-secondary mt-1">Configure global store settings and integrations</p>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <div className="p-4 bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] text-error rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+          <div className="p-4 bg-[color-mix(in_oklch,var(--color-success)_12%,white)] border border-[color-mix(in_oklch,var(--color-success)_35%,transparent)] text-success rounded-lg">
           {success}
         </div>
       )}
@@ -117,59 +117,59 @@ export default function AdminSettingsPage() {
       {/* Settings Form */}
       <div className="space-y-6">
         {/* Contact Settings */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Contact Information</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-lg font-bold mb-4 text-foreground">Contact Information</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Support Email
               </label>
               <input
                 type="email"
                 value={settings.support_email || ''}
                 onChange={(e) => handleChange('support_email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="support@example.com"
               />
-              <p className="text-xs text-gray-500 mt-1">Email for customer support inquiries</p>
+              <p className="text-xs text-text-tertiary mt-1">Email for customer support inquiries</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Support Phone
               </label>
               <input
                 type="tel"
                 value={settings.support_phone || ''}
                 onChange={(e) => handleChange('support_phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="+92 300 1234567"
               />
-              <p className="text-xs text-gray-500 mt-1">Customer support phone number</p>
+              <p className="text-xs text-text-tertiary mt-1">Customer support phone number</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Website URL
               </label>
               <input
                 type="url"
                 value={settings.website_url || ''}
                 onChange={(e) => handleChange('website_url', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="https://example.com"
               />
-              <p className="text-xs text-gray-500 mt-1">Used in email templates and redirects</p>
+              <p className="text-xs text-text-tertiary mt-1">Used in email templates and redirects</p>
             </div>
           </div>
         </div>
 
         {/* Pricing Settings */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Pricing & Fees</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-lg font-bold mb-4 text-foreground">Pricing & Fees</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Tax Rate (%)
               </label>
               <input
@@ -178,17 +178,17 @@ export default function AdminSettingsPage() {
                 onChange={(e) =>
                   handleChange('tax_rate', e.target.value ? parseFloat(e.target.value) : 0)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="17"
                 min="0"
                 max="100"
                 step="0.1"
               />
-              <p className="text-xs text-gray-500 mt-1">Applied to all orders</p>
+              <p className="text-xs text-text-tertiary mt-1">Applied to all orders</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Delivery Fee (₨)
               </label>
               <input
@@ -197,21 +197,21 @@ export default function AdminSettingsPage() {
                 onChange={(e) =>
                   handleChange('delivery_fee', e.target.value ? parseFloat(e.target.value) : 0)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="0"
                 min="0"
                 step="0.01"
               />
-              <p className="text-xs text-gray-500 mt-1">Added to checkout total</p>
+              <p className="text-xs text-text-tertiary mt-1">Added to checkout total</p>
             </div>
           </div>
         </div>
 
         {/* Inventory Settings */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Inventory Management</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-lg font-bold mb-4 text-foreground">Inventory Management</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               Default Low Stock Threshold
             </label>
             <input
@@ -220,45 +220,45 @@ export default function AdminSettingsPage() {
               onChange={(e) =>
                 handleChange('low_stock_threshold', e.target.value ? parseInt(e.target.value) : 0)
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
               placeholder="5"
               min="0"
               step="1"
             />
-            <p className="text-xs text-gray-500 mt-1">Applied to new products by default</p>
+            <p className="text-xs text-text-tertiary mt-1">Applied to new products by default</p>
           </div>
         </div>
 
         {/* Email Settings */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">Email Configuration</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-lg font-bold mb-4 text-foreground">Email Configuration</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               Email Provider
             </label>
             <select
               value={settings.email_provider || 'resend'}
               onChange={(e) => handleChange('email_provider', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="resend">Resend</option>
               <option value="sendgrid">SendGrid</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-text-tertiary mt-1">
               Configure API keys in environment variables
             </p>
           </div>
 
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-3 bg-[color-mix(in_oklch,var(--color-info)_12%,white)] border border-[color-mix(in_oklch,var(--color-info)_35%,transparent)] rounded-lg">
+            <p className="text-sm text-info">
               <strong>API Keys:</strong> Set environment variables for email provider:
             </p>
             {settings.email_provider === 'resend' ? (
-              <p className="text-xs text-blue-700 mt-2">
+              <p className="text-xs text-info mt-2">
                 <code>EMAIL_PROVIDER_KEY=your_resend_api_key</code>
               </p>
             ) : (
-              <p className="text-xs text-blue-700 mt-2">
+              <p className="text-xs text-info mt-2">
                 <code>EMAIL_PROVIDER_KEY=your_sendgrid_api_key</code>
               </p>
             )}
@@ -266,9 +266,9 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* System Info */}
-        <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-gray-900">System Information</h2>
-          <div className="space-y-2 text-sm text-gray-600">
+        <div className="bg-paper-2 p-6 rounded-lg border border-border">
+          <h2 className="text-lg font-bold mb-4 text-foreground">System Information</h2>
+          <div className="space-y-2 text-sm text-text-secondary">
             <div>
               <span className="font-medium">Environment:</span> {process.env.NODE_ENV || 'development'}
             </div>
@@ -284,7 +284,7 @@ export default function AdminSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save Settings'}
         </button>

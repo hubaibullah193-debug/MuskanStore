@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { disableProductAction, enableProductAction, getAllProducts, addProductAction, updateProductAction, getCategories, uploadProductImageAction, removeProductImageAction, getProductImages, bulkUploadProducts } from '@/server/actions/admin-products';
+import { statusTint } from '@/lib/ui/status-colors';
 
 interface Product {
   id: string;
@@ -261,8 +262,8 @@ export default function AdminProductsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">Manage your product catalog</p>
+          <h1 className="text-3xl font-bold text-foreground">Products</h1>
+          <p className="text-secondary mt-1">Manage your product catalog</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -270,7 +271,7 @@ export default function AdminProductsPage() {
               setShowBulkUpload(!showBulkUpload);
               setBulkResults(null);
             }}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm"
+            className="px-4 py-2 border border-border text-text-secondary rounded-lg hover:bg-paper-2 font-medium text-sm"
           >
             {showBulkUpload ? 'Cancel Upload' : 'Bulk Upload CSV'}
           </button>
@@ -280,7 +281,7 @@ export default function AdminProductsPage() {
               setEditingId(null);
               setFormData({ name: '', sku: '', price: '', description: '', categoryId: '' });
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark"
           >
             {showForm ? 'Cancel' : '+ Add Product'}
           </button>
@@ -289,26 +290,26 @@ export default function AdminProductsPage() {
 
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] text-error rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-success)_12%,white)] border border-[color-mix(in_oklch,var(--color-success)_35%,transparent)] text-success rounded-lg">
           {success}
         </div>
       )}
 
       {/* Bulk Upload Section */}
       {showBulkUpload && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-bold mb-2">Bulk Upload Products via CSV</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            CSV must include columns: <code className="bg-gray-100 px-1 rounded">name</code>,{' '}
-            <code className="bg-gray-100 px-1 rounded">sku</code>,{' '}
-            <code className="bg-gray-100 px-1 rounded">category</code>,{' '}
-            <code className="bg-gray-100 px-1 rounded">base_price</code>,{' '}
-            <code className="bg-gray-100 px-1 rounded">stock</code>.
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-xl font-bold mb-2 text-foreground">Bulk Upload Products via CSV</h2>
+          <p className="text-sm text-text-secondary mb-4">
+            CSV must include columns: <code className="bg-paper-2 px-1 rounded">name</code>,{' '}
+            <code className="bg-paper-2 px-1 rounded">sku</code>,{' '}
+            <code className="bg-paper-2 px-1 rounded">category</code>,{' '}
+            <code className="bg-paper-2 px-1 rounded">base_price</code>,{' '}
+            <code className="bg-paper-2 px-1 rounded">stock</code>.
             Existing SKUs will be skipped.
           </p>
           <div className="flex items-center gap-4">
@@ -318,23 +319,23 @@ export default function AdminProductsPage() {
               accept=".csv"
               onChange={handleBulkUpload}
               disabled={bulkUploading}
-              className="block text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer disabled:opacity-50"
+              className="block text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-accent file:text-accent-foreground hover:file:bg-accent-dark file:cursor-pointer disabled:opacity-50"
             />
-            {bulkUploading && <span className="text-sm text-gray-500">Uploading…</span>}
+            {bulkUploading && <span className="text-sm text-text-tertiary">Uploading…</span>}
           </div>
 
           {/* Bulk upload results */}
           {bulkResults && (
-            <div className="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
-              <p className="font-medium text-gray-900 mb-1">
+            <div className="mt-4 p-4 rounded-lg bg-paper-2 border border-border">
+              <p className="font-medium text-foreground mb-1">
                 {bulkResults.success} product{bulkResults.success !== 1 ? 's' : ''} uploaded
               </p>
               {bulkResults.errors.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-sm text-red-600 font-medium mb-1">
+                  <p className="text-sm text-error font-medium mb-1">
                     {bulkResults.errors.length} row{bulkResults.errors.length !== 1 ? 's' : ''} failed:
                   </p>
-                  <ul className="text-sm text-red-600 space-y-1">
+                  <ul className="text-sm text-error space-y-1">
                     {bulkResults.errors.map((err, i) => (
                       <li key={i}>Row {err.rowNumber} ({err.sku}): {err.error}</li>
                     ))}
@@ -346,10 +347,10 @@ export default function AdminProductsPage() {
 
           {/* Sample CSV */}
           <details className="mt-4">
-            <summary className="text-sm text-blue-600 cursor-pointer hover:underline">
+            <summary className="text-sm text-accent cursor-pointer hover:underline">
               View sample CSV format
             </summary>
-            <pre className="mt-2 p-3 bg-gray-100 rounded text-xs text-gray-700 overflow-x-auto">
+            <pre className="mt-2 p-3 bg-paper-2 rounded text-xs text-text-secondary overflow-x-auto">
 {`name,sku,category,base_price,stock
 Herbal Shampoo,HC-SHP-001,Hair Care,450,50
 Aloe Vera Face Wash,SC-FW-002,Skin Care,320,75
@@ -361,58 +362,58 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
+        <div className="bg-card p-6 rounded-lg border border-border">
+          <h2 className="text-xl font-bold mb-4 text-foreground">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Product Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="e.g., Herbal Shampoo"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   SKU *
                 </label>
                 <input
                   type="text"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="e.g., HC-SHP-001"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Price (PKR) *
                 </label>
                 <input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="0.00"
                   step="0.01"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Category
                 </label>
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (
@@ -423,13 +424,13 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-text-secondary mb-1">
                 Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder="Product description..."
                 rows={3}
               />
@@ -443,13 +444,13 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
                   setEditingId(null);
                   setFormData({ name: '', sku: '', price: '', description: '', categoryId: '' });
                 }}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-foreground border border-border rounded-lg hover:bg-paper-2"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark"
               >
                 {editingId ? 'Update Product' : 'Create Product'}
               </button>
@@ -466,8 +467,8 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === f
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-paper-2 text-text-secondary hover:bg-border'
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)} ({filteredProducts.length})
@@ -476,29 +477,29 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
       </div>
 
       {/* Products List */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading products...</div>
+          <div className="p-8 text-center text-text-tertiary">Loading products...</div>
         ) : filteredProducts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-text-tertiary">
             {products.length === 0 ? 'No products yet. Create your first product to get started.' : 'No products match the selected filter.'}
           </div>
         ) : (
           <table className="w-full">
-            <thead className="border-b border-gray-200 bg-gray-50">
+            <thead className="border-b border-border bg-paper-2">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Image</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">SKU</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Price</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
-                <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Image</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Name</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">SKU</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Price</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Created</th>
+                <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <tr key={product.id} className="border-b border-border hover:bg-paper-2">
                   <td className="px-6 py-4">
                     {productImages[product.id]?.length > 0 ? (
                       <div className="relative group">
@@ -509,7 +510,7 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
                         />
                         <button
                           onClick={() => handleRemoveImage(product.id, productImages[product.id][0].id)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-1 -right-1 bg-error text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           x
                         </button>
@@ -527,39 +528,39 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
                           input.click();
                         }}
                         disabled={uploading === product.id}
-                        className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors text-xs"
+                        className="w-12 h-12 border-2 border-dashed border-border rounded flex items-center justify-center text-text-tertiary hover:border-accent hover:text-accent transition-colors text-xs"
                       >
                         {uploading === product.id ? '...' : '+'}
                       </button>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{product.sku}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">₨{product.base_price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-foreground">{product.name}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{product.sku}</td>
+                  <td className="px-6 py-4 text-sm text-foreground">₨{product.base_price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-sm">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         product.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? statusTint.success
+                          : statusTint.neutral
                       }`}
                     >
                       {product.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-text-secondary">
                     {new Date(product.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <button
                       onClick={() => handleEdit(product)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-accent hover:text-accent-dark text-sm font-medium"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleToggleActive(product.id, product.is_active)}
-                      className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
+                      className="text-warning hover:opacity-80 text-sm font-medium"
                     >
                       {product.is_active ? 'Disable' : 'Enable'}
                     </button>
@@ -573,17 +574,17 @@ Moisturizing Lotion,BC-ML-003,Body Care,550,30`}
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Total Products</div>
-          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Total Products</div>
+          <div className="text-2xl font-bold text-foreground">{products.length}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Active</div>
-          <div className="text-2xl font-bold text-green-600">{products.filter((p) => p.is_active).length}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Active</div>
+          <div className="text-2xl font-bold text-success">{products.filter((p) => p.is_active).length}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Inactive</div>
-          <div className="text-2xl font-bold text-gray-600">{products.filter((p) => !p.is_active).length}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Inactive</div>
+          <div className="text-2xl font-bold text-text-secondary">{products.filter((p) => !p.is_active).length}</div>
         </div>
       </div>
     </div>

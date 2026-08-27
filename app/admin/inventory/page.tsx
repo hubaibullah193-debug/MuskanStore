@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAllInventory, adjustInventoryAction } from '@/server/actions/admin-inventory';
+import { statusTint } from '@/lib/ui/status-colors';
 
 interface InventoryItem {
   id: string;
@@ -106,39 +107,39 @@ export default function AdminInventoryPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-        <p className="text-gray-600 mt-1">Track stock levels and adjust inventory</p>
+        <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
+        <p className="text-text-secondary mt-1">Track stock levels and adjust inventory</p>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] text-error rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+        <div className="p-4 bg-[color-mix(in_oklch,var(--color-success)_12%,white)] border border-[color-mix(in_oklch,var(--color-success)_35%,transparent)] text-success rounded-lg">
           {success}
         </div>
       )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Total SKUs</div>
-          <div className="text-3xl font-bold text-gray-900">{totalItems}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Total SKUs</div>
+          <div className="text-3xl font-bold text-foreground">{totalItems}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Total Stock</div>
-          <div className="text-3xl font-bold text-gray-900">{totalStock.toLocaleString()}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Total Stock</div>
+          <div className="text-3xl font-bold text-foreground">{totalStock.toLocaleString()}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-600">Reserved</div>
-          <div className="text-3xl font-bold text-orange-600">{totalReserved.toLocaleString()}</div>
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="text-sm text-text-secondary">Reserved</div>
+          <div className="text-3xl font-bold text-warning">{totalReserved.toLocaleString()}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-red-200 bg-red-50">
-          <div className="text-sm text-red-600">Low Stock Alerts</div>
-          <div className="text-3xl font-bold text-red-600">{lowStockCount}</div>
+        <div className="p-4 rounded-lg border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] bg-[color-mix(in_oklch,var(--color-error)_12%,white)]">
+          <div className="text-sm text-error">Low Stock Alerts</div>
+          <div className="text-3xl font-bold text-error">{lowStockCount}</div>
         </div>
       </div>
 
@@ -150,8 +151,8 @@ export default function AdminInventoryPage() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === f
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-paper-2 text-text-secondary hover:bg-border'
             }`}
           >
             {f === 'all'
@@ -164,58 +165,58 @@ export default function AdminInventoryPage() {
       </div>
 
       {/* Inventory Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading inventory...</div>
+          <div className="p-8 text-center text-text-tertiary">Loading inventory...</div>
         ) : filteredInventory.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-text-tertiary">
             {inventory.length === 0 ? 'No inventory records yet.' : 'No items match the selected filter.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-border bg-paper-2">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Product</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">SKU</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Quantity</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Reserved</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Available</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Threshold</th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">Action</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Product</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">SKU</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Quantity</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Reserved</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Available</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Threshold</th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-foreground">Status</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredInventory.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={item.id} className="border-b border-border hover:bg-paper-2">
                     <td className="px-6 py-4 text-sm">
-                      <div className="font-medium text-gray-900">{item.productName}</div>
+                      <div className="font-medium text-foreground">{item.productName}</div>
                       {item.variantName && (
-                        <div className="text-xs text-gray-500">{item.variantName}</div>
+                        <div className="text-xs text-text-tertiary">{item.variantName}</div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{item.sku}</td>
-                    <td className="px-6 py-4 text-sm text-right font-medium text-gray-900">
+                    <td className="px-6 py-4 text-sm text-text-secondary">{item.sku}</td>
+                    <td className="px-6 py-4 text-sm text-right font-medium text-foreground">
                       {item.quantity.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-right text-orange-600">
+                    <td className="px-6 py-4 text-sm text-right text-warning">
                       {item.reserved.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-right text-gray-900">
+                    <td className="px-6 py-4 text-sm text-right text-foreground">
                       {item.available.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-right text-gray-600">
+                    <td className="px-6 py-4 text-sm text-right text-text-secondary">
                       {item.lowStockThreshold}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           item.status === 'low'
-                            ? 'bg-red-100 text-red-800'
+                            ? statusTint.error
                             : item.status === 'high'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? statusTint.success
+                            : statusTint.info
                         }`}
                       >
                         {item.status === 'low'
@@ -228,7 +229,7 @@ export default function AdminInventoryPage() {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => setAdjusting(item.id)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-accent hover:text-accent-dark text-sm font-medium"
                       >
                         Adjust
                       </button>
@@ -244,31 +245,31 @@ export default function AdminInventoryPage() {
       {/* Adjustment Modal */}
       {adjusting && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Adjust Inventory</h2>
+          <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4 border border-border">
+            <h2 className="text-xl font-bold mb-4 text-foreground">Adjust Inventory</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   New Quantity
                 </label>
-                <input
+                  <input
                   type="number"
                   value={adjustmentData.newQuantity}
                   onChange={(e) =>
                     setAdjustmentData({ ...adjustmentData, newQuantity: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="0"
                   min="0"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Reason
                 </label>
-                <select
+                  <select
                   value={adjustmentData.reason}
                   onChange={(e) =>
                     setAdjustmentData({
@@ -276,7 +277,7 @@ export default function AdminInventoryPage() {
                       reason: e.target.value as any,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   <option>Physical Count</option>
                   <option>Damaged</option>
@@ -288,15 +289,15 @@ export default function AdminInventoryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Notes (Optional)
                 </label>
-                <textarea
+                  <textarea
                   value={adjustmentData.notes}
                   onChange={(e) =>
                     setAdjustmentData({ ...adjustmentData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   placeholder="Additional details..."
                   rows={2}
                 />
@@ -306,13 +307,13 @@ export default function AdminInventoryPage() {
             <div className="flex gap-3 justify-end mt-6">
               <button
                 onClick={() => setAdjusting(null)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-foreground border border-border rounded-lg hover:bg-paper-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleAdjustment(adjusting)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent-dark"
               >
                 Adjust Inventory
               </button>

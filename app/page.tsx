@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { Button } from '@/app/components/ui/button';
 import BundleAddToCartButton from '@/app/components/bundle-add-to-cart-button';
 
 async function getFeaturedProducts() {
@@ -68,48 +69,44 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-paper">
       {/* Hero Section */}
-      <section className="text-white" style={{backgroundImage: 'linear-gradient(to right, var(--color-accent), var(--color-accent-dark))'}}>
+      <section
+        className="relative overflow-hidden"
+        style={{
+          backgroundImage:
+            'linear-gradient(135deg, color-mix(in oklch, var(--color-accent-light) 45%, white), var(--color-paper-3))',
+        }}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
           <div className="max-w-3xl">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground mb-4">
               Welcome to Muskan Care Center
             </h1>
-            <p className="text-xl mb-8" style={{color: 'rgba(255, 255, 255, 0.85)'}}>
+            <p className="text-xl text-text-secondary mb-8">
               Premium personal hygiene products for a healthier, cleaner you. Quality care, trusted by thousands.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/products"
-                className="inline-flex items-center justify-center rounded-lg px-8 py-3 font-semibold text-white transition hover:opacity-90"
-                style={{
-                  backgroundColor: 'white',
-                  color: 'var(--color-accent)',
-                }}
-              >
+              <Button href="/products" size="lg">
                 Shop Now
-              </Link>
-              <Link
-                href="#featured"
-                className="inline-flex items-center justify-center rounded-lg border-2 border-white px-8 py-3 font-semibold text-white transition hover:opacity-90"
-              >
+              </Button>
+              <Button href="#featured" variant="outline" size="lg">
                 Explore Products
-              </Link>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-paper py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
+          <h2 className="font-display text-3xl font-bold text-foreground mb-12 text-center">
             Why Choose Muskan Care?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white bg-accent">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -124,16 +121,16 @@ export default async function HomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">
                 Certified Quality
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 All products are tested and certified for safety and quality standards.
               </p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white bg-accent">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -148,16 +145,16 @@ export default async function HomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">
                 Fast Shipping
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 Quick and reliable delivery to your doorstep within 2-3 business days.
               </p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white" style={{backgroundColor: 'var(--color-accent)'}}>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg text-white bg-accent">
                 <svg
                   className="h-6 w-6"
                   fill="none"
@@ -172,10 +169,10 @@ export default async function HomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-2">
                 24/7 Support
               </h3>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 Our customer support team is always here to help with any questions.
               </p>
             </div>
@@ -184,13 +181,13 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section id="featured" className="bg-gray-50 py-16 sm:py-20">
+      <section id="featured" className="bg-paper-2 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="font-display text-3xl font-bold text-foreground mb-4">
               Featured Products
             </h2>
-            <p className="text-gray-600">
+            <p className="text-text-secondary">
               Discover our most popular personal care items loved by customers.
             </p>
           </div>
@@ -205,9 +202,9 @@ export default async function HomePage() {
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
-                  className="group overflow-hidden rounded-lg border border-gray-200 bg-white hover:shadow-lg transition"
+                  className="group overflow-hidden rounded-lg border border-border bg-card hover:shadow-md transition"
                 >
-                  <div className="aspect-square overflow-hidden bg-gray-100">
+                  <div className="aspect-square overflow-hidden bg-paper-2">
                     {imageUrl ? (
                       <img
                         src={imageUrl}
@@ -216,22 +213,22 @@ export default async function HomePage() {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <span className="text-gray-400">No image</span>
+                        <span className="text-text-tertiary">No image</span>
                       </div>
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">
+                    <h3 className="font-semibold text-foreground mb-2">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-text-secondary mb-4 line-clamp-2">
                       {product.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-gray-900">
+                      <span className="text-lg font-bold text-foreground">
                         Rs. {product.base_price.toLocaleString()}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-text-tertiary">
                         Stock: {product.stock_quantity}
                       </span>
                     </div>
@@ -242,14 +239,10 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">No featured products available yet.</p>
-              <Link
-                href="/products"
-                className="inline-flex items-center justify-center rounded-lg px-6 py-3 font-semibold text-white transition hover:opacity-90"
-                style={{backgroundColor: 'var(--color-accent)'}}
-              >
+              <p className="text-text-secondary mb-4">No featured products available yet.</p>
+              <Button href="/products">
                 View All Products
-              </Link>
+              </Button>
             </div>
           )}
         </div>
@@ -257,13 +250,13 @@ export default async function HomePage() {
 
       {/* Bundle Deals Section */}
       {bundles.length > 0 && (
-        <section className="bg-white py-16 sm:py-20">
+        <section className="bg-paper py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              <h2 className="font-display text-3xl font-bold text-foreground mb-4">
                 Bundle Deals
               </h2>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 Save more when you buy together. Limited-time bundle offers.
               </p>
             </div>
@@ -274,10 +267,10 @@ export default async function HomePage() {
                 return (
                   <div
                     key={bundle.id}
-                    className="rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition"
+                    className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition"
                   >
                     {/* Bundle image: first item's image or gradient */}
-                    <div className="aspect-[4/3] bg-gray-100 relative">
+                    <div className="aspect-[4/3] bg-paper-2 relative">
                       {firstItemImage ? (
                         <img
                           src={firstItemImage}
@@ -293,29 +286,29 @@ export default async function HomePage() {
                         </div>
                       )}
                       {bundle.discount_percent > 0 && (
-                        <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                        <div className="absolute top-3 right-3 bg-accent text-white text-xs font-bold px-2 py-1 rounded">
                           Save {bundle.discount_percent}%
                         </div>
                       )}
                     </div>
                     <div className="p-5">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                      <h3 className="font-display text-lg font-bold text-foreground mb-1">
                         {bundle.name}
                       </h3>
                       {bundle.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        <p className="text-sm text-text-secondary mb-3 line-clamp-2">
                           {bundle.description}
                         </p>
                       )}
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl font-bold text-gray-900">
+                        <span className="text-2xl font-bold text-foreground">
                           Rs. {Number(bundle.bundle_price).toFixed(0)}
                         </span>
-                        <span className="text-sm text-gray-500 line-through">
+                        <span className="text-sm text-text-tertiary line-through">
                           Rs. {Number(bundle.regular_price).toFixed(0)}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-text-tertiary">
                         {bundleItems.length} products included
                       </div>
                       <div className="mt-4">
@@ -342,21 +335,17 @@ export default async function HomePage() {
       )}
 
       {/* CTA Section */}
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-paper-2 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <h2 className="font-display text-3xl font-bold text-foreground mb-4">
             Ready to get started?
           </h2>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-text-secondary mb-8">
             Join thousands of satisfied customers and discover the Muskan Care difference.
           </p>
-          <Link
-            href="/products"
-            className="inline-flex items-center justify-center rounded-lg px-8 py-3 font-semibold text-white transition hover:opacity-90"
-            style={{backgroundColor: 'var(--color-accent)'}}
-          >
+          <Button href="/products" size="lg">
             Browse Our Full Collection
-          </Link>
+          </Button>
         </div>
       </section>
     </div>

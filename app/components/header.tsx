@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
+import { Button } from '@/app/components/ui/button';
 
 export function Header() {
   const router = useRouter();
@@ -25,83 +26,72 @@ export function Header() {
   const closeMobileMenu = () => setIsMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-bold text-gray-900">Muskan Care</span>
+            <span className="font-display text-xl font-bold text-foreground">Muskan Care</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-8">
-            <Link href="/products" className="text-gray-700 hover:text-gray-900">
+          <div className="hidden items-center space-x-8 md:flex">
+            <Link href="/products" className="text-secondary transition-colors hover:text-foreground">
               Products
             </Link>
-            <Link href="/cart" data-testid="cart-link" className="text-gray-700 hover:text-gray-900 relative">
+            <Link href="/cart" data-testid="cart-link" className="relative text-secondary transition-colors hover:text-foreground">
               Cart
               {itemCount > 0 && (
-                <span data-testid="cart-badge" className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span data-testid="cart-badge" className="absolute -top-2 -right-3 flex h-5 w-5 items-center justify-center rounded-full bg-error text-xs text-white">
                   {itemCount > 99 ? '99+' : itemCount}
                 </span>
               )}
             </Link>
-            <Link href="/account" className="text-gray-700 hover:text-gray-900">
+            <Link href="/account" className="text-secondary transition-colors hover:text-foreground">
               Account
             </Link>
-            <Link href="/orders" className="text-gray-700 hover:text-gray-900">
+            <Link href="/orders" className="text-secondary transition-colors hover:text-foreground">
               Orders
             </Link>
           </div>
 
           {/* Right Actions */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
+          <div className="hidden items-center space-x-4 md:flex">
             {!authLoading && user ? (
               <>
                 {user.role === 'admin' && (
                   <Link
                     href="/admin/dashboard"
-                    className="text-sm text-gray-700 hover:text-gray-900"
+                    className="text-sm text-secondary transition-colors hover:text-foreground"
                   >
                     Admin
                   </Link>
                 )}
-                <span className="text-sm text-gray-700">{user.name || user.email}</span>
+                <span className="text-sm text-secondary">{user.name || user.email}</span>
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-gray-700 hover:text-gray-900"
+                  className="text-sm text-secondary transition-colors hover:text-foreground"
                 >
                   Logout
                 </button>
               </>
             ) : !authLoading ? (
               <>
-                <Link
-                  href="/auth/login"
-                  className="text-gray-700 hover:text-gray-900"
-                >
+                <Button href="/auth/login" variant="ghost" size="sm">
                   Sign In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="rounded-lg px-4 py-2 text-white"
-                  style={{
-                    backgroundColor: 'var(--color-accent)',
-                    transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
-                >
+                </Button>
+                <Button href="/auth/signup" variant="primary" size="sm">
                   Sign Up
-                </Link>
+                </Button>
               </>
             ) : null}
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100"
+            className="inline-flex items-center justify-center rounded-md p-2 text-foreground hover:bg-paper-2 md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
           >
             <svg
               className="h-6 w-6"
@@ -125,33 +115,33 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="border-t border-gray-200 md:hidden">
+          <div className="border-t border-border md:hidden">
             <div className="space-y-1 px-2 pb-3 pt-2">
               <Link
                 href="/products"
                 onClick={closeMobileMenu}
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
               >
                 Products
               </Link>
               <Link
                 href="/cart"
                 onClick={closeMobileMenu}
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
               >
                 Cart {itemCount > 0 && `(${itemCount})`}
               </Link>
               <Link
                 href="/account"
                 onClick={closeMobileMenu}
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
               >
                 Account
               </Link>
               <Link
                 href="/orders"
                 onClick={closeMobileMenu}
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
               >
                 Orders
               </Link>
@@ -161,41 +151,37 @@ export function Header() {
                     <Link
                       href="/admin/dashboard"
                       onClick={closeMobileMenu}
-                      className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                      className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
                     >
                       Admin
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                    className="block w-full rounded-md px-3 py-2 text-left text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
                   >
                     Logout
                   </button>
                 </>
               ) : !authLoading ? (
                 <>
-                  <hr className="my-2" />
+                  <hr className="my-2 border-border" />
                   <Link
                     href="/auth/login"
                     onClick={closeMobileMenu}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                    className="block rounded-md px-3 py-2 text-base font-medium text-secondary hover:bg-paper-2 hover:text-foreground"
                   >
                     Sign In
                   </Link>
-                  <Link
+                  <Button
                     href="/auth/signup"
+                    variant="primary"
+                    size="sm"
+                    className="w-full"
                     onClick={closeMobileMenu}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-white"
-                    style={{
-                      backgroundColor: 'var(--color-accent)',
-                      transition: 'background-color 200ms cubic-bezier(0.33, 1, 0.68, 1)',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent-dark)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-accent)')}
                   >
                     Sign Up
-                  </Link>
+                  </Button>
                 </>
               ) : null}
             </div>

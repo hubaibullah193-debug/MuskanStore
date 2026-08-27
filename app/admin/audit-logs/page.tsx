@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { statusTint, getAuditActionTone } from '@/lib/ui/status-colors';
 
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -48,20 +49,11 @@ export default function AdminAuditLogsPage() {
     (log.admin_id?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
-  const getActionColor = (action: string) => {
-    if (action.includes('created')) return 'bg-green-100 text-green-900';
-    if (action.includes('updated')) return 'bg-blue-100 text-blue-900';
-    if (action.includes('deleted')) return 'bg-red-100 text-red-900';
-    if (action.includes('refund')) return 'bg-orange-100 text-orange-900';
-    if (action.includes('payment')) return 'bg-purple-100 text-purple-900';
-    return 'bg-gray-100 text-gray-900';
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
           <p>Loading audit logs...</p>
         </div>
       </div>
@@ -72,15 +64,15 @@ export default function AdminAuditLogsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
-        <p className="text-gray-600 mt-1">View all system activities and admin actions</p>
+        <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
+        <p className="text-text-secondary mt-1">View all system activities and admin actions</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Search
             </label>
             <input
@@ -88,18 +80,18 @@ export default function AdminAuditLogsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by ID, action, or user..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Entity Type
             </label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             >
               <option value="all">All Activities</option>
               <option value="order">Order Activities</option>
@@ -112,65 +104,65 @@ export default function AdminAuditLogsPage() {
 
       {/* Logs Table */}
       {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <p className="text-red-700">{error}</p>
+        <div className="bg-[color-mix(in_oklch,var(--color-error)_12%,white)] border border-[color-mix(in_oklch,var(--color-error)_35%,transparent)] rounded-lg p-6">
+          <p className="text-error">{error}</p>
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-600">No audit logs found</p>
+        <div className="bg-paper-2 border border-border rounded-lg p-6 text-center">
+          <p className="text-text-secondary">No audit logs found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-paper-2 border-b border-border">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Action
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Entity
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Performed By
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                   Timestamp
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {filteredLogs.map((log, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
+                <tr key={idx} className="hover:bg-paper-2">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getActionColor(log.action)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusTint[getAuditActionTone(log.action)]}`}>
                       {log.action.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{log.entity_type}</p>
-                      <p className="text-xs text-gray-600 font-mono">{log.entity_id ?? "—"}</p>
+                      <p className="text-sm font-medium text-foreground">{log.entity_type}</p>
+                      <p className="text-xs text-text-secondary font-mono">{log.entity_id ?? "—"}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-600">{log.admin_id || 'System'}</p>
+                    <p className="text-sm text-text-secondary">{log.admin_id || 'System'}</p>
                   </td>
                   <td className="px-6 py-4">
                     {log.changes && (
                       <details className="cursor-pointer">
-                        <summary className="text-sm text-blue-600 hover:text-blue-900">
+                        <summary className="text-sm text-accent hover:text-accent-dark">
                           View Details
                         </summary>
-                        <pre className="text-xs bg-gray-50 p-2 rounded mt-2 overflow-auto max-w-md">
+                        <pre className="text-xs bg-paper-2 p-2 rounded mt-2 overflow-auto max-w-md">
                           {JSON.stringify(log.changes, null, 2)}
                         </pre>
                       </details>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                     {new Date(log.created_at).toLocaleString()}
                   </td>
                 </tr>
@@ -182,13 +174,13 @@ export default function AdminAuditLogsPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Total Activities</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{logs.length}</p>
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Total Activities</p>
+          <p className="text-3xl font-bold text-foreground mt-2">{logs.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Last 24 Hours</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Last 24 Hours</p>
+          <p className="text-3xl font-bold text-foreground mt-2">
             {logs.filter((l) => {
               const date = new Date(l.created_at);
               const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -196,9 +188,9 @@ export default function AdminAuditLogsPage() {
             }).length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm">Unique Entities</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+          <p className="text-text-secondary text-sm">Unique Entities</p>
+          <p className="text-3xl font-bold text-foreground mt-2">
             {new Set(logs.map((l) => l.entity_id ?? "")).size}
           </p>
         </div>

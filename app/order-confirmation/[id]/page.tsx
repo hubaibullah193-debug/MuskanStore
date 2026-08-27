@@ -11,6 +11,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Spinner } from '@/app/components/ui/spinner';
+import { Button } from '@/app/components/ui/button';
+import { Alert } from '@/app/components/ui/alert';
 import { getOrderForDisplay } from '@/server/actions/orders';
 
 export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
@@ -76,10 +79,10 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 mx-auto mb-4" style={{borderBottomColor: 'var(--color-accent)', borderColor: 'transparent', borderWidth: '2px'}}></div>
-          <p>Loading order confirmation...</p>
+          <Spinner className="h-12 w-12 mx-auto mb-4" />
+          <p className="text-text-secondary">Loading order confirmation...</p>
         </div>
       </div>
     );
@@ -87,15 +90,15 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-paper py-8">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h1 className="text-2xl font-bold text-red-900 mb-2">Error Loading Order</h1>
-            <p className="text-red-700 mb-4">{error || 'Order not found'}</p>
-            <Link href="/products" className="text-red-600 hover:text-red-700 underline">
+          <Alert variant="error" className="p-6">
+            <h1 className="font-display text-2xl font-bold mb-2">Error Loading Order</h1>
+            <p className="mb-4">{error || 'Order not found'}</p>
+            <Link href="/products" className="text-accent hover:underline">
               Return to shopping
             </Link>
-          </div>
+          </Alert>
         </div>
       </div>
     );
@@ -105,47 +108,51 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
   const isPending = order.payment_status === 'pending';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-paper py-8">
       <div className="max-w-2xl mx-auto px-4">
         {/* Success Message */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-shrink-0">
-              <svg className="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-green-900">Order Confirmed!</h1>
-              <p className="text-green-700">Thank you for your order.</p>
-            </div>
+        <div
+          className="rounded-lg p-6 mb-8 flex items-center gap-3"
+          style={{
+            backgroundColor: 'color-mix(in oklch, var(--color-success) 10%, white)',
+            border: '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)',
+          }}
+        >
+          <div className="flex-shrink-0">
+            <svg className="h-6 w-6 text-success" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-success">Order Confirmed!</h1>
+            <p className="text-success">Thank you for your order.</p>
           </div>
         </div>
 
         {/* Order Number */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Order Number</h2>
-          <p className="text-2xl font-mono font-bold text-blue-600">{order.order_number}</p>
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="font-display text-lg font-semibold mb-2 text-foreground">Order Number</h2>
+          <p className="text-2xl font-mono font-bold text-accent">{order.order_number}</p>
           {guestToken && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
+            <div className="mt-3 p-3 bg-paper-2 rounded-lg border border-border">
+              <p className="text-sm text-text-secondary mb-1">
                 Your tracking code (save this to track your order):
               </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm font-mono bg-white px-3 py-2 rounded border border-gray-200 break-all">
+                <code className="flex-1 text-sm font-mono bg-card px-3 py-2 rounded border border-border break-all">
                   {guestToken}
                 </code>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(guestToken);
                   }}
-                  className="px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-sm font-medium rounded-lg border border-border hover:bg-paper-2 transition-colors"
                 >
                   Copy
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Use this code at <Link href="/track-order" className="underline" style={{color: 'var(--color-accent)'}}>Track Order</Link> along with your email to check order status anytime.
+              <p className="text-xs text-text-tertiary mt-2">
+                Use this code at <Link href="/track-order" className="underline" style={{ color: 'var(--color-accent)' }}>Track Order</Link> along with your email to check order status anytime.
               </p>
             </div>
           )}
@@ -153,40 +160,54 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
         {/* Payment Status */}
         {paymentStatus === 'success' && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-            <div className="flex items-center gap-3">
-              <svg className="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-green-900">Payment Successful</h2>
-                <p className="text-green-700">Your payment has been processed and your order is confirmed.</p>
-              </div>
+          <div
+            className="rounded-lg p-6 mb-6 flex items-center gap-3"
+            style={{
+              backgroundColor: 'color-mix(in oklch, var(--color-success) 10%, white)',
+              border: '1px solid color-mix(in oklch, var(--color-success) 30%, transparent)',
+            }}
+          >
+            <svg className="h-6 w-6 text-success" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-success">Payment Successful</h2>
+              <p className="text-success">Your payment has been processed and your order is confirmed.</p>
             </div>
           </div>
         )}
 
         {paymentStatus === 'failed' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-            <div className="flex items-start gap-3">
-              <svg className="h-6 w-6 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <div>
-                <h2 className="text-lg font-semibold text-red-900">Payment Failed</h2>
-                <p className="text-red-700 mb-3">Your payment was not processed. You can retry payment below.</p>
-                {redirectError && (
-                  <p className="text-sm text-red-600 mb-3">{redirectError}</p>
-                )}
-              </div>
+          <div
+            className="rounded-lg p-6 mb-6 flex items-start gap-3"
+            style={{
+              backgroundColor: 'color-mix(in oklch, var(--color-error) 10%, white)',
+              border: '1px solid color-mix(in oklch, var(--color-error) 30%, transparent)',
+            }}
+          >
+            <svg className="h-6 w-6 text-error mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-error">Payment Failed</h2>
+              <p className="text-error mb-3">Your payment was not processed. You can retry payment below.</p>
+              {redirectError && (
+                <p className="text-sm text-error mb-3">{redirectError}</p>
+              )}
             </div>
           </div>
         )}
 
         {isPending && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-yellow-900 mb-4">Payment Required</h2>
-            <p className="text-yellow-700 mb-4">
+          <div
+            className="rounded-lg p-6 mb-6"
+            style={{
+              backgroundColor: 'color-mix(in oklch, var(--color-warning) 12%, white)',
+              border: '1px solid color-mix(in oklch, var(--color-warning) 35%, transparent)',
+            }}
+          >
+            <h2 className="font-display text-lg font-semibold text-[color-mix(in_oklch,var(--color-warning)_55%,black)] mb-4">Payment Required</h2>
+            <p className="text-[color-mix(in_oklch,var(--color-warning)_55%,black)] mb-4">
               Your order is waiting for payment. Please select a payment method to proceed.
             </p>
 
@@ -194,28 +215,28 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
             {order.payment_method !== 'cod' && (
               <div className="space-y-3 mb-4">
                 {order.payment_method === 'jazz_cash' && (
-                  <button
+                  <Button
                     onClick={() => handlePaymentRedirect('jazz_cash')}
                     disabled={redirecting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition"
+                    className="w-full"
                   >
                     {redirecting ? 'Redirecting to JazzCash...' : 'Pay with JazzCash'}
-                  </button>
+                  </Button>
                 )}
 
                 {order.payment_method === 'easypaisa' && (
-                  <button
+                  <Button
                     onClick={() => handlePaymentRedirect('easypaisa')}
                     disabled={redirecting}
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition"
+                    className="w-full"
                   >
                     {redirecting ? 'Redirecting to Easypaisa...' : 'Pay with Easypaisa'}
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
 
-            <p className="text-yellow-700 text-sm">
+            <p className="text-sm text-[color-mix(in_oklch,var(--color-warning)_55%,black)]">
               A payment link was also sent to {order.guest_email || 'your email'}.
               Check your email if you prefer to pay from there.
             </p>
@@ -223,34 +244,40 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         )}
 
         {isCOD && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-blue-900 mb-2">Cash on Delivery</h2>
-            <p className="text-blue-700">
+          <div
+            className="rounded-lg p-6 mb-6"
+            style={{
+              backgroundColor: 'color-mix(in oklch, var(--color-info) 12%, white)',
+              border: '1px solid color-mix(in oklch, var(--color-info) 35%, transparent)',
+            }}
+          >
+            <h2 className="font-display text-lg font-semibold text-info mb-2">Cash on Delivery</h2>
+            <p className="text-info">
               You will pay Rs {(order.total_amount).toFixed(0)} when your order arrives.
             </p>
           </div>
         )}
 
         {/* Order Summary */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="font-display text-lg font-semibold mb-4 text-foreground">Order Summary</h2>
 
-          <div className="space-y-4 mb-6 pb-6 border-b">
+          <div className="space-y-4 mb-6 pb-6 border-b border-border">
             {Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
               <div key={idx} className="flex justify-between items-start">
                 <div>
                   {item.is_bundle && (
-                    <span className="mr-1 rounded bg-purple-100 px-1.5 py-0.5 text-xs font-semibold text-purple-800 align-middle">
+                    <span className="mr-1 rounded px-1.5 py-0.5 text-xs font-semibold align-middle bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent">
                       Bundle
                     </span>
                   )}
-                  <p className="font-medium">{item.product_name}</p>
+                  <p className="font-medium text-foreground">{item.product_name}</p>
                   {item.variant_name && (
-                    <p className="text-sm text-gray-600">{item.variant_name}</p>
+                    <p className="text-sm text-text-secondary">{item.variant_name}</p>
                   )}
-                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                  <p className="text-sm text-text-secondary">Qty: {item.quantity}</p>
                   {item.is_bundle && Array.isArray(item.bundle_items) && (
-                    <ul className="mt-1 space-y-0.5 text-sm text-gray-500">
+                    <ul className="mt-1 space-y-0.5 text-sm text-text-tertiary">
                       {item.bundle_items.map((bi: any, i: number) => (
                         <li key={i} className="truncate">
                           {bi.product_name || bi.product_id}
@@ -260,29 +287,29 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                     </ul>
                   )}
                 </div>
-                <p className="font-medium">Rs {(item.subtotal).toFixed(0)}</p>
+                <p className="font-medium text-foreground">Rs {(item.subtotal).toFixed(0)}</p>
               </div>
             ))}
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-text-secondary">
               <span>Subtotal:</span>
               <span>Rs {(order.subtotal).toFixed(0)}</span>
             </div>
             {order.tax_amount > 0 && (
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-text-secondary">
                 <span>Tax (17%):</span>
                 <span>Rs {(order.tax_amount).toFixed(0)}</span>
               </div>
             )}
             {order.delivery_fee > 0 && (
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-text-secondary">
                 <span>Delivery:</span>
                 <span>Rs {(order.delivery_fee).toFixed(0)}</span>
               </div>
             )}
-            <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+            <div className="flex justify-between font-semibold text-lg pt-2 border-t border-border text-foreground">
               <span>Total:</span>
               <span>Rs {(order.total_amount).toFixed(0)}</span>
             </div>
@@ -290,11 +317,11 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         </div>
 
         {/* Delivery Address */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Delivery Address</h2>
-          <div className="text-gray-700 space-y-1">
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="font-display text-lg font-semibold mb-4 text-foreground">Delivery Address</h2>
+          <div className="text-text-secondary space-y-1">
             {order.delivery_address?.recipient_name && (
-              <p className="font-medium">{order.delivery_address.recipient_name}</p>
+              <p className="font-medium text-foreground">{order.delivery_address.recipient_name}</p>
             )}
             {order.delivery_address?.phone && (
               <p>{order.delivery_address.phone}</p>
@@ -308,25 +335,25 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
         </div>
 
         {/* Next Steps */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">What&apos;s Next?</h2>
-          <ol className="space-y-3 text-gray-700">
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="font-display text-lg font-semibold mb-4 text-foreground">What&apos;s Next?</h2>
+          <ol className="space-y-3 text-text-secondary">
             <li className="flex gap-3">
-              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">1</span>
+              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent flex items-center justify-center text-sm font-semibold">1</span>
               <span>
                 {isPending ? 'Complete payment via the link sent to your email' : 'Your order is confirmed and will be processed'}
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">2</span>
+              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent flex items-center justify-center text-sm font-semibold">2</span>
               <span>Receive order confirmation and shipping updates</span>
             </li>
             <li className="flex gap-3">
-              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">3</span>
+              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent flex items-center justify-center text-sm font-semibold">3</span>
               <span>Your items will be packaged and shipped</span>
             </li>
             <li className="flex gap-3">
-              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">4</span>
+              <span className="flex-shrink-0 h-6 w-6 rounded-full bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent flex items-center justify-center text-sm font-semibold">4</span>
               <span>Track your delivery in real time</span>
             </li>
           </ol>
@@ -334,18 +361,15 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <Link
+          <Button
             href={guestToken ? `/order-confirmation/${order.id}?token=${guestToken}` : `/orders/${order.id}`}
-            className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700"
+            className="w-full"
           >
             Track Order
-          </Link>
-          <Link
-            href="/products"
-            className="block w-full bg-gray-200 text-gray-900 text-center py-3 rounded-lg font-medium hover:bg-gray-300"
-          >
+          </Button>
+          <Button href="/products" variant="outline" className="w-full">
             Continue Shopping
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

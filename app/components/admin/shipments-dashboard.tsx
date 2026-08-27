@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { StatusBadge } from '@/app/components/ui/status-badge';
 
 interface Shipment {
   id: string;
@@ -28,15 +29,6 @@ interface Order {
 interface ShipmentWithOrder extends Shipment {
   order?: Order;
 }
-
-const statusColors: Record<string, string> = {
-  pending: 'bg-gray-100 text-gray-800',
-  processing: 'bg-blue-100 text-blue-800',
-  shipped: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
-  returned: 'bg-orange-100 text-orange-800',
-  lost: 'bg-red-100 text-red-800',
-};
 
 const statusLabels: Record<string, string> = {
   pending: 'Pending',
@@ -116,8 +108,8 @@ export function ShipmentsDashboard() {
           onClick={() => setFilter('')}
           className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
             filter === ''
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-paper-2 text-text-secondary hover:bg-border'
           }`}
         >
           All
@@ -128,8 +120,8 @@ export function ShipmentsDashboard() {
             onClick={() => setFilter(key)}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               filter === key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-paper-2 text-text-secondary hover:bg-border'
             }`}
           >
             {label}
@@ -140,17 +132,17 @@ export function ShipmentsDashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Shipments list */}
         <div className="lg:col-span-1">
-          <div className="rounded-lg border border-gray-200 bg-white">
-            <div className="border-b border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900">
+          <div className="rounded-lg border border-border bg-card">
+            <div className="border-b border-border p-4">
+              <h3 className="font-semibold text-foreground">
                 Shipments ({shipments.length})
               </h3>
             </div>
             <div className="max-h-[600px] space-y-1 overflow-y-auto p-2">
               {loading ? (
-                <div className="p-4 text-center text-gray-500">Loading...</div>
+                <div className="p-4 text-center text-text-tertiary">Loading...</div>
               ) : shipments.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">No shipments</div>
+                <div className="p-4 text-center text-text-tertiary">No shipments</div>
               ) : (
                 shipments.map((shipment) => (
                   <button
@@ -158,22 +150,16 @@ export function ShipmentsDashboard() {
                     onClick={() => setSelected(shipment)}
                     className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${
                       selected?.id === shipment.id
-                        ? 'bg-blue-100 text-blue-900'
-                        : 'hover:bg-gray-100'
+                        ? 'bg-[color-mix(in_oklch,var(--color-accent)_12%,white)] text-accent'
+                        : 'hover:bg-paper-2'
                     }`}
                   >
                     <div className="font-medium">Order #{shipment.order_id.slice(0, 8)}</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-text-secondary">
                       {shipment.carrier} - {shipment.tracking_number || 'No tracking'}
                     </div>
                     <div className="mt-1">
-                      <span
-                        className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                          statusColors[shipment.status] || statusColors.pending
-                        }`}
-                      >
-                        {statusLabels[shipment.status] || shipment.status}
-                      </span>
+                      <StatusBadge status={shipment.status} />
                     </div>
                   </button>
                 ))
@@ -185,44 +171,38 @@ export function ShipmentsDashboard() {
         {/* Details panel */}
         <div className="lg:col-span-2">
           {selected ? (
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            <div className="rounded-lg border border-border bg-card p-6">
+              <h3 className="mb-4 text-lg font-semibold text-foreground">
                 Shipment Details
               </h3>
 
               <div className="space-y-4">
                 {/* Order info */}
                 <div>
-                  <div className="text-sm font-medium text-gray-600">Order</div>
-                  <div className="mt-1 text-base text-gray-900">
+                  <div className="text-sm font-medium text-text-secondary">Order</div>
+                  <div className="mt-1 text-base text-foreground">
                     {selected.order_id}
                   </div>
                 </div>
 
                 {/* Status */}
                 <div>
-                  <div className="text-sm font-medium text-gray-600">Current Status</div>
+                  <div className="text-sm font-medium text-text-secondary">Current Status</div>
                   <div className="mt-1">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${
-                        statusColors[selected.status] || statusColors.pending
-                      }`}
-                    >
-                      {statusLabels[selected.status] || selected.status}
-                    </span>
+                    <StatusBadge status={selected.status} />
                   </div>
                 </div>
 
                 {/* Carrier info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-600">Carrier</div>
-                    <div className="mt-1 text-base text-gray-900">{selected.carrier}</div>
+                    <div className="text-sm font-medium text-text-secondary">Carrier</div>
+                    <div className="mt-1 text-base text-foreground">{selected.carrier}</div>
                   </div>
                   {selected.tracking_number && (
                     <div>
-                      <div className="text-sm font-medium text-gray-600">Tracking</div>
-                      <div className="mt-1 font-mono text-sm text-gray-900">
+                      <div className="text-sm font-medium text-text-secondary">Tracking</div>
+                      <div className="mt-1 font-mono text-sm text-foreground">
                         {selected.tracking_number}
                       </div>
                     </div>
@@ -233,16 +213,16 @@ export function ShipmentsDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   {selected.shipped_date && (
                     <div>
-                      <div className="text-sm font-medium text-gray-600">Shipped</div>
-                      <div className="mt-1 text-sm text-gray-900">
+                      <div className="text-sm font-medium text-text-secondary">Shipped</div>
+                      <div className="mt-1 text-sm text-foreground">
                         {format(new Date(selected.shipped_date), 'MMM d, yyyy')}
                       </div>
                     </div>
                   )}
                   {selected.estimated_delivery && (
                     <div>
-                      <div className="text-sm font-medium text-gray-600">Est. Delivery</div>
-                      <div className="mt-1 text-sm text-gray-900">
+                      <div className="text-sm font-medium text-text-secondary">Est. Delivery</div>
+                      <div className="mt-1 text-sm text-foreground">
                         {format(new Date(selected.estimated_delivery), 'MMM d, yyyy')}
                       </div>
                     </div>
@@ -250,14 +230,14 @@ export function ShipmentsDashboard() {
                 </div>
 
                 {/* Status actions */}
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="text-sm font-medium text-gray-600 mb-2">Update Status</div>
+                <div className="border-t border-border pt-4">
+                  <div className="text-sm font-medium text-text-secondary mb-2">Update Status</div>
                   <div className="space-y-2">
                     {selected.status !== 'shipped' && (
                       <button
                         onClick={() => updateStatus(selected.id, 'shipped')}
                         disabled={isUpdating}
-                        className="w-full rounded-lg bg-purple-600 text-white px-3 py-2 text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
+                        className="w-full rounded-lg bg-info text-white px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
                       >
                         Mark as Shipped
                       </button>
@@ -266,7 +246,7 @@ export function ShipmentsDashboard() {
                       <button
                         onClick={() => updateStatus(selected.id, 'delivered')}
                         disabled={isUpdating}
-                        className="w-full rounded-lg bg-green-600 text-white px-3 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                        className="w-full rounded-lg bg-success text-white px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
                       >
                         Mark as Delivered
                       </button>
@@ -275,7 +255,7 @@ export function ShipmentsDashboard() {
                       <button
                         onClick={() => updateStatus(selected.id, 'returned')}
                         disabled={isUpdating}
-                        className="w-full rounded-lg bg-orange-600 text-white px-3 py-2 text-sm font-medium hover:bg-orange-700 disabled:opacity-50"
+                        className="w-full rounded-lg bg-warning text-white px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
                       >
                         Mark as Returned
                       </button>
@@ -285,8 +265,8 @@ export function ShipmentsDashboard() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-              <p className="text-gray-600">Select a shipment to view details</p>
+            <div className="rounded-lg border border-border bg-paper-2 p-6 text-center">
+              <p className="text-text-secondary">Select a shipment to view details</p>
             </div>
           )}
         </div>
