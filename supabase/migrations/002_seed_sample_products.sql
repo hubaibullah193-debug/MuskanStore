@@ -224,7 +224,7 @@ FROM public.products p WHERE p.sku = 'HC-CND-001';
 
 -- Skin Care images
 INSERT INTO public.product_images (product_id, image_url, display_order)
-SELECT p.id, 'https://images.unsplash.com/photo-1556228812-2b391910c4f3?w=600&h=600&fit=crop', 0
+SELECT p.id, 'https://images.pexels.com/photos/8533228/pexels-photo-8533228.jpeg', 0
 FROM public.products p WHERE p.sku = 'SC-FW-001';
 
 INSERT INTO public.product_images (product_id, image_url, display_order)
@@ -241,7 +241,7 @@ FROM public.products p WHERE p.sku = 'SC-EYE-001';
 
 -- Body Care images
 INSERT INTO public.product_images (product_id, image_url, display_order)
-SELECT p.id, 'https://images.unsplash.com/photo-1608181831718-2501ef3a862e?w=600&h=600&fit=crop', 0
+SELECT p.id, 'https://images.pexels.com/photos/7319145/pexels-photo-7319145.jpeg', 0
 FROM public.products p WHERE p.sku = 'BC-BL-001';
 
 INSERT INTO public.product_images (product_id, image_url, display_order)
@@ -262,7 +262,7 @@ SELECT p.id, 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600
 FROM public.products p WHERE p.sku = 'SP-NE-001';
 
 INSERT INTO public.product_images (product_id, image_url, display_order)
-SELECT p.id, 'https://images.unsplash.com/photo-1585232004423-244e0e290980?w=600&h=600&fit=crop', 0
+SELECT p.id, 'https://images.stockcake.com/public/d/a/d/dadf753b-4d0a-4f3f-b373-0782cc17c974_large/natural-soap-bar-stockcake.jpg', 0
 FROM public.products p WHERE p.sku = 'SP-CD-001';
 
 INSERT INTO public.product_images (product_id, image_url, display_order)
