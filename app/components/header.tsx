@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
 import { Button } from '@/app/components/ui/button';
@@ -12,6 +12,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, loading: authLoading, logout } = useAuth();
   const { itemCount } = useCart();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleLogout = async () => {
     try {
@@ -25,9 +26,23 @@ export function Header() {
 
   const closeMobileMenu = () => setIsMenuOpen(false);
 
+  // Close the mobile menu on Escape and return focus to the toggle button so
+  // keyboard users are not trapped.
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isMenuOpen]);
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <nav aria-label="Primary" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
@@ -89,9 +104,12 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <button
+            ref={menuButtonRef}
             className="inline-flex items-center justify-center rounded-md p-2 text-foreground hover:bg-paper-2 md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle navigation menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
           >
             <svg
               className="h-6 w-6"
@@ -115,7 +133,12 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="border-t border-border md:hidden">
+          <div
+            id="mobile-menu"
+            role="navigation"
+            aria-label="Mobile navigation"
+            className="border-t border-border md:hidden"
+          >
             <div className="space-y-1 px-2 pb-3 pt-2">
               <Link
                 href="/products"
