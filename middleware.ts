@@ -7,17 +7,14 @@ import { buildSecurityHeaders } from "@/lib/security/headers";
  * Protects routes by verifying JWT and role
  *
  * Protected routes:
- * - /account/* (authenticated customer)
- * - /orders/* (authenticated customer)
  * - /admin/* (authenticated admin only)
  *
  * Public routes (no auth needed, including guest checkout + token-based tracking):
- * - / /products /product/* /auth/* /api/* /order-confirmation/* /track-order
+ * - / /products /product/* /api/* /order-confirmation/* /track-order
  * - /checkout (guests provide email; logged-in users detected via cookie)
  */
 
 const ADMIN_ROUTES = ["/admin"];
-const CUSTOMER_PROTECTED_ROUTES = ["/account", "/orders"];
 const PUBLIC_ROUTES = ["/", "/products", "/product", "/auth", "/api", "/track-order", "/order-confirmation"];
 
 /**
@@ -89,10 +86,6 @@ function isAdminRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 }
 
-function isCustomerProtectedRoute(pathname: string): boolean {
-  return CUSTOMER_PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-}
-
 function isPublicRoute(pathname: string): boolean {
   if (pathname === "/") return true;
   return PUBLIC_ROUTES.some((route) => route !== "/" && pathname.startsWith(route));
@@ -137,22 +130,15 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute(pathname)) {
     const role = userId ? await getUserRole(userId) : null;
     if (!userId || role !== "admin") {
-      const loginUrl = new URL("/auth/login", request.url);
+      const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("redirectUrl", pathname);
       return applySecurityHeaders(NextResponse.redirect(loginUrl));
     }
     return applySecurityHeaders(NextResponse.next());
   }
 
-  // Customer protected routes require authentication only
-  if (isCustomerProtectedRoute(pathname)) {
-    if (!userId) {
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("redirectUrl", pathname);
-      return applySecurityHeaders(NextResponse.redirect(loginUrl));
-    }
-    return applySecurityHeaders(NextResponse.next());
-  }
+  // Customer protected routes - no longer require authentication
+  // Customers can access /account and /orders without logging in
 
   return applySecurityHeaders(NextResponse.next());
 }
